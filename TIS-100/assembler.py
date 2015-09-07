@@ -3,7 +3,7 @@
 import re
 import os
 import sys
-
+import string
 
 # in python:
 # (opcode, operand0, operand1)
@@ -56,19 +56,24 @@ OPER_LEFT = 1004
 # }
 #
 
-def assembleNode(fout, instrs):
-    labelToAddr:
+def assembleNode(fout, nodeLines):
+    labelToAddr = {}
 
-    # scan for labels:
-    for instr in instrs:
-        if re.match(r'(\w+):.*', instr)
-            label
+    # scan for labels, removing them
+    for addr in range(len(nodeLines)):
+        line = string.lstrip(nodeLines[addr])
+
+        while re.match(r'(\w+):.*', line):
+            label = m.group(1)
+            labelToAddr[label] = addr
+            print "set %s to address %d" % (label, addr)
+            line = string.lstrip(line[len(label)+1:])
+
+        nodeLines[addr] = line
 
     # now assemble
-
-    for instr in instrs:
-        m = re.match(r'(.+) (.+)(?, (.+))?', line)
-        if not m:
+    for line in nodeLines:
+        m = re.match(r'(\w+) (.+)(?:, (.+))?', line)
         if m:
             mnem = m.group(1)
             opers = [m.group(2)]
@@ -92,7 +97,7 @@ def assembleNode(fout, instrs):
     
             for oper in opers:
                 if not re.match(r'-?\d+', oper) and \
-                    not oper in curLabels and \
+                    not oper in labelToAddr and \
                     not oper in operToId:
     
                     print "illegal operand \"%s\"" % oper
@@ -106,6 +111,9 @@ def assembleNode(fout, instrs):
             for i in range(numEmpty):
                 data = pack('<BHH', OPCODE_NULL, 0, 0)
                 fout.write(data)
+        else:
+            print "syntax error for instruction \"%s\"" % line
+            sys.exit(-1)
 
 
 if len(sys.argv)<=1:
@@ -120,31 +128,37 @@ fin = open(infile, 'r')
 fout = open(outfile, 'wb')
 
 curLine = 0
-curNode = 0
+curNode = -1
 curProg = None
-curInstrs = []
+nodeLines = []
 state = 'WAITING'
-state = 'INNODE'
 
 while 1:
     curLine += 1
-    line = f.readline()
+
+    line = fin.readline()
     if not line: break
+    line = string.rstrip(line)
+
+    print "state=%s line=%d \"%s\"" % (state, curLine, line)
 
     # whitespace
     #
-    if re.match(r'\s*', line):
+    if re.match(r'^\s*$', line):
         if state=='WAITING': 
             # waiting? whitespace means keep waiting
             pass
         if state=='INNODE':
             # in node? whitespace means the node is done
             print "writing node %d" % curNode
+            assembleNode(fout, nodeLines)
+            nodeLines = []
+            state = 'WAITING'
         continue
 
     # node declarations eg: "@5"
     #
-    m = re.match(r'@(\d)')
+    m = re.match(r'@(\d)', line)
     if m:
         if state=='WAITING':
             # waiting? then we open a new node!
@@ -154,27 +168,19 @@ while 1:
                 sys.exit(-1)
             print "opening node %d" % nodeNum
             curNode = nodeNum
+            state = 'INNODE'
         if state=='INNODE':
             # in node? expected whitespace to end it
             print "unexpected new node declaration within node %d" % curNode
         continue
 
-    # actual instructions
+    # ok what now?
     #
-    m = re.match(r'(.+) (.+)(?, (.+))?', line)
-    if m:
-        curInstrs.append(line)
-
-
-
-
-
-
-                
-            
-
-
-
-
-
+    if state=='WAITING':
+        print "ERROR: don't know how to handle it, quiting..."
+        break;
+    elif state=='INNODE':
+        # then assume it's an instruction or label
+        nodeLines.append(line)
+        continue
 
