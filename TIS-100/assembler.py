@@ -4,6 +4,7 @@ import re
 import os
 import sys
 import string
+import struct
 
 # in python:
 # (opcode, operand0, operand1)
@@ -63,7 +64,9 @@ def assembleNode(fout, nodeLines):
     for addr in range(len(nodeLines)):
         line = string.lstrip(nodeLines[addr])
 
-        while re.match(r'(\w+):.*', line):
+        while 1:
+            m = re.match(r'(\w+):.*', line)
+            if not m: break
             label = m.group(1)
             labelToAddr[label] = addr
             print "set %s to address %d" % (label, addr)
@@ -71,13 +74,18 @@ def assembleNode(fout, nodeLines):
 
         nodeLines[addr] = line
 
+    # add empty lines so that 15 instructions are assembled
+    if len(nodeLines) > 15:
+        raise Exception("node has more than 15 instructions!")
+    nodeLines = nodeLines + ([""] * (15-len(nodeLines)))
+
     # now assemble
     for line in nodeLines:
-        m = re.match(r'(\w+) (.+)(?:, (.+))?', line)
+        m = re.match(r'^(\w+) (.+?)(?:, (.+))?$', line)
         if m:
             mnem = m.group(1)
-            opers = [m.group(2)]
-            if m.group(3): opers.append(m.group(3))
+            opers = list(m.group(2, 3))
+            opcode = None
     
             opcStrToId = { 
                 'NOP':OPCODE_NOP, 'SAV':OPCODE_SAV, 'SWP':OPCODE_SWP,
@@ -87,34 +95,40 @@ def assembleNode(fout, nodeLines):
                 'JMP':OPCODE_JMP
             }
     
-            if mnem not in opcStrToId:
+            if mnem in opcStrToId:
+                opcode = opcStrToId[mnem]
+            else:
                 raise Exception("unknown mnemonic \"%s\"" % mnem)
     
             operToId = {
                 'ACC':OPER_ACC, 'UP':OPER_UP, 'DOWN':OPER_DOWN, 
                 'LEFT':OPER_LEFT, 'RIGHT':OPER_RIGHT
             }
-    
-            for oper in opers:
-                if not re.match(r'-?\d+', oper) and \
-                    not oper in labelToAddr and \
-                    not oper in operToId:
-    
-                    print "illegal operand \"%s\"" % oper
+   
+            # map text operand to id
+            for i in range(len(opers)):
+                if opers[i] == None:
+                    opers[i] = 0
+                elif re.match(r'-?\d+', opers[i]):
+                    opers[i] = int(opers[i])
+                elif opers[i] in labelToAddr:
+                    opers[i] = labelToAddr[opers[i]]
+                elif opers[i] in operToId:
+                    opers[i] = operToId[opers[i]]
+                else:
+                    print "illegal operand \"%s\"" % opers[i]
 
-            for instr in curProg:
-                (opcode, oper0, oper1) = instr;
-                data = pack('<BHH', opcode, oper0, oper1)
-                fout.write(data)
-            numEmpty = 15-len(curProg)
-            print "on node %d filling %d null instructions" % (curNode, numEmpty)
-            for i in range(numEmpty):
-                data = pack('<BHH', OPCODE_NULL, 0, 0)
-                fout.write(data)
+            # write 'em 
+            data = struct.pack('<Bhh', opcode, opers[0], opers[1])
+            fout.write(data)
+
+        elif re.match(r'^\s*$', line):
+            data = struct.pack('<BHH', OPCODE_NULL, 0, 0)
+            fout.write(data)
+
         else:
             print "syntax error for instruction \"%s\"" % line
             sys.exit(-1)
-
 
 if len(sys.argv)<=1:
     print "  usage: %s <input> <output>" % sys.argv[0]
@@ -147,14 +161,15 @@ while 1:
     if re.match(r'^\s*$', line):
         if state=='WAITING': 
             # waiting? whitespace means keep waiting
-            pass
+            continue
+
         if state=='INNODE':
             # in node? whitespace means the node is done
             print "writing node %d" % curNode
             assembleNode(fout, nodeLines)
             nodeLines = []
             state = 'WAITING'
-        continue
+            continue
 
     # node declarations eg: "@5"
     #
@@ -169,10 +184,12 @@ while 1:
             print "opening node %d" % nodeNum
             curNode = nodeNum
             state = 'INNODE'
+            continue
+
         if state=='INNODE':
             # in node? expected whitespace to end it
             print "unexpected new node declaration within node %d" % curNode
-        continue
+            continue
 
     # ok what now?
     #
