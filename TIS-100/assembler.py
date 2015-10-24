@@ -6,56 +6,7 @@ import sys
 import string
 import struct
 
-# in python:
-# (opcode, operand0, operand1)
-# in C:
-# struct instruction {
-#    uint8_t opcode;
-#    uint16_t operand0;
-#    uint16_t operand1;
-# }
-#
-
-OPCODE_NULL = 0 # indicates no instruction present at all
-
-OPCODE_NOP = 1
-
-OPCODE_SAV = 2
-OPCODE_SWP = 3
-
-OPCODE_ADD = 4
-OPCODE_SUB = 5
-OPCODE_NEG = 6
-
-OPCODE_MOV = 7
-
-OPCODE_JGZ = 8
-OPCODE_JEZ = 9
-OPCODE_JNZ = 10
-OPCODE_JLZ = 11
-OPCODE_JRO = 12 # JRO <reg> 
-OPCODE_JMP = 13 # JRO <imm> assembles to this
-
-# operands can be immediates, labels, or the below fixed items:
-# immediates are in [-999,999]
-# labels end up as imm [0,15] 
-# and the below element stay out of the imm band:
-OPER_ACC = 1000
-OPER_UP = 1001
-OPER_DOWN = 1002
-OPER_RIGHT = 1003
-OPER_LEFT = 1004
-
-# in python:
-# (
-# struct program {
-#     struct instruction instrs[15];
-# }
-
-# struct system {
-#     struct program prgrms[9];
-# }
-#
+import defs
 
 def assembleNode(fout, nodeLines):
     labelToAddr = {}
@@ -87,24 +38,11 @@ def assembleNode(fout, nodeLines):
             opers = list(m.group(2, 3))
             opcode = None
     
-            opcStrToId = { 
-                'NOP':OPCODE_NOP, 'SAV':OPCODE_SAV, 'SWP':OPCODE_SWP,
-                'ADD':OPCODE_ADD, 'SUB':OPCODE_SUB, 'NEG':OPCODE_NEG,
-                'MOV':OPCODE_MOV, 'JGZ':OPCODE_JGZ, 'JEZ':OPCODE_JEZ,
-                'JNZ':OPCODE_JNZ, 'JLZ':OPCODE_JLZ, 'JRO':OPCODE_JRO,
-                'JMP':OPCODE_JMP
-            }
-    
-            if mnem in opcStrToId:
-                opcode = opcStrToId[mnem]
+            if mnem in defs.opcStrToId:
+                opcode = defs.opcStrToId[mnem]
             else:
                 raise Exception("unknown mnemonic \"%s\"" % mnem)
     
-            operToId = {
-                'ACC':OPER_ACC, 'UP':OPER_UP, 'DOWN':OPER_DOWN, 
-                'LEFT':OPER_LEFT, 'RIGHT':OPER_RIGHT
-            }
-   
             # map text operand to id
             for i in range(len(opers)):
                 if opers[i] == None:
@@ -113,8 +51,8 @@ def assembleNode(fout, nodeLines):
                     opers[i] = int(opers[i])
                 elif opers[i] in labelToAddr:
                     opers[i] = labelToAddr[opers[i]]
-                elif opers[i] in operToId:
-                    opers[i] = operToId[opers[i]]
+                elif opers[i] in defs.operToId:
+                    opers[i] = defs.operToId[opers[i]]
                 else:
                     print "illegal operand \"%s\"" % opers[i]
 
