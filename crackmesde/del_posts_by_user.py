@@ -71,6 +71,11 @@ for (urlIdx, url) in enumerate(urls):
     delUrls = []
     soup = BeautifulSoup(resp)
     foo = soup.find('table', { 'class':"talk" })
+
+    # no comments?
+    if not foo:
+        continue
+
     comRows = foo.contents
     for com in comRows:
         # get author
