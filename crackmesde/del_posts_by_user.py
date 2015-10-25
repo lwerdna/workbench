@@ -2,7 +2,7 @@
 # delete all posts by a single user (to remove spam, etc.)
 
 USER = 'jahan'
-COOKIE = 'Cookie: PHPSESSID=jddcsqkvi4vidh5o2340q26c83; _ga=GA1.2.1908081374.1445613284; _gat=1'
+COOKIE = 'Cookie: _ga=GA1.2.1908081374.1445613284; PHPSESSID=ob84ug91u4uoubnsmktcndmoq4; _gat=1'
 
 #
 # tools:
@@ -58,7 +58,13 @@ class delThread(threading.Thread):
 with open('allcrackmes.txt') as f:
     urls = f.readlines()
 
+waitUntil = 0
+if sys.argv[1:]:
+    waitUntil = int(sys.argv[1])
+
 for (urlIdx, url) in enumerate(urls):
+    if urlIdx < waitUntil:
+        continue
 
     if re.match(r'^#', url): continue
     url = url.strip()
