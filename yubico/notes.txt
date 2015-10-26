@@ -1,0 +1,8 @@
+[771880.315804] usb 2-2.2: new full-speed USB device number 9 using uhci_hcd
+[771880.531468] usb 2-2.2: New USB device found, idVendor=1050, idProduct=0120
+[771880.531473] usb 2-2.2: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+[771880.531475] usb 2-2.2: Product: Security Key by Yubico
+[771880.531477] usb 2-2.2: Manufacturer: Yubico
+[771880.550951] hid-generic 0003:1050:0120.0002: hiddev0,hidraw1: USB HID v1.10 Device [Yubico Security Key by Yubico] on usb-0000:02:00.0-2.2/input0
+
+
