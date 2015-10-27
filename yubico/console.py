@@ -23,8 +23,18 @@
 # find docs with `pydoc usb` or within python `help(usb)`
 # code for me is in /usr/local/lib/python2.7/dist-packages/pyusb-1.0.0b2-py2.7.egg (treat like zip file)
 
+import os
+import sys
+
+# alib imports
+sys.path.append(os.environ['PATH_ALIB_PY'])
+import utils
+from output import Info, Error, Warn, Debug, print_hex
+
 import usb
 from struct import pack, unpack
+import readline
+from binascii import hexlify
 
 #------------------------------------------------------------------------------
 # PROTOCOL CONSTANTS
@@ -67,16 +77,24 @@ ERR_OTHER = 0x7f
 CAPFLAG_WINK = 1
 CAPFLAG_LOCK = 2
 
+#------------------------------------------------------------------------------
+# PACKET STUFF
+#------------------------------------------------------------------------------
 def pktSend(endPoint, data):
-    print "SENDING 0x%X (%d) bytes: " % (len(data), len(data)) + repr(data)
+    Info("SENDING 0x%X (%d) bytes: " % (len(data), len(data)))
+    print_hex(0, data)
     endPoint.write(data)
 
 def pktRecv(endPoint):
     dataArray = endPoint.read(64)
     data = dataArray.tostring()
-    print "RECEIVED 0x%X (%d) bytes: " % (len(data), len(data)) + repr(data)
+    Info("RECEIVED 0x%X (%d) bytes: " % (len(data), len(data)))
+    print_hex(0, data)
     return data
 
+#------------------------------------------------------------------------------
+# MESSAGE STUFF
+#------------------------------------------------------------------------------
 class Message():
     def __init__(self, chanId=CID_BROADCAST, cmdId=U2FHID_PING, payload=''):
         self.chanId = chanId
@@ -179,7 +197,7 @@ class Message():
                 rc = False
     
         elif self.cmdId == U2FHID_ERROR:
-            if len(data) != 1:
+            if len(self.payload) != 1:
                 if throw: raise Exception('error msg should have 1 byte of data')
                 rc = False
 
@@ -232,39 +250,86 @@ class Message():
         else:
             return 'msg cmd=(unknown)'
 
-# `lsusb` to find your device
-# `lsusb -v -d 1050:0120` for details:
-# device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
-#   config descr
-#     interface descr (class: HID)
-#       endpoint descr (addr: 0x04 EP 4 OUT) (pkt size: 64)
-#       endpoint descr (addr: 0x84 EP 4 IN)  (pkt size: 64)
+if __name__ == '__main__':
+    # `lsusb` to find your device
+    # `lsusb -v -d 1050:0120` for details:
+    # device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
+    #   config descr
+    #     interface descr (class: HID)
+    #       endpoint descr (addr: 0x04 EP 4 OUT) (pkt size: 64)
+    #       endpoint descr (addr: 0x84 EP 4 IN)  (pkt size: 64)
+  
+    [dev, cfg, interf, endPointOut, endPointIn] = [None]*5
+    # going with random command channel 1, use 'init' to alloc your own
+    # but be aware of reconnect issues
+    cidCommands = CID_RESERVED + 1
 
-# select device
-# `lsusb` gives: Bus 002 Device 012: ID 1050:0120 Yubico.com
-dev = usb.core.find(idVendor=YUBICO_VENDOR_ID, idProduct=NEO_SKY_PROD_ID)
-if dev is None: raise ValueError('Device not found')
+    while 1:
+        line = raw_input('yubi> ').lower()
 
-# set configuration to the first and only, retrieve it
-#dev.set_configuration()
-cfg = dev.get_active_configuration()
+        if line == 'connect':
+            # select device
+            # `lsusb` gives: Bus 002 Device 012: ID 1050:0120 Yubico.com
+            dev = usb.core.find(idVendor=YUBICO_VENDOR_ID, idProduct=NEO_SKY_PROD_ID)
+            if dev is None: raise ValueError('Device not found')
+       
+            if dev.is_kernel_driver_active(0):
+                Warn("detaching kernel HID driver")
+                dev.detach_kernel_driver(0) 
 
-# get interface
-interf = cfg[(0,0)]
+            # set configuration to the first and only, retrieve it
+            dev.set_configuration()
+            cfg = dev.get_active_configuration()
+            
+            # get interface
+            interf = cfg[(0,0)]
+            
+            # get endpoints
+            (endpointOut, endpointIn) = interf.endpoints()
+        
+            print endpointOut
+            print endpointIn
+    
+        elif line == 'ping':
+            randData = utils.genRandomData(8)
+            msg = Message(cidCommands, U2FHID_PING, randData)
+            Info("PING!")
+            msg.send(endpointOut)
+            msg.recv(endpointIn)
+            if msg.cmdId != U2FHID_PING:
+                raise Exception("dongle did not respond with PING, got: %s" % str(msg))
+            if len(msg.payload) != 8:
+                raise Exception("dongle did not respond with 8-byte PING payload")
+            if randData != msg.payload[0:8]:
+                raise Exception("dongle did not match sent data in PING payload")
+            Info("PONG!")
 
-# get endpoints
-(endpointOut, endpointIn) = interf.endpoints()
+        elif line == 'init':
+            # send some shit
+            nonce = utils.genRandomData(8)
+            print "nonce: " + hexlify(nonce)
+            msg = Message(CID_BROADCAST, U2FHID_INIT, nonce)
+            msg.send(endpointOut)
+            print "COOL"
+            msg.recv(endpointIn)
 
-print endpointOut
-print endpointIn
+            if msg.cmdId != U2FHID_INIT:
+                raise Exception("dongle did not respond with INIT, got: %s" % str(msg))
+            msg.validate()
+            nonceBack = msg.payload[0:8]
+            if nonceBack != nonce:
+                raise Exception("dongle did not match our nonce, got: %s" % repr(nonceBack))
+            cidCommands = unpack('>I', msg.payload[8:12])[0]
+            print "allocated command channel: 0x%X (%d)" % (cidCommands, cidCommands)
+           
+        elif line == 'wink':
+            msg = Message(cidCommands, U2FHID_WINK, '')
+            msg.send(endpointOut)
+            msg.recv(endpointIn)
 
-# send some shit
-msg = Message(CID_BROADCAST, U2FHID_INIT, "\x01\x02\x03\x04\xAA\xBB\xCC\xDD")
-msg.send(endpointOut)
-msg.recv(endpointIn)
-print msg
-
-#msgSend(dev, U2FHID_PING, "\xDE\xAD\xBE\xEF")
-#resp = dev.read(ENDPOINT_ADDR_IN, 64)
-#print repr(resp)
-
+        elif line == 'quit':
+            usb.util.dispose_resources(dev)
+            usb.util.release_interface(dev, interf)
+            break
+            
+    
