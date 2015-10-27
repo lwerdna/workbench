@@ -5,4 +5,26 @@
 [771880.531477] usb 2-2.2: Manufacturer: Yubico
 [771880.550951] hid-generic 0003:1050:0120.0002: hiddev0,hidraw1: USB HID v1.10 Device [Yubico Security Key by Yubico] on usb-0000:02:00.0-2.2/input0
 
+>>> for k in usb.core.find(find_all=True):
+...   print k
 
+gotta modify the source to fucking talk to it:
+(Pdb) where
+  /usr/lib/python2.7/bdb.py(400)run()
+-> exec cmd in globals, locals
+  <string>(1)<module>()
+  /mnt/hgfs/andrewl/repos/lwerdna/experiments/yubico/getversion.py(8)<module>()
+-> yubikey = yubico.find_yubikey(debug=True)
+  /mnt/hgfs/andrewl/repos/lwerdna/experiments/yubico/build/bdist.linux-x86_64/egg/yubico/yubikey.py(53)find_key()
+-> hid_device = YubiKeyHIDDevice(debug, skip)
+  /mnt/hgfs/andrewl/repos/lwerdna/experiments/yubico/build/bdist.linux-x86_64/egg/yubico/yubikey_usb_hid.py(123)__init__()
+-> if not self._open(skip):
+  /mnt/hgfs/andrewl/repos/lwerdna/experiments/yubico/build/bdist.linux-x86_64/egg/yubico/yubikey_usb_hid.py(317)_open()
+-> usb_device = self._get_usb_device(skip)
+> /mnt/hgfs/andrewl/repos/lwerdna/experiments/yubico/build/bdist.linux-x86_64/egg/yubico/yubikey_usb_hid.py(373)_get_usb_device()
+-> if device.idVendor == YUBICO_VID:
+
+change "if device.idProduct in PID.all(otp=True):" to "if device.idProduct in PID.all(u2f=True):"
+
+a@ubuntu:~/Downloads/ykpers-1.17.2$ ./ykinfo  -I
+Yubikey core error: no yubikey present
