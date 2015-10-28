@@ -1,28 +1,6 @@
 #!/usr/bin/python
 # mess around with the F2D-only (not OTP) yubico key promoted thru github
 
-# protocol stack:
-# +------------------+
-# | U2F              | TRANSACTIONS
-# |                  | (encapsulated in U2FHID_MSG)
-# |                  |
-# +------------------+ 
-# | U2FHID           | MESSAGES
-# |                  | - logical channels: 0 (reserved), ..., 0xFFFFFFFF (broadcast)
-# |                  | - commands: U2FHID_INIT, U2FHID_PING, U2FHID_WINK
-# |                  | - initialization and continuation packets
-# +------------------+
-# | USB REPORT       | PACKETS
-# |                  | - IN and OUT endpoints
-# |                  | - 64-byte chunks (HID_RPT_SIZE)
-# +------------------+
-# | USB              |
-# +------------------+
-#
-
-# find docs with `pydoc usb` or within python `help(usb)`
-# code for me is in /usr/local/lib/python2.7/dist-packages/pyusb-1.0.0b2-py2.7.egg (treat like zip file)
-
 import os
 import sys
 
@@ -49,7 +27,6 @@ LOGICAL_CHAN_ID = 0
 ENDPOINT_ADDR_OUT = 0x04
 ENDPOINT_ADDR_IN = 0x84
 
-# see fido-u2f-u2f.h and fido-u2f-u2fhid.h
 TYPE_INIT = 0x80
 U2FHID_PING = (TYPE_INIT | 0x01)	
 U2FHID_MSG = (TYPE_INIT | 0x03)	
@@ -251,14 +228,6 @@ class Message():
             return 'msg cmd=(unknown)'
 
 if __name__ == '__main__':
-    # `lsusb` to find your device
-    # `lsusb -v -d 1050:0120` for details:
-    # device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
-    #   config descr
-    #     interface descr (class: HID)
-    #       endpoint descr (addr: 0x04 EP 4 OUT) (pkt size: 64)
-    #       endpoint descr (addr: 0x84 EP 4 IN)  (pkt size: 64)
-  
     [dev, cfg, interf, endPointOut, endPointIn] = [None]*5
     # going with random command channel 1, use 'init' to alloc your own
     # but be aware of reconnect issues
