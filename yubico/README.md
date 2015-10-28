@@ -4,7 +4,7 @@ These are some tools to play with the Yubico U2F-only ("NEO Sky") USB dongle sol
 * (PLANNED) a shell to interact with the dongle, using FIDO U2F javascript API
 * (PLANNED) a "spy" that reports on the dongle's activity as your browser 
 
-[screenshot](/media/screenshot0.png?raw=true "screenshot")
+[screenshot](./media/screenshot0.png?raw=true "screenshot")
 
 ###communication stack
     +------------------+
