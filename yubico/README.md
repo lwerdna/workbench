@@ -4,7 +4,7 @@ These are some tools to play with the Yubico U2F-only ("NEO Sky") USB dongle sol
 * (PLANNED) a shell to interact with the dongle, using FIDO U2F javascript API
 * (PLANNED) a "spy" that reports on the dongle's activity as your browser 
 
-[screenshot](/media/screenshot0.png?raw=true "screenshot")
+![screenshot](./media/screenshot0.png?raw=true "screenshot")
 
 ###communication stack
     +------------------+
@@ -30,20 +30,23 @@ These are some tools to play with the Yubico U2F-only ("NEO Sky") USB dongle sol
 
 ###device structure
 * one HID device, one config, one interface, two endpoints, lsbusb gives:
-    device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
-      config descr
-        interface descr (class: HID)
-          endpoint descr (addr: 0x04 EP 4 OUT) (pkt size: 64)
-          endpoint descr (addr: 0x84 EP 4 IN)  (pkt size: 64)
-
+```    
+device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
+  config descr
+    interface descr (class: HID)
+      endpoint descr (addr: 0x04 EP 4 OUT) (pkt size: 64)
+      endpoint descr (addr: 0x84 EP 4 IN)  (pkt size: 64)
+```
 ###debuggin USB presence issues
 * simple `dmesg` to watch insertion, example output:
-    [771880.315804] usb 2-2.2: new full-speed USB device number 9 using uhci_hcd
-    [771880.531468] usb 2-2.2: New USB device found, idVendor=1050, idProduct=0120
-    [771880.531473] usb 2-2.2: New USB device strings: Mfr=1, Product=2, SerialNumber=0
-    [771880.531475] usb 2-2.2: Product: Security Key by Yubico
-    [771880.531477] usb 2-2.2: Manufacturer: Yubico
-    [771880.550951] hid-generic 0003:1050:0120.0002: hiddev0,hidraw1: USB HID v1.10 Device [Yubico Security Key by Yubico] on usb-0000:02:00.0-2.2/input0
+```
+[771880.315804] usb 2-2.2: new full-speed USB device number 9 using uhci_hcd
+[771880.531468] usb 2-2.2: New USB device found, idVendor=1050, idProduct=0120
+[771880.531473] usb 2-2.2: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+[771880.531475] usb 2-2.2: Product: Security Key by Yubico
+[771880.531477] usb 2-2.2: Manufacturer: Yubico
+[771880.550951] hid-generic 0003:1050:0120.0002: hiddev0,hidraw1: USB HID v1.10 Device [Yubico Security Key by Yubico] on usb-0000:02:00.0-2.2/input0
+```
 * `lsusb` to find your device
 * `lsusb -v -d 1050:0120` for details
 
