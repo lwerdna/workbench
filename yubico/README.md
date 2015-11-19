@@ -37,7 +37,7 @@ device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
       endpoint descr (addr: 0x04 EP 4 OUT) (pkt size: 64)
       endpoint descr (addr: 0x84 EP 4 IN)  (pkt size: 64)
 ```
-###debuggin USB presence issues
+###debugging USB presence issues
 * simple `dmesg` to watch insertion, example output:
 ```
 [771880.315804] usb 2-2.2: new full-speed USB device number 9 using uhci_hcd
@@ -64,4 +64,5 @@ device descr (Bus 002 Device 012: ID 1050:0120 Yubico.com)
 * don't use the yubikey personalization tool in Linux, 'cause it's impossible to compile!
 * don't use the command-line personalization tool in Linux (ykpers), it won't detect
 * DON'T THINK THIS IS ANYTHING LIKE A TYPICAL YUBICO PRODUCT, IT'S U2F ONLY
+* don't be scared of USB like I was, there's an indispensable guide called "USB in a NutShell" at http://www.beyondlogic.org/usbnutshell/usb1.shtml and you just have to skim the "device descriptors" section for cursory idea of what device, configuration, interface, and endpoint mean
 
