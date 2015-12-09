@@ -1,5 +1,7 @@
 /* demonstrate command line mail send using smtp.google.com
 
+    the account you use must have "less secure apps" access setting
+
     smtp.gmail.com:465 is SSL
     smtp.gmail.com:587 starts plaintext and requies STARTTLS command
 
@@ -18,8 +20,10 @@
 #define MAX_NAME_PASS 2048
 #define MAX_ENC_NAME_PASS 2048
 #define PATH_OPENSSL "/usr/bin/openssl"
-#define GMAIL_USER "foo@gmail.com"
-#define GMAIL_PASS "mypassword"
+#define GMAIL_USER "XXXXXX@gmail.com"
+#define GMAIL_PASS "ABABBABABABAB"
+#define SENDER "alice@domain.com" // this gets overridden by GMAIL_USER
+#define RECEIVER "bob@domain.com"
 
 //****************************************************************************
 // UTILS
@@ -222,15 +226,20 @@ int main(int ac, char **av)
 
         /* consume initial blurb */
         openssl_read_lines_until(fds_up[0], "220 smtp.gmail.com ESMTP");
-        openssl_write_line(fds_down[1], "EHLO foo@bar.com");
+        openssl_write(fds_down[1], "EHLO ");
+        openssl_write_line(fds_down[1], SENDER);
         openssl_read_lines_until(fds_up[0], "250 SMTPUTF8");
         openssl_write(fds_down[1], "AUTH PLAIN ");
         openssl_write(fds_down[1], enc_name_pass); 
         openssl_write(fds_down[1], "\n"); 
         openssl_read_lines_until(fds_up[0], "Accepted");
-        openssl_write_line(fds_down[1], "MAIL FROM: <foo@bar.com>");
+        openssl_write(fds_down[1], "MAIL FROM: <");
+        openssl_write(fds_down[1], SENDER);
+        openssl_write(fds_down[1], ">\n");
         openssl_read_lines_until(fds_up[0], " OK ");
-        openssl_write_line(fds_down[1], "rcpt to: <xtr3311@gmail.com>");
+        openssl_write(fds_down[1], "rcpt to: <");
+        openssl_write(fds_down[1], RECEIVER);
+        openssl_write(fds_down[1], ">\n");
         openssl_read_lines_until(fds_up[0], " OK ");
         openssl_write_line(fds_down[1], "DATA");
         openssl_read_lines_until(fds_up[0], " Go ahead ");
