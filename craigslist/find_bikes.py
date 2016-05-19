@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# find bikes on craigslist
+# find bikes on craigslist, requires BeautifulSoup library
 
 # ~~~ EDIT THIS PART
 
@@ -28,9 +28,7 @@ def filter(title, price):
 
 import re
 import os
-import sys
-import socket
-import threading
+import httplib
 from BeautifulSoup import BeautifulSoup
 
 def seenLoad():
@@ -41,6 +39,7 @@ def seenLoad():
             if re.match(r'^\s*$', l):
                 continue
             [url, title] = l.split(' ', 1)
+            title = title.rstrip()
             seen[url] = title
         fp.close()
     print "loaded %d urls previously seen" % len(seen.keys())
@@ -56,29 +55,10 @@ def seenSave(seen):
     print "saved %d urls previously seen" % len(seen.keys())
 
 def httpGetRequest(base, rest):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((base, 80))
-    req = 'GET %s HTTP/1.1\x0d\x0aHost: %s\x0d\x0aUser-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0\x0d\x0aAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\x0d\x0aAccept-Language: en-US,en;q=0.5\x0d\x0a'
-    #req += COOKIE 
-    #req += '\x0d\x0a'
-    req += 'Connection: keep-alive\x0d\x0a\x0d\x0a'
-    req = req % (rest, base)
-
-    #print "base is: " + base
-    #print "rest is: " + rest
-    #print "request is: " + repr(req)
-
-    sock.send(req)
-
-    # get all response, close
-    resp = ''
-    while 1:
-        temp = sock.recv(4096)
-        if not temp: break
-        resp += temp
-    sock.close()
-
-    # done
+    conn = httplib.HTTPConnection(base)
+    conn.request("GET", rest)
+    resp = conn.getresponse().read()
+    conn.close()
     return resp
 
 def doIt():
@@ -111,7 +91,7 @@ def doIt():
             hdrlink = row.find('a', {'class':'hdrlnk'})
             title = hdrlink.span.text
             sublink = hdrlink['href']
-            
+           
             price = 0
             priceElem = row.find('span', {'class':'price'})
             if priceElem:
