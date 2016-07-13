@@ -1,0 +1,39 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0303 
+header_name {.h} 
+code_name {.cxx}
+class Gui {open
+} {
+  Function {Gui()} {open
+  } {
+    Fl_Window mainWindow {
+      label {XXX Keygenned by Cracker} open
+      xywh {633 123 380 130} type Double visible
+    } {
+      Fl_Input inName {
+        label {Name:}
+        xywh {54 55 316 21}
+      }
+      Fl_Button buttonGen {
+        label Generate user_data_type {void *}
+        callback {char buff[256];
+keyAlgo(inName->value(), buff);
+outSerial->value(buff);} selected
+        tooltip {Generate the serial number!} xywh {300 105 70 20} when 1
+        code0 {\#include "algo.h"}
+      }
+      Fl_Box {} {
+        label {Keygen Template!}
+        xywh {10 5 360 45} box GTK_THIN_UP_BOX color 2 labelsize 32 labelcolor 1
+      }
+      Fl_Output outSerial {
+        label {Serial:}
+        xywh {54 79 316 21}
+      }
+    }
+  }
+  Function {show(int argc, char **argv)} {open
+  } {
+    code {mainWindow->show(argc, argv);} {}
+  }
+} 
