@@ -1,0 +1,28 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0303 
+header_name {.h} 
+code_name {.cxx}
+decl {\#include "logic.h"} {private global
+} 
+
+class UserInterface {open
+} {
+  Function {make_window()} {open
+  } {
+    Fl_Window {} {
+      label {Compiler Lab} open
+      xywh {604 323 1032 748} type Double hide
+    } {
+      Fl_Text_Editor sourceCode {selected
+        xywh {4 4 400 740} align 21 textfont 4
+        code0 {Fl_Text_Buffer *buf = new Fl_Text_Buffer();}
+        code1 {o->buffer(buf);}
+        code2 {buf->text("\#include <stdio.h>\\n\\nint main(int ac, char **av)\\n{\\n    printf(\\"Hello, world!\\\\n\\");\\n    return 0;\\n}");}
+        code3 {buf->add_modify_callback(onSourceModified, NULL);}
+      }
+      Fl_Text_Editor asmCode {
+        xywh {408 4 200 740} textfont 4 textsize 8
+      }
+    }
+  }
+} 
