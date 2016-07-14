@@ -17,6 +17,8 @@
 #include <sys/types.h>
 #include <sys/poll.h>
 
+#include <autils/subprocess.h>
+
 #define MAX_NAME_PASS 2048
 #define MAX_ENC_NAME_PASS 2048
 #define PATH_OPENSSL "/usr/bin/openssl"
@@ -142,18 +144,14 @@ int main(int ac, char **av)
     int rc = -1;
     int i;
     ssize_t n;
-    pid_t childpid;
+    pid_t child_pid;
     char enc_name_pass[MAX_ENC_NAME_PASS];
 
     // both argv and envp must be terminated by a NULL pointer.
-    char *args_openssl[] = { "/usr/bin/openssl", "s_client", "-connect", 
+    char *const argv[] = { PATH_OPENSSL, "s_client", "-connect", 
         "smtp.gmail.com:465", "-crlf", "-ign_eof", NULL };
-    char *search_move;
 
-    /* these fd's used to send commands down to openssl */
-    int fds_down[2];
-    /* these fd's used to read output from openssl (he writes up to us) */
-    int fds_up[2];
+    int fd_child_stdin, fd_child_stdout, pid_child;
 
     /* encode the name and pass */
     {
@@ -170,90 +168,41 @@ int main(int ac, char **av)
         printf("encoded name/pass to: %s\n", enc_name_pass);
     }
 
-    /* create pipes */
-    pipe(fds_down);
-    pipe(fds_up);
-
-    /* fork */
-    childpid = fork();
-    if(childpid == -1) {
-        printf("ERROR: fork()\n");
+    if(fork_and_launch(PATH_OPENSSL, argv, &child_pid, &fd_child_stdout, &fd_child_stdin)) {
+        printf("ERROR: fork_and_launch()\n");
         goto cleanup;
     }
+    printf("openssl launched with PID=%d\n", child_pid);
 
-    /* child activity */
-    if(childpid == 0) {
-        /* close writer from down pipes (we read from parent) */
-        close(fds_down[1]); 
-        /* close reader from up pipes (we write to parent) */
-        close(fds_up[0]);
+    /* consume initial blurb */
+    openssl_read_lines_until(fd_child_stdout, "220 smtp.gmail.com ESMTP");
+    openssl_write(fd_child_stdin, "EHLO ");
+    openssl_write_line(fd_child_stdin, "doesn.t.mat.ter");
+    openssl_read_lines_until(fd_child_stdout, "250 SMTPUTF8");
+    openssl_write(fd_child_stdin, "AUTH PLAIN ");
+    openssl_write(fd_child_stdin, enc_name_pass); 
+    openssl_write(fd_child_stdin, "\n"); 
+    openssl_read_lines_until(fd_child_stdout, "Accepted");
+    openssl_write(fd_child_stdin, "MAIL FROM: <");
+    openssl_write(fd_child_stdin, SENDER);
+    openssl_write(fd_child_stdin, ">\n");
+    openssl_read_lines_until(fd_child_stdout, " OK ");
+    openssl_write(fd_child_stdin, "rcpt to: <");
+    openssl_write(fd_child_stdin, RECEIVER);
+    openssl_write(fd_child_stdin, ">\n");
+    openssl_read_lines_until(fd_child_stdout, " OK ");
+    openssl_write_line(fd_child_stdin, "DATA");
+    openssl_read_lines_until(fd_child_stdout, " Go ahead ");
+    openssl_write_line(fd_child_stdin, "Subject: MySubject");
+    openssl_write_line(fd_child_stdin, "\n");
+    openssl_write_line(fd_child_stdin, "MyBody");
+    openssl_write_line(fd_child_stdin, ".");
+    openssl_read_lines_until(fd_child_stdout, " OK ");
+    openssl_write_line(fd_child_stdin, "quit");
 
-        /* duplicate the down rx pipe onto stdin */
-        i = dup2(fds_down[0], STDIN_FILENO);
-        if(i >= 0) {
-            printf("dup2() on STDIN returned: %d\n", i);
-        } 
-        else {
-            perror("dup2()");
-            goto cleanup;
-        }
-
-        /* NO PRINTF() WORK AFTER dup2() IS DONE */
-
-        /* duplicate the up tx pipe onto stdout */
-        i = dup2(fds_up[1], STDOUT_FILENO);
-        if(i >= 0) {
-            printf("dup2() on STDOUT returned: %d\n", i);
-        } 
-        else {
-            perror("dup2()");
-            goto cleanup;
-        }
-
-        /* now execute openssl, which inherits file descriptors */
-        execv(PATH_OPENSSL, args_openssl);
-
-        printf("ERROR: execv()\n");
-    }
-    /* parent activity */
-    else {
-        printf("spawned child process: %d\n", childpid);
-
-        /* close reader from down pipes (we write to child) */
-        close(fds_down[0]); 
-        /* close writer from up pipes (we read from child) */
-        close(fds_up[1]);
-
-        /* consume initial blurb */
-        openssl_read_lines_until(fds_up[0], "220 smtp.gmail.com ESMTP");
-        openssl_write(fds_down[1], "EHLO ");
-        openssl_write_line(fds_down[1], SENDER);
-        openssl_read_lines_until(fds_up[0], "250 SMTPUTF8");
-        openssl_write(fds_down[1], "AUTH PLAIN ");
-        openssl_write(fds_down[1], enc_name_pass); 
-        openssl_write(fds_down[1], "\n"); 
-        openssl_read_lines_until(fds_up[0], "Accepted");
-        openssl_write(fds_down[1], "MAIL FROM: <");
-        openssl_write(fds_down[1], SENDER);
-        openssl_write(fds_down[1], ">\n");
-        openssl_read_lines_until(fds_up[0], " OK ");
-        openssl_write(fds_down[1], "rcpt to: <");
-        openssl_write(fds_down[1], RECEIVER);
-        openssl_write(fds_down[1], ">\n");
-        openssl_read_lines_until(fds_up[0], " OK ");
-        openssl_write_line(fds_down[1], "DATA");
-        openssl_read_lines_until(fds_up[0], " Go ahead ");
-        openssl_write_line(fds_down[1], "Subject: MySubject");
-        openssl_write_line(fds_down[1], "\n");
-        openssl_write_line(fds_down[1], "MyBody");
-        openssl_write_line(fds_down[1], ".");
-        openssl_read_lines_until(fds_up[0], " OK ");
-        openssl_write_line(fds_down[1], "quit");
-
-        printf("all done here\n");
-        close(fds_down[1]);
-        close(fds_down[0]);
-    }
+    printf("all done here\n");
+    close(fd_child_stdout);
+    close(fd_child_stdin);
 
     cleanup:
     return rc;
