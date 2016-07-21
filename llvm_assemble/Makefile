@@ -1,5 +1,5 @@
-FLAGS_COMPILE = $(shell llvm-config-mp-3.7 --cxxflags) -fno-rtti
-FLAGS_LINK = $(shell llvm-config-mp-3.7 --libs --ldflags)
+FLAGS_COMPILE = $(shell llvm-config --cxxflags) -fno-rtti
+FLAGS_LINK = $(shell llvm-config --libs --ldflags)
 
 FLAGS_LINK += -lz
 #FLAGS_LINK += -ltinfo

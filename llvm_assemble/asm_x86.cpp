@@ -10,7 +10,7 @@
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectFileInfo.h"
 #include "llvm/MC/MCParser/AsmLexer.h"
-#include "llvm/MC/MCTargetAsmParser.h"
+#include "llvm/MC/MCParser/MCTargetAsmParser.h"
 #include "llvm/MC/MCRegisterInfo.h"
 #include "llvm/MC/MCSectionMachO.h"
 #include "llvm/MC/MCStreamer.h"
@@ -90,9 +90,10 @@ int main(int ac, char **av)
     const Target *TheTarget;
     SourceMgr SrcMgr;
 
-    LLVMInitializeAllTargetInfos();
-    LLVMInitializeAllTargetMCs();
-    LLVMInitializeAllDisassemblers();
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllDisassemblers();
 
     // arg0:
     // llvm::Target encapsulating the "x86_64-apple-darwin14.5.0" information 
@@ -102,22 +103,35 @@ int main(int ac, char **av)
     }
     printf("Got target: %s\n", TripleName.c_str()); // eg: x86_64-apple-darwin14.5.0
     printf("Got arch: %s\n", ArchName.c_str());
+    printf("Target.getName(): %s\n", TheTarget->getName());
+    printf("Target.getShortDescription(): %s\n", TheTarget->getShortDescription());
 
-    // arg1:
+
+    /* from the target we get almost everything */
+    std::unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(TripleName));
+    std::unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, TripleName));
+    std::unique_ptr<MCInstrInfo> MCII(TheTarget->createMCInstrInfo()); /* describes target instruction set */
+    std::unique_ptr<MCSubtargetInfo> STI(TheTarget->createMCSubtargetInfo(TripleName, "", "")); /* subtarget instr set */
+    std::unique_ptr<MCAsmBackend> MAB(TheTarget->createMCAsmBackend(*MRI, TripleName, /* specific CPU */ ""));
+    MCInstPrinter *IP =  TheTarget->createMCInstPrinter(Triple(TripleName), /*variant*/0, *MAI, *MCII, *MRI);
+
+
+    // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    std::string asmSrc = "push ebp";
+    printf("building arg0\n");
+    std::string asmSrc = ".text\nxor %eax, %eax";
+    printf("test: %s\n", asmSrc.c_str());
     std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
     SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
 
-    // arg2: the machine code context
-    std::unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(TripleName));
-    std::unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, TripleName));
+    // arg1: the machine code context
+    printf("building arg1\n");
     MCObjectFileInfo MOFI;
     MCContext Ctx(MAI.get(), MRI.get(), &MOFI, &SrcMgr);
-    MOFI.InitMCObjectFileInfo(TheTriple, Reloc::Default, CodeModel::Default, Ctx);
+    MOFI.InitMCObjectFileInfo(TheTriple, /*pic*/ false, CodeModel::Default, Ctx);
 
-    // arg3: the streamer
+    // arg2: the streamer
     //
     // this is the assembler interface
     // -methods per .s statements (emit bytes, handle directive, etc.)
@@ -128,28 +142,34 @@ int main(int ac, char **av)
     //   tracking of line and column position for padding and shit
     //
     //   but raw_ostream is abstract and is implemented by raw_fd_ostream, raw_string_ostream, etc.
+    printf("building arg2\n");
     std::string strOutput;
     raw_string_ostream rso(strOutput);
     formatted_raw_ostream fro(rso);
-    std::unique_ptr<::formatted_raw_ostream> pfro(&fro);
+    std::unique_ptr<formatted_raw_ostream> pfro(&fro);
 
-    MCInstrInfo *MCII = TheTarget->createMCInstrInfo(); /* describes target instruction set */
     /* code emitter needs 1) instruction set info 2) register info */
     MCCodeEmitter *CE = TheTarget->createMCCodeEmitter(*MCII, *MRI, Ctx);
-    MCAsmBackend *MAB = TheTarget->createMCAsmBackend(*MRI, TripleName, /* specific CPU */ "");
-    MCStreamer *mcs = TheTarget->createAsmStreamer(
+
+    MCStreamer *as = TheTarget->createAsmStreamer(
         Ctx, /* the MC context */
         std::move(pfro), /* output stream (type: std::unique_ptr<formatted_raw_ostream> from Support/FormattedStream.h) */
         true, /* isVerboseAsm */
         false, /* useDwarfDirectory */
-        NULL, /* if given, the instruction printer to use (else, MCInstr representation is used) */
+        IP, /* if given, the instruction printer to use (else, MCInstr representation is used) */
         CE, /* if given, a code emitter used to show instruction encoding inline with the asm */
-        MAB,  /* the AsmBackend, (fixups, relaxation, objs and elfs) */
+        MAB.get(),  /* the AsmBackend, (fixups, relaxation, objs and elfs) */
         true /* ShowInst (show encoding) */
     );
 
-    //AssembleInput(av[0], TheTarget, SrcMgr, Ctx, *Str, *MAI, *STI,
-    //    *MCII, MCOptions);
+    std::string abi = "none";
+    MCTargetOptions toptions;
+    toptions.MCUseDwarfDirectory = false;
+    toptions.ABIName = abi;
+
+    printf("trying to assemble, let's go..\n");
+    AssembleInput(av[0], TheTarget, SrcMgr, Ctx, *as, *MAI, *STI,
+        *MCII, toptions);
 
     return 0;
 }
