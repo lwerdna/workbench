@@ -106,7 +106,6 @@ int main(int ac, char **av)
     printf("Target.getName(): %s\n", TheTarget->getName());
     printf("Target.getShortDescription(): %s\n", TheTarget->getShortDescription());
 
-
     /* from the target we get almost everything */
     std::unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(TripleName));
     std::unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, TripleName));
@@ -119,14 +118,11 @@ int main(int ac, char **av)
     // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    printf("building arg0\n");
-    std::string asmSrc = ".text\nxor %eax, %eax";
-    printf("test: %s\n", asmSrc.c_str());
+    std::string asmSrc = ".text\nxor %eax, %eax\n";
     std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
     SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
 
     // arg1: the machine code context
-    printf("building arg1\n");
     MCObjectFileInfo MOFI;
     MCContext Ctx(MAI.get(), MRI.get(), &MOFI, &SrcMgr);
     MOFI.InitMCObjectFileInfo(TheTriple, /*pic*/ false, CodeModel::Default, Ctx);
@@ -142,7 +138,6 @@ int main(int ac, char **av)
     //   tracking of line and column position for padding and shit
     //
     //   but raw_ostream is abstract and is implemented by raw_fd_ostream, raw_string_ostream, etc.
-    printf("building arg2\n");
     std::string strOutput;
     raw_string_ostream rso(strOutput);
     formatted_raw_ostream fro(rso);
@@ -170,6 +165,9 @@ int main(int ac, char **av)
     printf("trying to assemble, let's go..\n");
     AssembleInput(av[0], TheTarget, SrcMgr, Ctx, *as, *MAI, *STI,
         *MCII, toptions);
+
+    fro.flush();
+    printf("output: %s\n", strOutput.c_str());
 
     return 0;
 }
