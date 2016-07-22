@@ -33,33 +33,9 @@
 #include "llvm/Support/ToolOutputFile.h"
 
 // globals
-std::string TripleName; // eg: x86_64-apple-darwin14.5.0
 std::string ArchName;
-Triple TheTriple;
-
-const Target *
-GetTarget(const char *ProgName) {
-    // Figure out the target triple.
-    if (TripleName.empty())
-        TripleName = llvm::sys::getDefaultTargetTriple();
-    TheTriple = Triple(Triple::normalize(TripleName));
-
-    // Get the target specific parser.
-    std::string Error;
-    const Target *TheTarget = TargetRegistry::lookupTarget(ArchName, TheTriple,
-            Error);
-    if (!TheTarget) {
-        errs() << ProgName << ": " << Error;
-        return nullptr;
-    }
-
-    // Update the triple name and return the found target.
-    TripleName = TheTriple.getTriple();
-    return TheTarget;
-}
 
 int AssembleInput(
-    const char *ProgName,
     const Target *TheTarget,
     SourceMgr &SrcMgr, 
     MCContext &Ctx, 
@@ -73,8 +49,7 @@ int AssembleInput(
   std::unique_ptr<MCTargetAsmParser> TAP(TheTarget->createMCAsmParser(STI, *Parser, MCII, MCOptions));
 
   if (!TAP) {
-    errs() << ProgName
-           << ": error: this target does not support assembly parsing.\n";
+    errs() << ": error: this target does not support assembly parsing.\n";
     return 1;
   }
 
@@ -87,38 +62,59 @@ int AssembleInput(
 
 int main(int ac, char **av)
 {
-    const Target *TheTarget;
     SourceMgr SrcMgr;
 
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllDisassemblers();
+    LLVMInitializeX86TargetInfo();
+    //llvm::InitializeAllTargetInfos();
+    LLVMInitializeX86AsmParser();
+    //llvm::InitializeAllTargetMCs();
+    LLVMInitializeX86TargetMC();
+    //llvm::InitializeAllAsmParsers();
+    LLVMInitializeX86AsmParser();
+    //llvm::InitializeAllDisassemblers();
+    LLVMInitializeX86Disassembler();
 
     // arg0:
     // llvm::Target encapsulating the "x86_64-apple-darwin14.5.0" information 
-    TheTarget = GetTarget(av[0]);
+
+    // see /lib/Support/Triple.cpp for the details
+    //spec = llvm::sys::getDefaultTargetTriple();
+    std::string machSpec = "x86_64-apple-darwin14.5.0";
+    //std::string machSpec = "x86_64-apple-darwin";
+    //std::string machSpec = "x86_64-thumb-linux-gnu";
+    //std::string machSpec = "x86_64-unknown-linux-gnu";
+    printf("machine spec: %s\n", machSpec.c_str());
+    machSpec = Triple::normalize(machSpec);
+    printf("machine spec (normalized): %s\n", machSpec.c_str());
+    Triple TheTriple(machSpec);
+
+    // Get the target specific parser.
+    std::string Error;
+    const Target *TheTarget = TargetRegistry::lookupTarget(/*arch*/"", TheTriple, Error);
     if (!TheTarget) {
+        errs() << Error;
         return -1;
     }
-    printf("Got target: %s\n", TripleName.c_str()); // eg: x86_64-apple-darwin14.5.0
-    printf("Got arch: %s\n", ArchName.c_str());
+
+    machSpec = TheTriple.getTriple();
+    printf("machine spec (returned): %s\n", machSpec.c_str());
+    
     printf("Target.getName(): %s\n", TheTarget->getName());
     printf("Target.getShortDescription(): %s\n", TheTarget->getShortDescription());
 
     /* from the target we get almost everything */
-    std::unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(TripleName));
-    std::unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, TripleName));
+    std::unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(machSpec));
+    std::unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, machSpec));
     std::unique_ptr<MCInstrInfo> MCII(TheTarget->createMCInstrInfo()); /* describes target instruction set */
-    std::unique_ptr<MCSubtargetInfo> STI(TheTarget->createMCSubtargetInfo(TripleName, "", "")); /* subtarget instr set */
-    std::unique_ptr<MCAsmBackend> MAB(TheTarget->createMCAsmBackend(*MRI, TripleName, /* specific CPU */ ""));
-    MCInstPrinter *IP =  TheTarget->createMCInstPrinter(Triple(TripleName), /*variant*/0, *MAI, *MCII, *MRI);
+    std::unique_ptr<MCSubtargetInfo> STI(TheTarget->createMCSubtargetInfo(machSpec, "", "")); /* subtarget instr set */
+    std::unique_ptr<MCAsmBackend> MAB(TheTarget->createMCAsmBackend(*MRI, machSpec, /* specific CPU */ ""));
+    MCInstPrinter *IP =  TheTarget->createMCInstPrinter(Triple(machSpec), /*variant*/0, *MAI, *MCII, *MRI);
 
 
     // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    std::string asmSrc = ".text\nxor %eax, %eax\n";
+    std::string asmSrc = ".text\n.org 0x100\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
     std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
     SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
 
@@ -163,11 +159,11 @@ int main(int ac, char **av)
     toptions.ABIName = abi;
 
     printf("trying to assemble, let's go..\n");
-    AssembleInput(av[0], TheTarget, SrcMgr, Ctx, *as, *MAI, *STI,
+    AssembleInput(TheTarget, SrcMgr, Ctx, *as, *MAI, *STI,
         *MCII, toptions);
 
     fro.flush();
-    printf("output: %s\n", strOutput.c_str());
+    printf("output:\n%s", strOutput.c_str());
 
     return 0;
 }
