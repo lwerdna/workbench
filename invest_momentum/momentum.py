@@ -10,6 +10,8 @@ import datetime
 syms = ['SPY', 'XLE', 'XLU', 'XLK', 'XLB', 'XLP', 'XLY', 'XLI', 'XLV', 'XLF',
     'VNQ', 'VEA', 'VWO', 'BND', 'V', 'AMZN']
 
+#costCol = 'Adj Close'
+costCol = 'Close'
 data = {}
 
 ###############################################################################
@@ -64,31 +66,33 @@ def dateIncrDay(date):
 
     return '%04d-%02d-%02d' % (y,m,d)
 
-def dateDecrMonth(date):
+def dateDecrMonth(date, amt=1):
     (y,m,d) = map(int, date.split('-'))
 
-    if m == 1:
-        y -= 1
-        m = 12
-        # handle case where, example: March 31 gets decremented to Feb 31
-        if d > dateDaysInMonth(m, y):
-            d = dateDaysInMonth(m, y);
-    else:
-        m -= 1
+    for i in range(amt):
+        if m == 1:
+            y -= 1
+            m = 12
+            # handle case where, example: March 31 gets decremented to Feb 31
+            if d > dateDaysInMonth(m, y):
+                d = dateDaysInMonth(m, y);
+        else:
+            m -= 1
 
     return '%04d-%02d-%02d' % (y,m,d)
 
-def dateIncrMonth(date):
+def dateIncrMonth(date, amt=1):
     (y,m,d) = map(int, date.split('-'))
 
-    if m == 12:
-        y += 1
-        m = 1
-        # handle case where, example: Jan 31 gets incremented to Feb 31
-        if d > dateDaysInMonth(m, y):
-            d = dateDaysInMonth(m, y);
-    else:
-        m += 1
+    for i in range(amt):
+        if m == 12:
+            y += 1
+            m = 1
+            # handle case where, example: Jan 31 gets incremented to Feb 31
+            if d > dateDaysInMonth(m, y):
+                d = dateDaysInMonth(m, y);
+        else:
+            m += 1
 
     return '%04d-%02d-%02d' % (y,m,d)
 
@@ -131,13 +135,15 @@ def parseData():
         print "%d records read" % len(lines)
         for line in lines:
             fields = line.split(',')
-            [date, open_, high, low, close, volume, adjclose] = fields
+            date = fields[0]
+            fields = map(float, fields[1:])
+            [open_, high, low, close, volume, adjclose] = fields
             #print "adding key %s\n" % date
-            date2cols[date] = {'open':open_, 'high':high, 'low':low, 'close':close,
-                'volume':volume, 'adjclose':adjclose.strip()}
+            date2cols[date] = {'Open':open_, 'High':high, 'Low':low, 'Close':close,
+                'Volume':volume, 'Adj Close':adjclose}
        
         # horrible hack, but yahoo leaves out many days, and I'm not sure why
-        # 'fill it forward' starting at the oldest date
+        # use strategy 'fill it forward' starting at the oldest date
         dateOldest = lines[-1].split(',')[0]
         dateNewest = lines[0].split(',')[0]
         dateCur = dateOldest
@@ -155,10 +161,6 @@ def parseData():
 
         data[sym] = date2cols
 
-# append extra shit to data, like the 1month change, 3month change, etc
-#def augment():
-#    for sym in syms:
-        
 def spreadsheetClosingLine():
     global data
     if not data:
@@ -171,61 +173,104 @@ def spreadsheetClosingLine():
         #if not key in data:
         #    key = '2016-06-02'
         #    #key = '2016-04-29'
-        print '%.02f,' % (100*float(date2cols[dateStr]['adjclose']))
+        print '%.02f,' % (100*date2cols[dateStr][costCol])
+
+def reportMonthHistoryTable(dateStart, dateEnd, col, title, asPercent=False):
+    global data
+    if not data:
+        parseData()
+
+    # print the table title
+    print ''
+    print title
+    print '-' * len(title)
+
+    # print the symbols as columns
+    print ' '*10,
+    for sym in syms:
+        print "% 7s" % sym,
+    print ''
+
+    # outer loop (rows) are the dates
+    dateCur = dateStart
+    while 1:
+        print dateCur,
+
+        # inner loop (cols) are the value
+        for sym in syms:
+            value = data[sym][dateCur][col]
+            if asPercent:
+                print "{:6.2f}%".format(100*value),
+            else:
+                print "{:7.2f}".format(value),
+
+        # next row
+        print ''
+
+        # quit?
+        if dateCur == dateEnd:
+            break
+        dateCur = dateIncrMonth(dateCur)
+
 
 def fullReport():
     global data
     if not data:
         parseData()
 
+    moNow = dateGetCurMonthStart()
+
+    # annotate the data for the last 12 months, adding keys for 1, 3, and 12
+    # month changes
+    for sym in syms:
+        date2cols = data[sym]
+    
+        # starting this month
+        moCur = moNow
+
+        # go back 24 months
+        for i in range(24):
+            mo1ago = dateDecrMonth(moCur, 1)
+            mo3ago = dateDecrMonth(moCur, 3)
+            mo6ago = dateDecrMonth(moCur, 6)
+            mo12ago = dateDecrMonth(moCur, 12)
+
+            if (not moCur in date2cols) or (not mo1ago in date2cols) \
+              or (not mo3ago in date2cols) or (not mo6ago in date2cols) \
+              or (not mo12ago in date2cols):
+                raise "missing data!"
+
+            priceNow = date2cols[moCur][costCol]
+            price1ago = date2cols[mo1ago][costCol]
+            price3ago = date2cols[mo3ago][costCol]
+            price6ago = date2cols[mo6ago][costCol]
+            price12ago = date2cols[mo12ago][costCol]
+            
+            change1 = (priceNow - price1ago) / price1ago
+            change3 = (priceNow - price3ago) / price3ago 
+            change6 = (priceNow - price6ago) / price6ago
+            change12 = (priceNow - price12ago) / price12ago
+
+            date2cols[moCur]['change1mo'] = change1
+            date2cols[moCur]['change3mo'] = change3
+            date2cols[moCur]['change6mo'] = change6
+            date2cols[moCur]['change12mo'] = change12
+            date2cols[moCur]['changeAvg'] = (change1+change3+change6+change12)/4
+
+            #print "setting %s on %s to [%f, %f, %f]" % \
+            #    (sym, moCur, change1, change3, change12)
+
+            # next
+            moCur = dateDecrMonth(moCur)
 
     moStart = '2014-10-01'
-    #moStart = dateGetCurMonthStart()
-    #for i in range(12):
-    #    moStart = dateDecrMonth(moStart)
 
-    print 'Prices'
-    print '------'
-
-    print ' '*10,
-    for sym in syms:
-        print "% 7s" % sym,
-    print ''
-
-    moCur = moStart
-    for i in range(12+1):
-        print moCur,
-
-        for sym in syms:
-            date2cols = data[sym]
-            priceThisMonth = float(date2cols[moCur]['adjclose'])
-            print "{:7.2f}".format(priceThisMonth),
-
-        print ''
-        moCur = dateIncrMonth(moCur)
-
-    print ''
-    print '1 Month Changes'
-    print '---------------'
-
-    print ' '*10,
-    for sym in syms:
-        print "% 7s" % sym,
-    print ''
-
-    moCur = moStart
-    for i in range(12+1):
-        print moCur,
-
-        for sym in syms:
-            date2cols = data[sym]
-            priceThisMonth = float(date2cols[moCur]['adjclose'])
-            priceLastMonth = float(date2cols[dateDecrMonth(moCur)]['adjclose'])
-            percentChange = (priceThisMonth - priceLastMonth)/priceLastMonth;
-            print "{:6.2f}%".format(100*percentChange),
-
-        print ''
-        moCur = dateIncrMonth(moCur)
+    reportMonthHistoryTable(moStart, moNow, costCol, 'prices')
+    reportMonthHistoryTable(moStart, moNow, 'change1mo', 'delta (vs. 1 month prior)', True)
+    reportMonthHistoryTable(moStart, moNow, 'change3mo', 'delta (vs. 3 months prior)', True)
+    reportMonthHistoryTable(moStart, moNow, 'change6mo', 'delta (vs. 6 months prior)', True)
+    reportMonthHistoryTable(moStart, moNow, 'change12mo', 'delta (vs. 12 months prior)', True)
+    reportMonthHistoryTable(moStart, moNow, 'changeAvg', '"momentum" (avg. of 1,3,6,12 month deltas)', True)
 
 ###############################################################################
 # TESTS, MAIN
