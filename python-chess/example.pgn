@@ -1,0 +1,15 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2016.01.01"]
+[White "anon0"]
+[Black "anon1"]
+[Result "1-0"]
+[WhiteElo "1076"]
+[BlackElo "1093"]
+[TimeControl "15|10"]
+[Termination "anon0 won by checkmate"]
+
+1.e4 e5 2.Nf3 Nc6 3.Nc3 Bc5 4.Bc4 h6 5.O-O Nf6 6.d3 d5 7.exd5 Ne7 8.Re1 O-O 9.Nxe5 Nexd5 10.d4 Bb6
+ 11.Na4 Be6 12.Nxb6 Nxb6 13.Bxe6 fxe6 14.Ng4 e5 15.Nxf6+ Qxf6 16.dxe5 Qe6 17.b3 Rad8 18.Qh5 Rf5 19.Qh4 Re8 20.f4 g5
+ 21.Qg3 Nd5 22.fxg5 hxg5 23.Bb2 Nf4 24.Qc3 c6 25.Rad1 b6 26.Rd4 c5 27.Rxf4 Rxf4 28.g3 Qg4 29.e6 Rf3 30.Qg7#
+ 1-0
