@@ -1,0 +1,12 @@
+Displays this image. This method is mainly intended for debugging purposes.
+On Unix platforms, this method saves the image to a temporary PPM file, and calls the xv utility.
+On Windows, it saves the image to a temporary BMP file, and uses the standard BMP display utility to show it (usually Paint).
+blah blah
+È------------+
+| one two    |
++------------+
+| one two    |
+| one two    |
+| one two    |
+| one two    |
++------------+
