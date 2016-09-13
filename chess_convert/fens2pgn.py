@@ -41,7 +41,7 @@ for problem in problems:
 	fp.write('[White "%s"]\n' % left)
 	fp.write('[Black "%s"]\n' % right)
 	fp.write('[Result "*"]\n')
-	fp.write('[FEN "%s"]\n\n1. *\n\n' % fen)
+	fp.write('[FEN "%s"]\n\n *\n\n' % fen)
 fp.close()
 
 	
