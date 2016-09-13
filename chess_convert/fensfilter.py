@@ -43,6 +43,13 @@ for (dirpath, dirnames, filenames) in os.walk('./fens'):
 			print "%s with fen %s has two white kings!" % (filename, fen)
 			fix(filename)
 
+		if not re.search(r'K', position):
+			print "%s with fen %s is missing a white king!" % (filename, fen)
+			fix(filename)
+		if not re.search(r'k', position):
+			print "%s with fen %s is missing a black king!" % (filename, fen)
+			fix(filename)
+
 		(rank8,x,x,x,x,x,x,rank1) = position.split('/')
 		if re.search(r'[pP]', rank8):
 			print "%s with fen %s has pawns on the 8th rank!" % (filename, fen)
