@@ -1,32 +1,48 @@
 #!/usr/bin/env python
 
-# this version expects file names in the form "B_C_P.pgn"
-# where B is the book number, C is the chapter number, 
-# and P is the problem number
+# this version assumes a book number, subdirectories are
+# the chapter number, and files are P.txt where P is the
+# problem number
 
 import os
 import re
 import sys
 
-def getFen(filename):
-	fp = open(filename)
+def getFen(fpath):
+	fp = open(fpath)
 	fen = fp.read().rstrip().lstrip()
 	fp.close
 	return fen
 
 path = '.'
+book = 2
 if len(sys.argv)>1:
 	path = sys.argv[1]
+	m = re.match(r'^.*(\d)', path)
+	if m:
+		book = int(m.group(1))
+print "using book number: %d" % book
 print "searching for PGN's in: %s" % path
 
 problems=[]
 for (dirpath, dirnames, filenames) in os.walk(path):
-	for filename in filenames:
-		fpath = os.path.join(path, filename)
-		m = re.match(r'^(\d+)_(\d+)_(\d+).txt$', filename)
+	# accept only terminal dirs (with files, without dirs)
+	if dirnames: continue
+
+	m = re.match(r'.*/(\d+)$', dirpath)
+	if not m:
+		print "expected chapter subdir %s to end in digit" % dirpath
 		assert(m)
+	chap = int(m.group(1))
+
+	for filename in filenames:
+		fpath = os.path.join(dirpath, filename)
+		m = re.match(r'^(\d+).txt$', filename)
+		if not m:
+			print "file %s is bad form" % fpath
+			assert(m)
+		prob = int(m.group(1))
 		fen = getFen(fpath)
-		(book,chap,prob) = map(int, m.group(1,2,3))
 		problems.append([book,chap,prob,fen])
 		print "book: %d" % book
 		print "chap: %d" % chap
