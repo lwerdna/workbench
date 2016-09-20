@@ -42,7 +42,7 @@ fp = open('output.pgn', 'w')
 for problem in problems:
 	(book,chap,prob,fen) = problem
 	left = 'Yusupov Book %d' % book
-	right = 'Chapter %d Problem %d' % (chap,prob)
+	right = 'Chapter %02d Problem %02d' % (chap,prob)
 	# in case pgn browser lists by event type, put all info there
 	fp.write('[Event "%s %s"]\n' % (left,right))
 	fp.write('[Site "?"]\n')
