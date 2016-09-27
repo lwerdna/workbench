@@ -34,6 +34,10 @@ int main(int ac, char **av)
 		}
 
 		pValue = PyObject_CallObject(pFunc, pArgs);
+		Py_DECREF(pArgs);
+		Py_DECREF(pFunc);
+		printf("Result of call: %ld\n", PyInt_AsLong(pValue));
+		Py_DECREF(pValue);
 	}
 
 	Py_Finalize();
