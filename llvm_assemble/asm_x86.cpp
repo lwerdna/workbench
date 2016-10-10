@@ -121,7 +121,7 @@ int main(int ac, char **av)
     // arg1: the machine code context
     MCObjectFileInfo MOFI;
     MCContext Ctx(MAI.get(), MRI.get(), &MOFI, &SrcMgr);
-    MOFI.InitMCObjectFileInfo(TheTriple, /*pic*/ false, CodeModel::Default, Ctx);
+    MOFI.InitMCObjectFileInfo(TheTriple, Reloc::Default, CodeModel::Default, Ctx);
 
     // arg2: the streamer
     //
