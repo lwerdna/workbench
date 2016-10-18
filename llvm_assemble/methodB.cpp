@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <string>
 
@@ -32,6 +33,8 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
 
+#include "help.h"
+
 // globals
 std::string ArchName;
 
@@ -55,7 +58,10 @@ int AssembleInput(
 
   Parser->setTargetParser(*TAP);
 
-  int Res = Parser->Run(true);
+  // AsmParser::Run in lib/MC/MCParser/AsmParser.cpp
+  /* first param is NoInitialTextSection
+		by supplying false -> YES initial text section (we don't have to do .text) */
+  int Res = Parser->Run(false);
 
   return Res;
 }
@@ -79,7 +85,8 @@ int main(int ac, char **av)
 
     // see /lib/Support/Triple.cpp for the details
     //spec = llvm::sys::getDefaultTargetTriple();
-    std::string machSpec = "x86_64-apple-darwin14.5.0";
+    //std::string machSpec = "x86_64-apple-windows"; // will produce a COFF
+    std::string machSpec = "x86_64-apple-darwin14.5.0"; // will produce a Mach-O
     //std::string machSpec = "x86_64-apple-darwin";
     //std::string machSpec = "x86_64-thumb-linux-gnu";
     //std::string machSpec = "x86_64-unknown-linux-gnu";
@@ -112,7 +119,7 @@ int main(int ac, char **av)
     // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    std::string asmSrc = ".text\n.org 0x100\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
+    std::string asmSrc = ".org 0x100, 0xAA\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
     std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
     SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
 
@@ -150,7 +157,7 @@ int main(int ac, char **av)
 		*STI, /* subtarget info */
 		true, /* relax all fixups */
 		true, /* incremental linker compatible */ 
-        true /* DWARFMustBeAtTheEnd */
+        false /* DWARFMustBeAtTheEnd */
     );
 
     std::string abi = "none";
@@ -162,11 +169,25 @@ int main(int ac, char **av)
     AssembleInput(TheTarget, SrcMgr, Ctx, *as, *MAI, *STI,
         *MCII, toptions);
 
-	printf("assembled to %lu bytes\n", smallString.size());
+	/* dump to file for debugging */
+	/*
 	FILE *fp;
 	fp = fopen("out.bin", "wb");
 	fwrite(smallString.data(), 1, smallString.size(), fp);
 	fclose(fp);
+	*/
+
+	//int n = smallString.size();
+	char *data = smallString.data();
+	unsigned int idx = 0;
+	idx += 0x20; /* skip mach_header_64 to first command */
+	idx += 0x48; /* advance into segment_command_64 to first section */
+	idx += 0x28; /* advance into section_64 to size */
+	uint64_t scn_size = *(uint64_t *)(data + idx);
+	idx += 0x8; /* advance into section_64 to offset */
+	uint64_t scn_offset = *(uint64_t *)(data + idx);
+	
+	dump_bytes((unsigned char *)data + scn_offset, scn_size, 0);
 
     return 0;
 }
