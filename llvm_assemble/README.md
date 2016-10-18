@@ -3,7 +3,7 @@ standalone disassemblers by linking with LLVM
 no modifications to LLVM like keystone does, but we lose ability to assemble at address
 without fill bytes
 
-== methodA ==
+## methodA
 * assemble to an in-memory assembler file, parse out the comments
 * advantage: instruction boundaries are given
 * advantage: no filler from .org statements
@@ -16,7 +16,7 @@ without fill bytes
                                         ##  <MCOperand Expr:(foo)>>
 ```
 
-== methodB ==
+## methodB
 * assemble to an in-memory object file, parse the bytes
 * advantage: relocation stuff is resolved
 * disadvantage: no instruction boundaries

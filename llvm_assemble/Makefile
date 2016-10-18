@@ -14,10 +14,10 @@ FLAGS_LINK += -lncurses
 all: methodA methodB
 
 methodA: methodA.cpp
-	g++ $(FLAGS_COMPILE) methodA.cpp $(FLAGS_LINK) -o methodA
+	g++ $(FLAGS_COMPILE) methodA.cpp help.cpp $(FLAGS_LINK) -o methodA
 
 methodB: methodB.cpp
-	g++ $(FLAGS_COMPILE) methodB.cpp $(FLAGS_LINK) -o methodB
+	g++ $(FLAGS_COMPILE) methodB.cpp help.cpp $(FLAGS_LINK) -o methodB
 
 clean:
 	rm methodA
