@@ -24,9 +24,9 @@ int main(int ac, char **av)
 	printf("-- done running python --\n");
 
 	// see if we captured that stdout
+	printf("-- retrieving its stdout --\n");
 	func = PyObject_GetAttrString(obj, "getvalue");
 	str = PyObject_CallObject(func, PyTuple_New(0));
-	printf("-- retrieving its stdout --\n");
 	printf("%s\n", PyString_AsString(str));
 
 	// cleanup, Py_DECREF, blah blah
