@@ -4,14 +4,31 @@
 
 int main(int ac, char **av)
 {
-	int rc = -1, i;
+	int rc = -1, i, n;
 	const char *modNames[3] = {"a", "b", "c"};
 
-	PyObject *pModule, *pFunc, *pValue, *pArgs;
+	PyObject *pModule, *pFunc, *pValue, *pTuple, *pArgs;
 
 	Py_SetProgramName(av[0]);
 	Py_Initialize();
 
+	/* find out what builtin modules exist */
+	pModule = PyImport_ImportModule("sys");
+	if(!pModule) {
+		printf("ERROR: PyImport_ImportModule(\"sys\")\n");
+		goto cleanup;
+	}
+	
+	pTuple = PyObject_GetAttrString(pModule, "builtin_module_names");
+
+	n = PyTuple_Size(pTuple);
+	for(i=0; i<n; ++i) {
+		PyObject *pString = PyTuple_GetItem(pTuple, i);
+		printf("builting module %d/%d: %s\n", i+1, n,
+			PyString_AsString(pString));
+	}
+
+	/* call the local modules */	
 	for(i=0; i<3; ++i) {
 		printf("on module: %s\n", modNames[i]);
 
