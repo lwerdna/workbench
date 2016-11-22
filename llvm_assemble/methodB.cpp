@@ -70,15 +70,15 @@ int main(int ac, char **av)
 {
     SourceMgr SrcMgr;
 
-    LLVMInitializeX86TargetInfo();
-    //llvm::InitializeAllTargetInfos();
-    LLVMInitializeX86AsmParser();
-    //llvm::InitializeAllTargetMCs();
-    LLVMInitializeX86TargetMC();
-    //llvm::InitializeAllAsmParsers();
-    LLVMInitializeX86AsmParser();
-    //llvm::InitializeAllDisassemblers();
-    LLVMInitializeX86Disassembler();
+    //LLVMInitializeX86TargetInfo();
+    llvm::InitializeAllTargetInfos();
+    //LLVMInitializeX86AsmParser();
+    llvm::InitializeAllTargetMCs();
+    //LLVMInitializeX86TargetMC();
+    llvm::InitializeAllAsmParsers();
+    //LLVMInitializeX86AsmParser();
+    llvm::InitializeAllDisassemblers();
+    //LLVMInitializeX86Disassembler();
 
     // arg0:
     // llvm::Target encapsulating the "x86_64-apple-darwin14.5.0" information 
@@ -86,7 +86,8 @@ int main(int ac, char **av)
     // see /lib/Support/Triple.cpp for the details
     //spec = llvm::sys::getDefaultTargetTriple();
     //std::string machSpec = "x86_64-apple-windows"; // will produce a COFF
-    std::string machSpec = "x86_64-apple-darwin14.5.0"; // will produce a Mach-O
+    //std::string machSpec = "x86_64-apple-darwin14.5.0"; // will produce a Mach-O
+    std::string machSpec = "arm-none-none-eabi"; //
     //std::string machSpec = "x86_64-apple-darwin";
     //std::string machSpec = "x86_64-thumb-linux-gnu";
     //std::string machSpec = "x86_64-unknown-linux-gnu";
@@ -119,7 +120,11 @@ int main(int ac, char **av)
     // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    std::string asmSrc = ".org 0x100, 0xAA\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
+    //std::string asmSrc = ".org 0x100, 0xAA\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
+	//std::string asmSrc = ".text\n" "ldr pc, data_foo\n" "\n" "data_foo:\n" "    .int 0x8\n" "\n" "loop:\n" "b loop\n";
+	//std::string asmSrc = ".text\n" "mov r2, r1\n";
+	std::string asmSrc = ".text\n" "ldr pc, data_foo\n" "data_foo:\n" ".int 0x8\n" "loop:\n" "b loop\n";
+
     std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
     SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
 
@@ -168,26 +173,41 @@ int main(int ac, char **av)
     printf("trying to assemble, let's go..\n");
     AssembleInput(TheTarget, SrcMgr, Ctx, *as, *MAI, *STI,
         *MCII, toptions);
+	printf("done with AssembleInput()\n");
 
 	/* dump to file for debugging */
-	/*
 	FILE *fp;
 	fp = fopen("out.bin", "wb");
 	fwrite(smallString.data(), 1, smallString.size(), fp);
 	fclose(fp);
-	*/
 
 	//int n = smallString.size();
+	int codeOffset=0, codeSize = 0;
 	char *data = smallString.data();
-	unsigned int idx = 0;
-	idx += 0x20; /* skip mach_header_64 to first command */
-	idx += 0x48; /* advance into segment_command_64 to first section */
-	idx += 0x28; /* advance into section_64 to size */
-	uint64_t scn_size = *(uint64_t *)(data + idx);
-	idx += 0x8; /* advance into section_64 to offset */
-	uint64_t scn_offset = *(uint64_t *)(data + idx);
+	if(*(uint32_t *)data == 0xFEEDFACF) {
+		unsigned int idx = 0;
+		idx += 0x20; /* skip mach_header_64 to first command */
+		idx += 0x48; /* advance into segment_command_64 to first section */
+		idx += 0x28; /* advance into section_64 to size */
+		uint64_t scn_size = *(uint64_t *)(data + idx);
+		idx += 0x8; /* advance into section_64 to offset */
+		uint64_t scn_offset = *(uint64_t *)(data + idx);
+		codeOffset = scn_offset;
+		codeSize = scn_size;
+	}
+	else if(0==memcmp(data, "\x7F" "ELF\x01\x01\x01\x00", 8)) {
+		/* assume four sections: NULL, .strtab, .text, .symtab */
+		uint32_t e_shoff = *(uint32_t *)(data + 0x20);
+		uint32_t sh_offset = *(uint32_t *)(data + e_shoff + 2*0x28 + 0x10); /* second shdr */
+		uint32_t sh_size = *(uint32_t *)(data + e_shoff + 2*0x28 + 0x14); /* second shdr */
+		codeOffset = sh_offset;
+		codeSize = sh_size;
+	}
+	else {
+		printf("ERROR: couldn't identify type of output file\n");
+	}
 	
-	dump_bytes((unsigned char *)data + scn_offset, scn_size, 0);
+	dump_bytes((unsigned char *)data + codeOffset, codeSize, 0);
 
     return 0;
 }
