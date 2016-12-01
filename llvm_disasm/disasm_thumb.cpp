@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <llvm-c/Disassembler.h>
+//#define __STDC_LIMIT_MACROS
+//#define __STDC_CONSTANT_MACROS
+
+#include <llvm/MC/MCDisassembler.h>
 #include <llvm-c/Target.h>
 
 int main()
@@ -33,22 +36,22 @@ int main()
         	if(((tmp & 0x1F)==0x1F)) continue;
         }
 
-        char mnemonic[256] = {0};
+        char buf[256] = {0};
 
         size_t insn_len = LLVMDisasmInstruction(
             dc, /* disasm context */
             code, /* source data */ 
             2, /* length of source data */ 
             0, /* address */ 
-            mnemonic, /* output buf */
-            sizeof(mnemonic) /* size of output buf */
+            buf, /* output buf */
+            256
         );
 
         if(insn_len <= 0) {
             printf("%02X %02X    undefined?\n", code[0], code[1]);
         }
         else {
-            printf("%02X %02X    %s\n", code[0], code[1], mnemonic);
+            printf("%02X %02X    %s\n", code[0], code[1], buf);
         }
     }
 
