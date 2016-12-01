@@ -12,8 +12,14 @@ IDX_GREEN = '\x03'
 color_lookup = [0xFFFFFF]*256
 color_lookup[ord(IDX_BLACK)] = 0
 color_lookup[ord(IDX_RED)] = 0xFF0000
-color_lookup[ord(IDX_WHITE)] = 0xFFFFFF
+color_lookup[ord(IDX_WHITE)] = 0xD0D0D0
 color_lookup[ord(IDX_GREEN)] = 0x00FF00
+
+palette = []
+for rgb in color_lookup:
+    palette.append(rgb>>16)
+    palette.append((rgb>>8)&0xFF)
+    palette.append(rgb&0xFF)
 
 ###############################################################################
 # main
@@ -25,13 +31,6 @@ if __name__ == '__main__':
 	
 	(width, aPath, bPath) = sys.argv[1:4]
 	width = int(width)
-	
-	palette = []
-	for rgb in color_lookup:
-	    palette.append(rgb>>16)
-	    palette.append((rgb>>8)&0xFF)
-	    palette.append(rgb&0xFF)
-	print palette
 
 	f = open(aPath, 'rb')
 	aBytes = f.read()
@@ -41,6 +40,7 @@ if __name__ == '__main__':
 	size = f.tell()
 	f.close()
 
+	print "computing the edit distance...",
 	ops = Levenshtein.editops(aBytes, bBytes)
 	print "done"
 
@@ -52,8 +52,11 @@ if __name__ == '__main__':
 		data += (IDX_WHITE * (bIdx - last))
 
 		if op == 'insert':
-			print "delete at (%d,%d)" % (aIdx, bIdx)
-			data += IDX_GREEN
+			if bBytes[bIdx]=='\x00':
+				print "delete at (%d,%d)" % (aIdx, bIdx)
+				data += IDX_GREEN
+			else:
+				data += IDX_RED
 		elif op == 'replace':
 			print "insert at (%d,%d)" % (aIdx, bIdx)
 			data += IDX_RED
@@ -71,6 +74,6 @@ if __name__ == '__main__':
 	img = Image.frombuffer("P", (width, height), data, 'raw', "P", 0, 1)
 	img.putpalette(palette)
 	
-	pathOut = os.path.basename(aPath) + '.png'
+	pathOut = os.path.basename(bPath) + '.png'
 	print "saving %s\n" % pathOut
 	img.save(pathOut)
