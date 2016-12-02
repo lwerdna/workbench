@@ -1,4 +1,4 @@
-just testing the capstone decompiler on ARM thumb
+just testing the capstone disassembler on ARM thumb
 
 on OSX www.capstone-engine.org/documentation.html says you might need to:
 ```
