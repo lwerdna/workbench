@@ -4,6 +4,14 @@
 #include <llvm-c/Disassembler.h>
 #include <llvm-c/Target.h>
 
+const char *
+symbol_lookup_cb(void *DisInfo, uint64_t ReferenceValue, uint64_t *ReferenceType,
+	uint64_t ReferencePC, const char **ReferenceName)
+{
+	printf("%s()\n", __func__);
+	return "";
+}
+
 int main()
 {
     int rc = -1;
@@ -18,8 +26,13 @@ int main()
     LLVMInitializeAllTargetMCs();
     LLVMInitializeAllDisassemblers();
 
-    LLVMDisasmContextRef dc = LLVMCreateDisasm ("aarch64-none-none", 
-        NULL, 0, NULL, NULL);
+    LLVMDisasmContextRef dc = LLVMCreateDisasm (
+		"aarch64-none-none", /* triple */
+        NULL, /* void *DisInfo */
+		0, /* TagType */
+		NULL, /* LLVMOpInfoCallback GetOpInfo */
+		symbol_lookup_cb /* LLVMSymbolLookupCallback SymbolLookUp */
+	);
 
     if (dc == NULL) {
         printf("ERROR: LLVMCreateDisasm()");
@@ -43,7 +56,9 @@ int main()
             break;
         }
         else {
-            printf("%04X: %s\n", offs, mnemonic);
+            printf("%04X: ", offs);
+			for(unsigned int j=0; j<insn_len; ++j) printf("%02X ", code[offs+j]);
+            printf(" %s\n", mnemonic);
         }
 
         offs += insn_len;
