@@ -130,84 +130,170 @@ def tokenize(line):
 ###############################################################################
 
 class Node:
-	def __init__(self, name):
-		pass
+	def __init__(self, name, children):
+		self.name = name
+		self.children = children
+
+	def __str__(self):
+		return '%s (%d children)' % (self.name, len(self.children))
 
 	def printTree(self, depth=0):
-		print ' ' * 2*depth,
+		if(depth):
+			print ' ' * 2*depth,
 		print 'Node "%s"' % self.name
+
+		for v in self.children:
+			if isinstance(v, Node):
+				v.printTree(depth+1)
+			else:
+				print ' ' * 2*(depth+1),
+				print v
 
 #------------------------------------------------------------------------------
 
 #    E  -> A E_ 
 def parse_E(mgr):
-	parse_A(mgr)
-	parse_E_(mgr)
-	if not mgr.isEnd():
-		raise Exception("expected end of input, got: %s" % mgr.peek())
+	l = parse_A(mgr)
+	r = parse_E_(mgr)
+	return Node('E', [l,r])
 
 #    E_ -> '+' A E_
 #       -> '-' A E_
 #       -> <empty>
 def parse_E_(mgr):
 	tok = mgr.peek()
-	if tok == TID.ADD:
-		parse_A()
-		parse_E_()
-		# return add()
-	if tok == TID.SUB:
-		parse_A()
-		parse_E_()
-		# return sub()
+
+	if tok in [TID.ADD, TID.SUB]:
+		mgr.consume()
+		l = parse_A(mgr)
+		r = parse_E_(mgr)
+		return Node('E_', [str(tok), l, r])
 	else:
-		# empty
+		return None
 
 #    A  -> F A_ 
 def parse_A(mgr):
-	parse_F(mgr)
-	parse_A_(mgr)
-	# return something
+	l = parse_F(mgr)
+	r = parse_A_(mgr)
+	return Node('A', [l,r])
 
 #    A_ -> '*' F A_
 #       -> '/' F A_
 #       -> <empty>
 def parse_A_(mgr):
 	tok = mgr.peek()
-	if tok == TID.ADD:
-		mgr.consume(TID.ADD)
-		parse_A()
-		parse_E_()
-		# return add()
-	elif tok == TID.SUB:
-		mgr.consume(TID.SUB)
-		parse_A()
-		parse_E_()
-		# return sub()
-	else
-		# empty
+	if tok in [TID.MUL, TID.DIV]:
+		mgr.consume()
+		l = parse_F(mgr)
+		r = parse_A_(mgr)
+		return Node('A_', [str(tok), l, r])
+	else:
+		return None # produce empty string
 
 #    F -> '(' E ')'
 #      -> NUMLIT   
 def parse_F(mgr):
 	tok = mgr.peek()
 	if tok == TID.LPAREN:
-		mgr.consume(TID.LPAREN)
-		parse_E()
+		mgr.consume()
+		l = parse_E(mgr)
 		mgr.consume(TID.RPAREN)
-		# return mul()
+		return Node('F', [l])
 	elif tok == TID.NUMLIT:
-		mgr.consume(TID.NUMLIT)
-		return int(tok)
+		mgr.consume()
+		child = Node('NumLit', [int(tok.val)])
+		return Node('F', [child])
 	else:
 		raise Exception("expected parenthesized expression or numeric " + \
 			"but got instead: %s" % tok)
+
+def parse(mgr):
+	#pdb.set_trace()
+
+	parseTree = parse_E(mgr)
+
+	if not mgr.isEnd():
+		raise Exception("expected end of input, got: %s" % mgr.peek())
+
+	return parseTree
+
+###############################################################################
+# PARSE TREE -> ABSTRACT SYNTAX TREE
+###############################################################################
+
+def p2a_E(n):
+	assert(n.name == 'E')
+	A,E_ = n.children
+
+	l = p2a_A(A)
+
+	if E_ == None: # just pass thru, no add/sub
+		return l
+	else: 
+		# build first node
+		op = E_.children[0]
+		r = p2a_A(E_.children[1])
+		result = Node(op, [l, r])
+
+		# build as we descend down E_'s
+		cur = E_.children[2]
+		while cur:
+			assert(cur.name == 'E_')
+			op = cur.children[0]
+			result = Node(op, [result, p2a_A(cur.children[1])])
+			cur = cur.children[2]
+
+		return result
+
+def p2a_A(n):
+	assert(n.name == 'A')
+	F,A_ = n.children
+
+	l = p2a_F(F)
+
+	if A_ == None: # just pass thru, no mul/div
+		return l
+	else: 
+		# build first node
+		op = A_.children[0]
+		r = p2a_F(A_.children[1])
+		result = Node(op, [l, r])
+
+		# build as we descend down A_'s
+		cur = A_.children[2]
+		while cur:
+			assert(cur.name == 'A_')
+			op = cur.children[0]
+			result = Node(op, [result, p2a_A(cur.children[1])])
+			cur = cur.children[2]
+
+		return result
+
+def p2a_F(n):
+	if not (n.name == 'F'):
+		raise Exception("expected node 'F', got %s" % n.name)
+
+	c0 = n.children[0]
+	if c0.name == 'E':
+		return p2a_E(c0)
+	else:
+		if not (c0.name == 'NumLit'):
+			raise Exception("expected node 'NumLit', got %s" % c0.name)
+		return c0 # should be NumLit
+
+def parseTreeToAbstractSyntaxTree(n):
+	assert(n.name == 'E')
+	#pdb.set_trace()
+	return p2a_E(n)
 
 ###############################################################################
 # MAIN
 ###############################################################################
 if __name__ == '__main__':
-	for line in sys.stdin:
-		line = line.rstrip()
+	#for line in sys.stdin:
+	if 1:
+		#line = line.rstrip()
+		line = '(6+4)'
 
 		print "input: " + line
 
@@ -215,10 +301,15 @@ if __name__ == '__main__':
 		print 'tokens'
 		print '------'
 		print tokenMgr
-
 		print ''
 
-#		ast = parse(tokenMgr)
-#		print 'parse tree'
-#		print '----------'
-#		print ast.printTree()
+		parseTree = parse(tokenMgr)
+		print 'parse tree'
+		print '----------'
+		print parseTree.printTree()
+		print ''
+
+		ast = parseTreeToAbstractSyntaxTree(parseTree)
+		print 'abstract syntax tree'
+		print '--------------------'
+		print ast.printTree()
