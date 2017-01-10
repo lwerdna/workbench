@@ -7,6 +7,7 @@ import pdb
 ###############################################################################
 # TOKENIZING STUFF
 ###############################################################################
+
 class TID:
 	NUMLIT,ADD,SUB,MUL,DIV,LPAREN,RPAREN = range(7)
 
@@ -201,7 +202,7 @@ def parse_F(mgr):
 		return Node('F', [l])
 	elif tok == TID.NUMLIT:
 		mgr.consume()
-		child = Node('NumLit', [int(tok.val)])
+		child = Node('NUMLIT', [int(tok.val)])
 		return Node('F', [child])
 	else:
 		raise Exception("expected parenthesized expression or numeric " + \
@@ -246,7 +247,8 @@ def p2a_E(n):
 		return result
 
 def p2a_A(n):
-	assert(n.name == 'A')
+	if n.name != 'A':
+		raise Exception("expected node 'A', got %s" % n.name)
 	F,A_ = n.children
 
 	l = p2a_F(F)
@@ -264,7 +266,7 @@ def p2a_A(n):
 		while cur:
 			assert(cur.name == 'A_')
 			op = cur.children[0]
-			result = Node(op, [result, p2a_A(cur.children[1])])
+			result = Node(op, [result, p2a_F(cur.children[1])])
 			cur = cur.children[2]
 
 		return result
@@ -277,9 +279,9 @@ def p2a_F(n):
 	if c0.name == 'E':
 		return p2a_E(c0)
 	else:
-		if not (c0.name == 'NumLit'):
-			raise Exception("expected node 'NumLit', got %s" % c0.name)
-		return c0 # should be NumLit
+		if not (c0.name == 'NUMLIT'):
+			raise Exception("expected node 'NUMLIT', got %s" % c0.name)
+		return c0 # should be NUMLIT
 
 def parseTreeToAbstractSyntaxTree(n):
 	assert(n.name == 'E')
@@ -287,13 +289,34 @@ def parseTreeToAbstractSyntaxTree(n):
 	return p2a_E(n)
 
 ###############################################################################
+# EVALUATE
+###############################################################################
+
+def evaluate(n):
+	if n.name == 'NUMLIT':
+		return n.children[0]
+
+	c0,c1 = n.children
+	if n.name == 'ADD':
+		return evaluate(c0) + evaluate(c1)
+	elif n.name == 'SUB':
+		return evaluate(c0) - evaluate(c1)
+	elif n.name == 'MUL':
+		return evaluate(c0) * evaluate(c1)
+	elif n.name == 'DIV':
+		return evaluate(c0) / evaluate(c1)
+	else:
+		raise Exception("don't know how to evaluate '%s'" % n.name)
+
+###############################################################################
 # MAIN
 ###############################################################################
+
 if __name__ == '__main__':
-	#for line in sys.stdin:
-	if 1:
-		#line = line.rstrip()
-		line = '(6+4)'
+	for line in sys.stdin:
+	#if 1:
+		line = line.rstrip()
+		#line = '(6+4)'
 
 		print "input: " + line
 
@@ -313,3 +336,6 @@ if __name__ == '__main__':
 		print 'abstract syntax tree'
 		print '--------------------'
 		print ast.printTree()
+		print ''
+
+		print "evaluated: %d" % evaluate(ast)

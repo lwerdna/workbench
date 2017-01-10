@@ -119,6 +119,8 @@ An example parse of the expression `(6+4)*8` which has tokens `'(', NUMLIT, '+',
 |19    | E_                     | $           | 4: E_ -> empty    |
 |20    |                        | $           | match, DONE       |
 
+Use the `parse_pda.py` program in this repo to test. (TODO)
+
 # Example - Recursive Descent
 
 The call stack of functions per nonterminal is like the PDA's stack if the presense of terminals is ignored. Here is a tree showing the calls taken to parse the same expression `(6+4)*8`.
@@ -155,6 +157,8 @@ The call stack of functions per nonterminal is like the PDA's stack if the prese
     |  |         |  |         |  |  |
     (  6         +  4         )  *  8
 
+Use the `parse_rd.py` program in this repo to test.
+
 # Stage 4
 
 If you play with the parser, you'll notice that the binary operators are *required* to be binary when written. We implicitly know that expressions like `3+3+3+3` are are the same as `((3+3)+3)+3` but the parser does not and must be explicitly told.
@@ -176,6 +180,6 @@ We can add to this capability by letting nonterminals E_ and A_ recur on themsel
     F -> '(' E ')'
       -> NUMLIT   
 
-This associates right, but these operators are associative so it doesn't matter: `(1+2)+3) == 1+(2+3)`.
+This groups favoring the right side, but these operators are associative so it doesn't matter: `(1+2)+3) == 1+(2+3)`.
 
 
