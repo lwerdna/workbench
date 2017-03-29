@@ -5,7 +5,7 @@ import os
 import sys
 from time import localtime, mktime, struct_time
 
-sys.path.append(os.environ['PATH_ALIB_PY'])
+sys.path.append(os.environ['PATH_AUTILS_PY'])
 import utils
 
 action = '-1'
@@ -37,13 +37,13 @@ for cmd in cmds:
    
         # calculate time of the file!
         #
-        #print "splitting line: -%s-" % l
-        m = re.match('^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)$', l)
+        print "splitting line: -%s-" % l
+		# -rw-rw---- 1 root sdcard_rw  2674934 2015-08-27 07:03 /sdcard/DCIM/Camera/IMG_20150827_070354.jpg
+        m = re.match('^(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)$', l)
         if not m:
             continue
 
-        print "line is: %s" % l
-        (perms, owner, dunno, size, date, ftime, fname) = m.group(1,2,3,4,5,6,7)
+        (perms, dunno, owner, dunno, size, date, ftime, fpath) = m.group(1,2,3,4,5,6,7,8)
         # parsing string like "2013-07-31"
         (year, month, day) = map(lambda x: int(x), date.split('-'))
         # parsing string like "15:44"
@@ -51,9 +51,9 @@ for cmd in cmds:
         #
         epoch_file = mktime(struct_time([year, month, day, hour, minute, 0, 0, 1, -1]))
 
-        fname = fname.rstrip()
+        fpath = fpath.rstrip()
         print "considering file \"%s\" with time %04d/%02d/%02d %02d:%02d (epoch: %d)" % \
-            (fname, year, month, day, hour, minute, epoch_file)
+            (fpath, year, month, day, hour, minute, epoch_file)
     
         if action == 'all':
             # k then just do it
@@ -73,20 +73,20 @@ for cmd in cmds:
             print "unknown action: %s" % action
             sys.exit(-1);
    
-        if os.path.exists(fname):
+        if os.path.exists(fpath):
             print "    EXISTS ALREADY!"
             continue
 
         #print "executing:\n    %s" % cmd
-        cmd = 'adb pull "/sdcard/DCIM/Camera/%s"' % fname
+        cmd = 'adb pull "%s"' % fpath
         output = utils.runGetOutput(cmd, True)
         print output
 
-        if re.match(r'^.*?\.jpg$', fname):
-            #cmd = 'mogrify -strip -resize 1024x768 %s' % fname
-            cmd = 'mogrify -strip -resize 2048x1536 %s' % fname
-            #cmd = 'mogrify -strip %s' % fname
-            #cmd = 'mogrify -strip -resize 512x384 %s' % fname
+        if re.match(r'^.*?\.jpg$', fpath):
+            #cmd = 'mogrify -strip -resize 512x384 %s' % fpath
+            #cmd = 'mogrify -strip -resize 1024x768 %s' % fpath
+            cmd = 'mogrify -strip -resize 2048x1536 %s' % fpath
+            #cmd = 'mogrify -strip %s' % fpath
             output = utils.runGetOutput(cmd, True)
             print output
 
