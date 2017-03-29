@@ -26,4 +26,4 @@ full_embed: full_embed.o
 	gcc full_embed.o -o full_embed $(PYTHON_LDFLAGS_EMB)
 
 clean:
-	rm call3 *.o *.pyc
+	rm call3 capture_stdout full_embed *.o *.pyc
