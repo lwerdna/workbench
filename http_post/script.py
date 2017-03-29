@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
+import os
 import cgi
+import base64
 
 form = cgi.FieldStorage();
 
-path = form['path'].value
-resp += 'using path: %s\n' % path
+fpath = form['fpath'].value
 fname = form['fname'].value
-resp += 'using file name: %s\n' % fname
 fdata = form['fdata'].value
-resp += 'using file data: %s...%s (%d chars)\n' % \
-	(fdata[0:4], fdata[-4:], len(fdata))
 
-os.chdir(path)
+os.chdir(fpath)
 fp = open(fname, 'wb')
 fp.write(base64.b64decode(fdata))
 fp.close()

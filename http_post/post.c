@@ -1,5 +1,7 @@
 #include "support.h"
 
+#define SERVER_ADDR "127.0.0.1"
+#define SERVER_PORT 8080
 #define FILE_NAME "sent.pdf"
 #define FILE_DATA "Hello, I am the contents of a pdf file."
 
@@ -17,7 +19,7 @@ int main(int ac, char **av)
 
 	/* create the front of the request (the back is the b64 data) */
 	strcat(request, "fname=" FILE_NAME);
-	strcat(request, "&fpath=%%2Ftmp");
+	strcat(request, "&fpath=%2Ftmp");
 	strcat(request, "&fdata=");
 
 	/* make headers */
@@ -34,26 +36,18 @@ int main(int ac, char **av)
 	strcat(headers, "Accept-Encoding: gzip, deflate, br\x0d\x0a");
 	strcat(headers, "Accept-Language: en-US,en;q=0.8\x0d\x0a");
 
-	/* enable print of what's sent, also try:
-		* sudo tcpdump -i lo0 -s0 -A port 8080
-		* sudo tcpdump -i lo0 -s0 -X port 8080
-	*/
-	if(0) {
-		printf("%s", headers);
-		/* double newlines mark end of headers and start of contents */
-		printf("\x0d\x0a");
-		printf("%s", request);
-		printf("%s", b64file);
-	}	
-
 	/* connect to server and send */
 	network_init();
-	network_resolve_target("localhost", 8080, &addr);
+	network_resolve_target(SERVER_ADDR, SERVER_PORT, &addr);
 	network_connect(&addr, &sock_fd);
+    send(sock_fd, headers, strlen(headers), 0);
+    send(sock_fd, "\x0d\x0a", 2, 0);
+    send(sock_fd, request, strlen(request), 0);
+    send(sock_fd, b64file, strlen(b64file), 0);
 
+	/* done */
 	close(sock_fd);
 	free(b64file);
-
 	return 0;		
 }
 

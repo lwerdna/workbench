@@ -20,3 +20,9 @@ httpd.serve_forever()
 
 # CGI options
 To upload the file, the client requests a script, while sending it a parameter of the file name and file data. The script can be written in any language, but a python one is provided because the libraries built into typical python installs make it so simple without having to manually parse environment QUERY_STRING, etc. See script.py.
+
+# troubleshooting
+* point your browser at localhost:8080, if it is printing source code for script.py, make sure it's +x
+* sudo tcpdump -i lo0 -s0 -A port 8080
+* sudo tcpdump -i lo0 -s0 -X port 8080 
+
