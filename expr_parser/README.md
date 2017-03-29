@@ -182,4 +182,6 @@ We can add to this capability by letting nonterminals E_ and A_ recur on themsel
 
 This groups favoring the right side, but these operators are associative so it doesn't matter: `(1+2)+3) == 1+(2+3)`.
 
+# Notes
 
+* [Theodore Norvell's Page](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) has good descriptions for other parsing ideas, like "shunting yard" and "precedence climbing" algorithms.
