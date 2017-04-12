@@ -1,0 +1,24 @@
+body {
+    height: 100%;
+    font-family: "Arial, Helvetica, sans-serif";
+    background-color: #F5F4EB;
+}
+
+textarea {
+    width: 100%;
+	margin: 0;
+}
+
+input {
+    display: inline;
+}
+
+td {
+	background-color: #b2b2b2;
+}
+
+div.option {
+	margin-bottom: 8px;
+}
+
+

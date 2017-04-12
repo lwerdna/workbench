@@ -1,0 +1,53 @@
+<html>
+ <head>
+   <title>
+    Random Sampling Laboratory
+   </title>
+   <link rel=StyleSheet href="style.css" type="text/css">
+   <script type="text/javascript" src="./data.js"></script>
+   <script type="text/javascript" src="./logic.js"></script>
+ </head>
+
+<body onload="logicInit()">
+
+<h2>Random Sampling Laboratory</h2>
+
+<hr>
+
+<div class=option>
+ Weight:&nbsp;
+ <select id="weight">
+  <option value="fair">fair: all values equally likely of being sampled</option>
+  <option value="medium">medium: larger values slightly favored</option>
+  <option value="mut">monetary unit sampling: probability is proportional to size</option>
+ </select>
+</div>
+<div class=option>
+ Sample Size:&nbsp;
+ <input type=text id="sampSize" value=32></input>
+</div>
+<div class=option>
+ <input type=submit value="Sample!" onclick=doSampling()></input>
+</div>
+
+<hr>
+
+<table width=100%>
+ <tr>
+  <td width=50%>
+	Input:<br>
+    <textarea rows="16" id="input"></textarea>
+  </td>
+  <td width=50%>
+    Output:<br>
+    <textarea rows="16" id="output"></textarea>
+  </td>
+ </tr>
+</table>
+
+<hr>
+
+<canvas id="mycanvas" width="640" height="100"></canvas>
+
+</body>
+</html>
