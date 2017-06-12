@@ -200,13 +200,43 @@ int main(int ac, char **av)
 		codeOffset = scn_offset;
 		codeSize = scn_size;
 	}
+	/* ELF, 32-bit, little-end */
 	else if(0==memcmp(data, "\x7F" "ELF\x01\x01\x01\x00", 8)) {
-		/* assume four sections: NULL, .strtab, .text, .symtab */
+		/* possibilities:
+			- four sections: NULL, .strtab, .text, .symtab 
+			- five sections: NULL, .strtab, .text, .rel.text, .symtab */
 		uint32_t e_shoff = *(uint32_t *)(data + 0x20);
-		uint32_t sh_offset = *(uint32_t *)(data + e_shoff + 2*0x28 + 0x10); /* second shdr */
-		uint32_t sh_size = *(uint32_t *)(data + e_shoff + 2*0x28 + 0x14); /* second shdr */
-		codeOffset = sh_offset;
-		codeSize = sh_size;
+		uint16_t e_shnum = *(uint16_t *)(data + 0x30);
+		uint32_t txt_offs = *(uint32_t *)(data + e_shoff + 2*0x28 + 0x10); /* second shdr */
+		uint32_t txt_size = *(uint32_t *)(data + e_shoff + 2*0x28 + 0x14); /* second shdr */
+		codeOffset = txt_offs;
+		codeSize = txt_size;
+
+		if(e_shnum == 5) {
+			/* we have relocations, uh oh */
+			uint32_t rel_offs = *(uint32_t *)(data + e_shoff + 3*0x28 + 0x10);
+			uint32_t rel_size = *(uint32_t *)(data + e_shoff + 3*0x28 + 0x14);
+			uint32_t sym_offs = *(uint32_t *)(data + e_shoff + 4*0x28 + 0x10);
+			uint32_t sym_size = *(uint32_t *)(data + e_shoff + 4*0x28 + 0x14);
+			/* parse relocations */
+			for(uint32_t i=0; i<rel_size; i+=8) {
+				uint32_t d_val = *(uint32_t *)(data + rel_offs + i);
+				uint32_t d_ptr = *(uint32_t *)(data + rel_offs + i + 4);
+				/* if R_ARM_CALL */
+				if((d_ptr & 0xFF) == 0x1C) {
+					uint8_t sym_idx = (d_ptr & 0xFF00) >> 8;
+					if(sym_idx >= (sym_size / 16)) continue;
+					uint32_t st_value = *(uint32_t *)(data + sym_offs + 16*sym_idx + 4);
+					/* at d_val we should find a bl/blx (0xEB/0xFA) */
+					uint32_t instr = *(uint32_t *)(data + txt_offs + d_val);
+					/* remember pc bias of +8 and this is 4-byte instr count */
+					int32_t displ = (st_value - (d_val + 8)) / 4;
+					/* modify the instr operand: 3 byte displacement */
+					instr = (instr & 0xFF000000) | (displ & 0xFFFFFF);
+					*(uint32_t *)(data + txt_offs + d_val) = instr;
+				}
+			}
+		}
 	}
 	else {
 		printf("ERROR: couldn't identify type of output file\n");

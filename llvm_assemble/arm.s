@@ -1,7 +1,10 @@
+nop
+nop
+nop
 main:
 nop
 nop
 nop
-mov r0, r0
+mov r0, r1
 nop
-bl main
+blx main
