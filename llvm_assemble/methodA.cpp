@@ -67,35 +67,40 @@ int main(int ac, char **av)
 {
     SourceMgr SrcMgr;
 
-    LLVMInitializeX86TargetInfo();
-    //llvm::InitializeAllTargetInfos();
-    LLVMInitializeX86AsmParser();
-    //llvm::InitializeAllTargetMCs();
-    LLVMInitializeX86TargetMC();
-    //llvm::InitializeAllAsmParsers();
-    LLVMInitializeX86AsmParser();
-    //llvm::InitializeAllDisassemblers();
-    LLVMInitializeX86Disassembler();
+	if(1) {	
+	    llvm::InitializeAllTargetInfos();
+	    llvm::InitializeAllTargetMCs();
+    	llvm::InitializeAllAsmParsers();
+	    llvm::InitializeAllDisassemblers();
+	}
+	else {
+    	LLVMInitializeX86TargetInfo();
+	    LLVMInitializeX86AsmParser();
+	    LLVMInitializeX86TargetMC();
+	    LLVMInitializeX86Disassembler();
+	}
 
     // arg0:
     // llvm::Target encapsulating the "x86_64-apple-darwin14.5.0" information 
 
     // see /lib/Support/Triple.cpp for the details
     //spec = llvm::sys::getDefaultTargetTriple();
-    std::string machSpec = "x86_64-apple-darwin14.5.0";
+    //std::string machSpec = "x86_64-apple-darwin14.5.0";
     //std::string machSpec = "x86_64-apple-darwin";
     //std::string machSpec = "x86_64-thumb-linux-gnu";
     //std::string machSpec = "x86_64-unknown-linux-gnu";
+    std::string machSpec = "arm-none-none-eabi"; //
+
     printf("machine spec: %s\n", machSpec.c_str());
     machSpec = Triple::normalize(machSpec);
     printf("machine spec (normalized): %s\n", machSpec.c_str());
     Triple TheTriple(machSpec);
 
     // Get the target specific parser.
-    std::string Error;
-    const Target *TheTarget = TargetRegistry::lookupTarget(/*arch*/"", TheTriple, Error);
+    std::string errStr;
+    const Target *TheTarget = TargetRegistry::lookupTarget(/*arch*/"", TheTriple, errStr);
     if (!TheTarget) {
-        errs() << Error;
+        errs() << errStr;
         return -1;
     }
 
@@ -113,12 +118,16 @@ int main(int ac, char **av)
     std::unique_ptr<MCAsmBackend> MAB(TheTarget->createMCAsmBackend(*MRI, machSpec, /* specific CPU */ ""));
     MCInstPrinter *IP =  TheTarget->createMCInstPrinter(Triple(machSpec), /*variant*/0, *MAI, *MCII, *MRI);
 
-
     // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    // std::string asmSrc = ".text\n.org 0x100\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n"; /* requires relocs */
-    std::string asmSrc = ".text\n.org 0x100\nfoo:\nxor %eax, %ebx\npush %rbp\npush %eax\nrdtsc\n";
+	string asmSrc;
+	if(readTextFileToString("arm.s", asmSrc, errStr)) {
+		errs() << errStr;
+		return -1;
+	}
+	printf("assembling:\n%s\n", asmSrc.c_str());
+
     std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
     SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
 
@@ -167,6 +176,8 @@ int main(int ac, char **av)
         *MCII, toptions);
 
     fro.flush();
+
+	printf("%s\n", strOutput.c_str());
 
 	//
 	// parse the bytes from the output assembler comments

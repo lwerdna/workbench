@@ -2,6 +2,11 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#include <string>
+#include <vector>
+#include <numeric>
+using namespace std;
+
 void dump_bytes(unsigned char *buf, int len, uintptr_t addr)
 {
     int i, j;
@@ -43,5 +48,51 @@ void dump_bytes(unsigned char *buf, int len, uintptr_t addr)
         printf(" %s\n", ascii);
         addr += 16;
     }
+}
+
+int readTextFileToVector(string path, vector<string> &result, string &error)
+{
+	int rc = -1;
+	size_t len;
+	FILE *fp = NULL;
+	char *line = NULL;
+
+	fp = fopen(path.c_str(), "r");
+	if(!fp) {
+		error = "fopen()";
+		goto cleanup;
+	}
+	
+	result.clear();
+	while(getline(&line, &len, fp) != -1) {
+		result.push_back(line);
+		if(line) {
+			free(line);
+			line = NULL;
+		}
+    }
+
+	rc = 0;
+	cleanup:
+	if(line) free(line);
+	if(fp) fclose(fp);
+	return rc;
+
+}
+
+int readTextFileToString(string path, string &result, string &error)
+{
+	int rc = -1;
+
+	vector<string> vec;
+
+	if(readTextFileToVector(path.c_str(), vec, error))
+		goto cleanup;
+
+   	result = accumulate(vec.begin(), vec.end(), string(""));
+
+	rc = 0;
+	cleanup:
+	return rc;
 }
 

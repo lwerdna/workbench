@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include <string>
+using namespace std;
 
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
@@ -35,9 +36,6 @@
 
 #include "help.h"
 
-// globals
-std::string ArchName;
-
 int AssembleInput(
     const Target *TheTarget,
     SourceMgr &SrcMgr, 
@@ -48,8 +46,8 @@ int AssembleInput(
     MCInstrInfo &MCII, 
     MCTargetOptions &MCOptions
 ) {
-  std::unique_ptr<MCAsmParser> Parser(createMCAsmParser(SrcMgr, Ctx, Str, MAI));
-  std::unique_ptr<MCTargetAsmParser> TAP(TheTarget->createMCAsmParser(STI, *Parser, MCII, MCOptions));
+  unique_ptr<MCAsmParser> Parser(createMCAsmParser(SrcMgr, Ctx, Str, MAI));
+  unique_ptr<MCTargetAsmParser> TAP(TheTarget->createMCAsmParser(STI, *Parser, MCII, MCOptions));
 
   if (!TAP) {
     errs() << ": error: this target does not support assembly parsing.\n";
@@ -85,22 +83,22 @@ int main(int ac, char **av)
 
     // see /lib/Support/Triple.cpp for the details
     //spec = llvm::sys::getDefaultTargetTriple();
-    //std::string machSpec = "x86_64-apple-windows"; // will produce a COFF
-    //std::string machSpec = "x86_64-apple-darwin14.5.0"; // will produce a Mach-O
-    std::string machSpec = "arm-none-none-eabi"; //
-    //std::string machSpec = "x86_64-apple-darwin";
-    //std::string machSpec = "x86_64-thumb-linux-gnu";
-    //std::string machSpec = "x86_64-unknown-linux-gnu";
+    //string machSpec = "x86_64-apple-windows"; // will produce a COFF
+    //string machSpec = "x86_64-apple-darwin14.5.0"; // will produce a Mach-O
+    string machSpec = "arm-none-none-eabi"; //
+    //string machSpec = "x86_64-apple-darwin";
+    //string machSpec = "x86_64-thumb-linux-gnu";
+    //string machSpec = "x86_64-unknown-linux-gnu";
     printf("machine spec: %s\n", machSpec.c_str());
     machSpec = Triple::normalize(machSpec);
     printf("machine spec (normalized): %s\n", machSpec.c_str());
     Triple TheTriple(machSpec);
 
     // Get the target specific parser.
-    std::string Error;
-    const Target *TheTarget = TargetRegistry::lookupTarget(/*arch*/"", TheTriple, Error);
+    string errStr;
+    const Target *TheTarget = TargetRegistry::lookupTarget(/*arch*/"", TheTriple, errStr);
     if (!TheTarget) {
-        errs() << Error;
+        errs() << errStr;
         return -1;
     }
 
@@ -111,22 +109,29 @@ int main(int ac, char **av)
     printf("Target.getShortDescription(): %s\n", TheTarget->getShortDescription());
 
     /* from the target we get almost everything */
-    std::unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(machSpec));
-    std::unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, machSpec));
-    std::unique_ptr<MCInstrInfo> MCII(TheTarget->createMCInstrInfo()); /* describes target instruction set */
+    unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(machSpec));
+    unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, machSpec));
+    unique_ptr<MCInstrInfo> MCII(TheTarget->createMCInstrInfo()); /* describes target instruction set */
     MCSubtargetInfo *STI = TheTarget->createMCSubtargetInfo(machSpec, "", ""); /* subtarget instr set */
     MCAsmBackend *MAB = TheTarget->createMCAsmBackend(*MRI, machSpec, /* specific CPU */ "");
 
     // arg0:
     // llvm::SourceMgr (Support/SourceMgr.h) that holds assembler source
     // has vector of llvm::SrcBuffer encaps (Support/MemoryBuffer.h) and vector of include dirs
-    //std::string asmSrc = ".org 0x100, 0xAA\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
-	//std::string asmSrc = ".text\n" "ldr pc, data_foo\n" "\n" "data_foo:\n" "    .int 0x8\n" "\n" "loop:\n" "b loop\n";
-	//std::string asmSrc = ".text\n" "mov r2, r1\n";
-	std::string asmSrc = ".text\n" "ldr pc, data_foo\n" "data_foo:\n" ".int 0x8\n" "loop:\n" "b loop\n";
+    //string asmSrc = ".org 0x100, 0xAA\nfoo:\nxor %eax, %ebx\npush %rbp\njmp foo\nrdtsc\n";
+	//string asmSrc = ".text\n" "ldr pc, data_foo\n" "\n" "data_foo:\n" "    .int 0x8\n" "\n" "loop:\n" "b loop\n";
+	//string asmSrc = ".text\n" "mov r2, r1\n";
+	//string asmSrc = ".text\n" "ldr pc, data_foo\n" "data_foo:\n" ".int 0x8\n" "loop:\n" "b loop\n";
 
-    std::unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
-    SrcMgr.AddNewSourceBuffer(std::move(memBuf), SMLoc());
+	string asmSrc;
+	if(readTextFileToString("arm.s", asmSrc, errStr)) {
+		errs() << errStr;
+		return -1;
+	}
+	printf("assembling:\n%s\n", asmSrc.c_str());
+
+    unique_ptr<MemoryBuffer> memBuf = MemoryBuffer::getMemBuffer(asmSrc);
+    SrcMgr.AddNewSourceBuffer(move(memBuf), SMLoc());
 
     // arg1: the machine code context
     MCObjectFileInfo MOFI;
@@ -160,12 +165,12 @@ int main(int ac, char **av)
         rso, /* output stream raw_pwrite_stream */
         CE, /* code emitter */
 		*STI, /* subtarget info */
-		true, /* relax all fixups */
-		true, /* incremental linker compatible */ 
+		false, /* relax all fixups */
+		false, /* incremental linker compatible */ 
         false /* DWARFMustBeAtTheEnd */
     );
 
-    std::string abi = "none";
+    string abi = "none";
     MCTargetOptions toptions;
     toptions.MCUseDwarfDirectory = false;
     toptions.ABIName = abi;
