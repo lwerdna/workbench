@@ -1,4 +1,10 @@
+
+int myAdd(int a, int b)
+{
+	return (a+b)*3;
+}
+
 int main(int ac, char **av)
 {
-    return ac+42;
+    return myAdd(4,5);
 }
