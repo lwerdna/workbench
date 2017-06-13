@@ -50,7 +50,7 @@ char *branch_code_to_str(int id)
 {
 	switch(id) {
 		case PPC_BC_INVALID: return "PPC_BC_INVALID";
-		case PPC_BC_LT: return "PPC_BC_LET";
+		case PPC_BC_LT: return "PPC_BC_LT";
 		case PPC_BC_LE: return "PPC_BC_LE";
 		case PPC_BC_EQ: return "PPC_BC_EQ";
 		case PPC_BC_GE: return "PPC_BC_GE";
