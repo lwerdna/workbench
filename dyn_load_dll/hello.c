@@ -15,7 +15,8 @@
 #define SIG_HOTSPOT	"\xe8\xc9\x03\x02\x00\x85\xc0\x0f\x88\xfb\xc0\x04\x00\x48\x8b\x44"
 
 /* globals */
-unsigned char *pNtDll = NULL;
+HMODULE pNtDll = NULL;
+HMODULE pKernel32 = NULL;
 
 /* various patches */
 unsigned char ret_zero[] = {
@@ -27,6 +28,8 @@ unsigned char hook_x64[] = {
 	0xc3,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
+
+unsigned int (*NtCreateSection)(void *, DWORD, void *, void *, ULONG, ULONG, HANDLE) = NULL;
 
 /* detour functions */
 NTSTATUS detour_ZwOpenFile(
@@ -52,8 +55,9 @@ NTSTATUS detour_ZwCreateSection(
 	HANDLE             FileHandle
 )
 {
-	HANDLE hFile;
-	HANDLE hMapFile;
+	HANDLE hMapFile = NULL;
+	LPVOID pData = NULL;
+	LARGE_INTEGER li;
 
 	printf("I'm in detour_ZwCreateSection()!\n");
 	printf("        SectionHandle: %p\n", SectionHandle);
@@ -67,33 +71,48 @@ NTSTATUS detour_ZwCreateSection(
 	/* unpatch (so we only execute once) */
 	memcpy(pNtDll+OFFS_ZWCREATESECTION, SIG_ZWCREATESECTION, 15);
 
-	hFile = CreateFile(
-		"libfake2.dll",
-		GENERIC_READ|GENERIC_WRITE /* dwDesiredAccess */,
-		FILE_SHARE_READ|FILE_SHARE_WRITE /* dwShareMode */,
-		NULL /* lpSecurityAttributes */,
-		OPEN_EXISTING /* dwCreationDisposition */,
-		FILE_ATTRIBUTE_NORMAL /* dwFlagsAndAttributes */,
-		NULL /* hTemplateFile */
-	);
-	if(hFile == INVALID_HANDLE_VALUE) {
-		printf("ERROR: CreateFile()\n");
+//	hMapFile = CreateFileMapping(
+//		INVALID_HANDLE_VALUE, 
+//		NULL, 
+//		PAGE_READWRITE | SEC_IMAGE,
+//		0,
+//		libfake_len,
+//		NULL
+//	);
+	li.HighPart = 0;
+	li.LowPart = libfake_len;
+	// 00000000`76b82fbc kernel32!NtCreateSection (<no parameter info>)
+	if(0 /* STATUS_SUCCESS */ != NtCreateSection(
+		&hMapFile /* SectionHandle */,
+		SECTION_MAP_READ|SECTION_MAP_WRITE /* DesiredAccess */,
+		NULL /* ObjectAttributes */,
+		&(li.u) /* MaximumSize */,
+		PAGE_READWRITE /* SectionPageProtection */,
+		SEC_IMAGE /* AllocationAttributes */,
+		NULL /* FileHandle */
+	))
+	{
+		printf("ERROR: CreateSection()\n");
 		goto cleanup;
 	}
 
-	hMapFile = CreateFileMapping(
-		hFile /* INVALID_HANDLE_VALUE */, 
-		NULL, 
-		PAGE_READWRITE | SEC_IMAGE,
-		0,
-		0,
-		NULL
-	);
-	if(!hMapFile) {
-		printf("ERROR: CreateFileMapping\n");
+	printf("hMapFile: %p\n", hMapFile);
+
+	/* fill the file mapping object with bytes from the .DLL */
+	pData = MapViewOfFile(hMapFile, FILE_MAP_WRITE, 0, 0, libfake_len);
+	if(!pData) {
+		printf("ERROR: MapViewOfFile()\n");
 		goto cleanup;
 	}
 
+	memcpy(pData, libfake, libfake_len);
+
+	if(!UnmapViewOfFile(pData)) {
+		printf("ERROR: UnmapViewOfFile()\n");
+		goto cleanup;
+	}
+
+	/* return the handle to mapfile as a handle to image section */
 	*SectionHandle = hMapFile;
 
 	cleanup:
@@ -116,8 +135,22 @@ int main(int ac, char **av)
 		printf("ERROR: LoadLibrary()\n");
 		goto cleanup;
 	}
-
 	printf("found ntdll at: %p\n", pNtDll);
+
+	pKernel32 = (void *)LoadLibrary("kernel32.dll");
+	if(!pKernel32) {
+		printf("ERROR: LoadLibrary()\n");
+		goto cleanup;
+	}
+	printf("found kernel32 at: %p\n", pKernel32);
+
+	NtCreateSection = (void *)((unsigned char *)pKernel32 + 0x32fbc);
+//	NtCreateSection = (void *)GetProcAddress(pKernel32, "NtCreateSection");
+//	if(!NtCreateSection) {
+//		printf("ERROR: GetProcAddress()\n");
+//		goto cleanup;
+//	}
+	printf("found kernel32!NtCreateSection at: %p\n", NtCreateSection);
 
 	/* hook ZwOpen() */
 	//VirtualProtect(pNtDll+OFFS_ZWOPEN, 64, PAGE_EXECUTE_READWRITE, &oldProtect);
