@@ -15,7 +15,6 @@
 #include <netinet/tcp.h> /* struct tcphdr */
 
 #include <net/if.h>
-#include <net/if_dl.h>
 #include <ifaddrs.h>
 
 /* how many write() calls to do before read() all packets in the queue
@@ -29,69 +28,6 @@
 	on my Ubuntu machine, read queue was around ~140 bare IP+TCP packets
 */
 #define BLAST_SZ 16
-#define IPADDR_STR "127.0.0.1"
-
-/*****************************************************************************/
-/* INTERFACE STUFF */
-/*****************************************************************************/
-
-int getinterfaces(void)
-{
-	int rc = -1;
-	struct ifaddrs *ifap = NULL, *ifap_cur;
-	char buf[1024];
-	
-	sa_family_t family;
-
-	struct sockaddr *saddr; /* sys/socket.h */
-	struct sockaddr_in *addr4; /* netinet/in.h */
-	struct sockaddr_in6 *addr6; /* netinet6/in6.h */
-	struct sockaddr_dl *addr_dl; /* net/if_dl.h */
-
-	if(0 != getifaddrs(&ifap)) {
-		printf("ERROR: getifaddrs()\n");
-		goto cleanup;
-	}
-
-	ifap_cur = ifap;
-	while(ifap_cur) {
-		printf("name:%s flags:%X",
-		  ifap_cur->ifa_name, ifap_cur->ifa_flags);
-
-		family = ifap_cur->ifa_addr->sa_family;
-		switch(family) {
-			case AF_INET:
-				addr4 = (void *)ifap_cur->ifa_addr;
-				if(NULL == inet_ntop(family, &(addr4->sin_addr), buf, 1024)) {
-					perror("ERROR: inet_ntop()\n");
-					goto cleanup;
-				}
-				printf(" inet4 addr: %s\n", buf);
-				break;
-			case AF_INET6:
-				addr6 = (void *)ifap_cur->ifa_addr;
-				if(NULL == inet_ntop(family, &(addr6->sin6_addr), buf, 1024)) {
-					perror("ERROR: inet_ntop()\n");
-					goto cleanup;
-				}
-				printf(" inet6 addr: %s\n", buf);
-				break;
-			case AF_LINK:
-				addr_dl = (void *)ifap_cur->ifa_addr;
-				printf(" link_addr: %s\n", link_ntoa(addr_dl));
-				break;
-			default:
-				printf("unknown (family id: %d)\n", family);
-		}
-
-		ifap_cur = ifap_cur->ifa_next;
-	}
-
-	rc = 0;
-	cleanup:
-	if(ifap) freeifaddrs(ifap);
-	return rc;
-}
 
 /*****************************************************************************/
 /* MISCELLANY */
@@ -183,7 +119,7 @@ int process_pkt(uint8_t *pkt, int n)
 		//dump_bytes(pkt, n, 0);
 	}
 	else {
-		printf("ignoring %d->%d with flags:%04X\n", sport, dport, tcph->th_flags);
+		//printf("ignoring %d->%d with flags:%04X\n", sport, dport, tcph->th_flags);
 		//dump_bytes(pkt, n, 0);
 		while(0);
 	}
@@ -290,100 +226,14 @@ void init_syn_pkt(uint8_t *pkt, uint32_t saddr, uint32_t daddr, uint16_t dport)
 }
 
 /*****************************************************************************/
-/* SCAN */
-/*****************************************************************************/
-
-int scan_open(char *ip, char *argv[])
-{
-	int rc=-1, i, n, sock_raw;
-	uint32_t dport;
-	uint32_t saddr, daddr;
-	uint8_t datagram[4096];
-	struct ip *iph;
-	struct tcphdr *tcph;
-	struct sockaddr_in sin;
-	struct timeval tvstart, tvstop;
-	double tvdelta;
-
-	getinterfaces();
-	exit(-1);
-
-	if(argc < 3) {
-		printf("USAGE: %s <ip> <port>\n", argv[0]);
-		goto cleanup;
-	}
-
-	/* addresses and ports, in host ordering */
-	saddr = ntohl(inet_addr("127.0.0.1"));
-	daddr = ntohl(inet_addr(argv[1]));
-	dport = atoi(argv[2]);
-	printf("scanning %s:%d (%08X:%04X)\n", argv[1], dport, daddr, dport);
-
-	sock_raw = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
-	if(sock_raw == -1) {
-		printf("ERROR: socket()\n");
-		goto cleanup;
-	}
-
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(saddr);
-
-	/* initialize IP part of header */
-	init_ip_pkt(datagram, saddr, daddr);
-
-	/* inform kernel we have headers, instruct not to insert new ones */
-	n = 1;
-	if(setsockopt(sock_raw, IPPROTO_IP, IP_HDRINCL, &n, sizeof(n)) < 0)
-		printf("Warning: Cannot set HDRINCL!\terrno = %d\n",errno);
-	
-	gettimeofday(&tvstart, NULL);
-
-	/* send, receive */
-	for(dport=0; dport<65535; dport+=BLAST_SZ) {
-		/* send BLAST_SZ packets */
-		for(i=0; i<BLAST_SZ; ++i) {
-			/* packet contains addr:port */
-			init_syn_pkt(datagram + sizeof(*iph), saddr, daddr, dport+i);
-	
-			/* sockaddr_in contains addr:port (shouldn't matter) */
-			sin.sin_port = htons(dport+i);
-
-			/* send! */
-			n = sendto(sock_raw, datagram,
-			  sizeof(struct ip) + sizeof(struct tcphdr), 
-			  0, (struct sockaddr *)&sin, sizeof(sin));
-
-			if(n <= 0) {
-				printf("ERROR: sendto() returned %d\n", n);
-				goto cleanup;
-			}
-		}
-
-		consume_queued_pkts(sock_raw, 1);
-	}
-	
-	gettimeofday(&tvstop, NULL);
-	tvdelta = (double)(tvstop.tv_usec - tvstart.tv_usec) / 1000000;
-	tvdelta += (double)tvstop.tv_sec - tvstart.tv_sec;
-	printf("scan send/recv main part took %f seconds\n", tvdelta);
-
-	/* final receive with longer timeout, just in case */
-	consume_queued_pkts(sock_raw, 1000000/4);
-
-	/* success */
-	rc = 0;
-	cleanup:
-	return rc;
-}
-
-/*****************************************************************************/
 /* MAIN ACTION */
 /*****************************************************************************/
 
 int main(int argc, char *argv[])
 {
 	int rc=-1, i, n, sock_raw;
-	uint32_t dport;
+	uint32_t port_start, port_end, port_cur;
+	char *daddr_str;
 	uint32_t saddr, daddr;
 	uint8_t datagram[4096];
 	struct ip *iph;
@@ -392,20 +242,23 @@ int main(int argc, char *argv[])
 	struct timeval tvstart, tvstop;
 	double tvdelta;
 
-	getinterfaces();
-	exit(-1);
-
-	if(argc < 3) {
-		printf("USAGE: %s <ip> <port>\n", argv[0]);
-		goto cleanup;
-	}
-
 	/* addresses and ports, in host ordering */
+	daddr_str = (char *)"127.0.0.1";
 	saddr = ntohl(inet_addr("127.0.0.1"));
-	daddr = ntohl(inet_addr(argv[1]));
-	dport = atoi(argv[2]);
-	printf("scanning %s:%d (%08X:%04X)\n", argv[1], dport, daddr, dport);
+	port_start = 0;
+	port_end = 65536;
 
+	if(argc > 1)
+		daddr_str = argv[1];
+	if(argc > 2)
+		port_start = atoi(argv[2]);
+	if(argc > 3)
+		port_end = atoi(argv[3]);
+	
+	daddr = ntohl(inet_addr(daddr_str));
+	printf("scanning %s port [%d,%d)\n", daddr_str, port_start, port_end);
+
+	/* socket */
 	sock_raw = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 	if(sock_raw == -1) {
 		printf("ERROR: socket()\n");
@@ -426,14 +279,14 @@ int main(int argc, char *argv[])
 	gettimeofday(&tvstart, NULL);
 
 	/* send, receive */
-	for(dport=0; dport<65535; dport+=BLAST_SZ) {
+	for(port_cur=port_start; port_cur<port_end; port_cur+=BLAST_SZ) {
 		/* send BLAST_SZ packets */
 		for(i=0; i<BLAST_SZ; ++i) {
 			/* packet contains addr:port */
-			init_syn_pkt(datagram + sizeof(*iph), saddr, daddr, dport+i);
+			init_syn_pkt(datagram + sizeof(*iph), saddr, daddr, port_cur+i);
 	
 			/* sockaddr_in contains addr:port (shouldn't matter) */
-			sin.sin_port = htons(dport+i);
+			sin.sin_port = htons(port_cur+i);
 
 			/* send! */
 			n = sendto(sock_raw, datagram,
