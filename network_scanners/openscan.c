@@ -218,7 +218,7 @@ void init_syn_pkt(uint8_t *pkt, uint32_t saddr, uint32_t daddr, uint16_t dport)
 	memcpy(&csi.tcp_hdr, tcph, sizeof(struct tcphdr));
 
 	/* see /usr/include/netinet/tcp.h */
-	#if defined(__APPLE__) || defined(__MACH__)
+	#if defined(__APPLE__) || defined(__MACH__) || defined(__FreeBSD__)
 	tcph->th_sum = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
 	#else
 	tcph->check = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 	/* addresses and ports, in host ordering */
 	daddr_str = (char *)"127.0.0.1";
 	saddr = ntohl(inet_addr("127.0.0.1"));
-	port_start = 0;
+	port_start = 1;
 	port_end = 65536;
 
 	if(argc > 1)

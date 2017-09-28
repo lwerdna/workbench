@@ -150,7 +150,7 @@ void process_pkt_cb(uint8_t *user, const struct pcap_pkthdr *h, const uint8_t *b
 	if(tcph->th_flags == (TH_SYN|TH_ACK)) {
 		//printf("SYNACK %d->%d\n", sport, dport);
 		printf("port %d is open!\n", sport);
-		dump_bytes((void *)tcph, 16, (uintptr_t)tcph);
+		//dump_bytes((void *)tcph, 16, (uintptr_t)tcph);
 		//dump_bytes(bytes, n, 0);
 	}
 	else if(tcph->th_flags == (TH_RST)) {
@@ -244,14 +244,14 @@ int pcap_setup(pcap_t **handle_out)
 	return rc;
 }
 
-int pcap_consume(pcap_t *handle)
+int pcap_consume(pcap_t *handle, int select_timeout_ms)
 {
 	int rc = -1, pcr;
 	char errbuf[PCAP_ERRBUF_SIZE];
 	const uint8_t *packet;
 	fd_set fds_r;
 	int fd;
-	struct timeval timeout = {0, 1};
+	struct timeval timeout = {0, 0};
 
 	fd = pcap_get_selectable_fd(handle);
 
@@ -263,6 +263,13 @@ int pcap_consume(pcap_t *handle)
 
 	//printf("starting pcap capture loop\n");
 
+	timeout.tv_usec = (select_timeout_ms % 1000) * 1000;
+	if(select_timeout_ms >= 1000)
+		timeout.tv_sec = select_timeout_ms / 1000;
+	//printf("timeout.tv_sec: %ld\n", timeout.tv_sec);
+	//printf("timeout.tv_usec: %ld\n", timeout.tv_usec);
+
+	int dispatch_streak = 0;
 	while(1) {
 		int num_ready;
 		FD_ZERO(&fds_r);
@@ -280,11 +287,13 @@ int pcap_consume(pcap_t *handle)
 			break;
 		}
 
-		int pdr = pcap_dispatch(handle, 1, process_pkt_cb, (uint8_t *)handle);
+		int pdr = pcap_dispatch(handle, 0, process_pkt_cb, (uint8_t *)handle);
 		switch(pdr) {
 			case 0:
 				/* no packets anyways */
-				break;
+				dispatch_streak += 1;
+				if(dispatch_streak >= 3)
+					break;
 			case -1:
 				printf("ERROR: pcap_dispatch(), %s\n", pcap_geterr(handle));
 				goto cleanup;
@@ -293,6 +302,7 @@ int pcap_consume(pcap_t *handle)
 				goto cleanup;
 			default:
 				//printf("pcap_dispatch() says it processed %d packets\n", pdr);
+				dispatch_streak = 0;
 				break;
 		}
 	}
@@ -356,7 +366,7 @@ void init_syn_pkt(uint8_t *pkt, uint32_t saddr, uint32_t daddr, uint16_t dport)
 	memcpy(&csi.tcp_hdr, tcph, sizeof(struct tcphdr));
 
 	/* see /usr/include/netinet/tcp.h */
-	#if defined(__APPLE__) || defined(__MACH__)
+	#if defined(__APPLE__) || defined(__MACH__) || defined(__FreeBSD__)
 	tcph->th_sum = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
 	#else
 	tcph->check = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
@@ -425,7 +435,7 @@ int main(int argc, char *argv[])
 
 	/* send, receive */
 	for(port_cur=port_start; port_cur<port_end; port_cur+=BLAST_SZ) {
-		pcap_consume(pcap_handle);
+		pcap_consume(pcap_handle, 1);
 
 		/* send BLAST_SZ packets */
 		for(i=0; i<BLAST_SZ; ++i) {
@@ -453,7 +463,7 @@ int main(int argc, char *argv[])
 	printf("scan send/recv main part took %f seconds\n", tvdelta);
 
 	/* final receive with longer timeout, just in case */
-	pcap_consume(pcap_handle);
+	pcap_consume(pcap_handle, 100);
 
 	/* success */
 	rc = 0;

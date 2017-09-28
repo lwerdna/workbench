@@ -94,8 +94,10 @@ int main(int ac, char **av)
 				rc = connect(sock, (struct sockaddr *)&saddr_in,
 				  sizeof(saddr_in));
 
-				if(rc == 0)
+				if(rc == 0) {
+					/* this happens on FreeBSD, despite the O_NONBLOCK */
 					printf("port %d is open (immediate connect!)\n", port_cur);
+				}
 				else {
 					if(errno == EINPROGRESS) {
 						cinfos[i].sock = sock;
