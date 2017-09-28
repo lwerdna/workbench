@@ -110,7 +110,7 @@ int process_pkt(uint8_t *pkt, int n)
 		goto cleanup;
 	}
 
-	tcph = (struct tcphdr *)(pkt + sizeof(struct ip));
+	tcph = (struct tcphdr *)((uint8_t *)iph + iph->ip_hl*4);
 	sport = ntohs(tcph->th_sport);
 	dport = ntohs(tcph->th_dport);
 
@@ -204,7 +204,7 @@ void init_syn_pkt(uint8_t *pkt, uint32_t saddr, uint32_t daddr, uint16_t dport)
 	tcph = (struct tcphdr *)pkt;
 	memset(tcph, 0, sizeof(*tcph));
 	tcph->th_flags = TH_SYN; /* we send SYN, hope for SYN|ACK */
-	tcph->th_sport = 0;// random();
+	tcph->th_sport = random();
 	tcph->th_dport = htons(dport);
 	tcph->th_x2 = 5;
 	tcph->th_off = 5;
@@ -219,7 +219,7 @@ void init_syn_pkt(uint8_t *pkt, uint32_t saddr, uint32_t daddr, uint16_t dport)
 
 	/* see /usr/include/netinet/tcp.h */
 	#if defined(__APPLE__) || defined(__MACH__)
-	tcph->th_flags = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
+	tcph->th_sum = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
 	#else
 	tcph->check = csum((uint16_t *)&csi, sizeof(csum_input_ipv4) / 2);
 	#endif
