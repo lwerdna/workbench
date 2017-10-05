@@ -18,7 +18,7 @@ ifeq (CC,"")
     $(error unable to detect OS!)
 endif
 
-all: openscan openscan_pcap connectscan
+all: openscan openscan_pcap connectscan interfaces
 
 connectscan: connectscan.c
 	$(CC) connectscan.c -o connectscan
@@ -29,6 +29,9 @@ openscan: openscan.c
 openscan_pcap: openscan_pcap.c
 	$(CC) openscan_pcap.c -lpcap -o openscan_pcap
 
+interfaces: interfaces.c
+	$(CC) interfaces.c -o interfaces
+
 clean:
-	rm connectscan openscan openscan_pcap
+	rm connectscan openscan openscan_pcap interfaces
 
