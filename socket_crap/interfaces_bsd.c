@@ -1,6 +1,7 @@
-// the only differences I can tell between MacOS and FreeBSD int his context
-// are the interface flags (IFF_XXX) and the address family flags (AF_XXX) but
-// they mostly overlap
+// compile this for MacOS and FreeBSD
+
+// the only differences I can tell are the interface flags (IFF_XXX) and the
+// address family flags (AF_XXX) but they mostly overlap
 
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +25,7 @@ void if_flags_to_str(int flags, char *result)
 {
 	strcpy(result, "");
 
-	#if defined(__APPLE__) || defined(__MACH__)
+	#if defined(OS_IS_MACOS)
 	if(flags & IFF_UP) strcat(result, "UP,");
 	if(flags & IFF_BROADCAST) strcat(result, "BROADCAST,");
 	if(flags & IFF_DEBUG) strcat(result, "DEBUG,");
@@ -42,7 +43,7 @@ void if_flags_to_str(int flags, char *result)
 	if(flags & IFF_LINK2) strcat(result, "LINK2,");
 	if(flags & IFF_ALTPHYS) strcat(result, "ALTPHYS,");
 	if(flags & IFF_MULTICAST) strcat(result, "MULTICAST,");
-	#else
+	#elif defined(OS_IS_FREEBSD)
 	if(flags & IFF_UP) { strcat(result, "IFF_UP,"); return; }
 	if(flags & IFF_BROADCAST) { strcat(result, "IFF_BROADCAST,"); return; }
 	if(flags & IFF_DEBUG) { strcat(result, "IFF_DEBUG,"); return; }
@@ -86,7 +87,7 @@ void family_to_str(int family, char *result)
 {
 	strcpy(result, "");
 
-	#if defined(__APPLE__) || defined(__MACH__)
+	#if defined(OS_IS_MACOS)
 	if(family == AF_UNSPEC) { strcat(result, "AF_UNSPEC"); return; }
 	if(family == AF_UNIX) { strcat(result, "AF_UNIX"); return; }
 	if(family == AF_LOCAL) { strcat(result, "AF_LOCAL"); return; }
@@ -128,7 +129,7 @@ void family_to_str(int family, char *result)
 	if(family == AF_RESERVED_36) { strcat(result, "AF_RESERVED_36"); return; }
 	if(family == AF_IEEE80211) { strcat(result, "AF_IEEE80211"); return; }
 	if(family == AF_UTUN) { strcat(result, "AF_UTUN"); return; }
-	#else
+	#elif defined(OS_IS_FREEBSD)
 	if(family == AF_UNIX) { strcat(result, "AF_UNIX"); return; }
 	if(family == AF_INET) { strcat(result, "AF_INET"); return; }
 	if(family == AF_IMPLINK) { strcat(result, "AF_IMPLINK"); return; }

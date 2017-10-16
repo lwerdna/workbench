@@ -1,3 +1,5 @@
+// compile this for Linux and Android
+
 #include <stdio.h>
 #include <string.h>
 
@@ -8,8 +10,35 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <net/if.h> // struct ifconf, struct ifreq
-#include <net/if_dl.h>
-#include <net/ethernet.h>
+#include <net/if_dl.h> // link_ntoa()
+
+/* MACOS: defined in /usr/include/net/if.h */
+void if_flags_to_str(int flags, char *result)
+{
+	strcpy(result, "");
+
+	if(flags & IFF_UP) strcat(result, "UP|");
+	if(flags & IFF_BROADCAST) strcat(result, "BROADCAST|");
+	if(flags & IFF_DEBUG) strcat(result, "DEBUG|");
+	if(flags & IFF_LOOPBACK) strcat(result, "LOOPBACK|");
+	if(flags & IFF_POINTOPOINT) strcat(result, "POINTOPOINT|");
+	if(flags & IFF_NOTRAILERS) strcat(result, "NOTRAILERS|");
+	if(flags & IFF_RUNNING) strcat(result, "RUNNING|");
+	if(flags & IFF_NOARP) strcat(result, "NOARP|");
+	if(flags & IFF_PROMISC) strcat(result, "PROMISC|");
+	if(flags & IFF_ALLMULTI) strcat(result, "ALLMULTI|");
+	if(flags & IFF_OACTIVE) strcat(result, "OACTIVE|");
+	if(flags & IFF_SIMPLEX) strcat(result, "SIMPLEX|");
+	if(flags & IFF_LINK0) strcat(result, "LINK0|");
+	if(flags & IFF_LINK1) strcat(result, "LINK1|");
+	if(flags & IFF_LINK2) strcat(result, "LINK2|");
+	if(flags & IFF_ALTPHYS) strcat(result, "ALTPHYS|");
+	if(flags & IFF_MULTICAST) strcat(result, "MULTICAST|");
+
+	int n = strlen(result);
+	if(result[n-1] == '|')
+		result[n-1] = '\0';
+}
 
 void dump_bytes(uint8_t *buf, int len, uint32_t addr)
 {
@@ -39,7 +68,7 @@ void dump_bytes(uint8_t *buf, int len, uint32_t addr)
     }
 }
 
-void method0_ioctls(void)
+void method_ioctls(void)
 {
     uint8_t buf[4096] = {0};
     int i;
@@ -78,7 +107,7 @@ void method0_ioctls(void)
 			case AF_UNSPEC: printf("AF_UNSPEC"); break;
 			case AF_UNIX: printf("AF_UNIX"); break;
 			case AF_INET: printf("AF_INET"); break;
-			case AF_LINK: printf("AF_LINK"); break; 
+			//case AF_LINK: printf("AF_LINK"); break; 
 			case AF_INET6: printf("AF_INET6"); break; 
 			default: printf("AF_UNKNOWN (%d)", family); break;
 		}
@@ -102,37 +131,6 @@ void method0_ioctls(void)
 		//printf("cursor is now: %p\n", cursor);
 	}
 
-//    debug("nInterfaces [%d]\n", nInterfaces);
-//    for(i = 0; i < nInterfaces; i++)
-//    {
-//        struct ifreq *item = &ifr[i];
-//
-//        // Show the device name and IP address
-//
-//        printf( writebuf, sizeof(writebuf),
-//            "%s: IP %s",
-//            item->ifr_name, inet_ntoa(((struct sockaddr_in *)&item->ifr_addr)->sin_addr));
-//
-//
-//        // Get the MAC address
-//        if(ioctl(sck, SIOCGIFHWADDR, item) < 0)
-//        {
-//            perror("ioctl(SIOCGIFHWADDR)");
-//            rc = 1;
-//            goto ERROR_EXIT;
-//        }
-//
-//        // Get the broadcast address
-//        if(ioctl(sck, SIOCGIFBRDADDR, item) >= 0)
-//        {
-//            snprintf(
-//                &writebuf[strlen(writebuf)],
-//                sizeof(writebuf)-strlen(writebuf),
-//                ", BROADCAST %s",
-//                inet_ntoa(((struct sockaddr_in *)&item->ifr_broadaddr)->sin_addr));
-//        }
-//
-//    }
 	cleanup:
 	return;
 }
@@ -142,7 +140,7 @@ void method0_ioctls(void)
 	on Windows: GetAdaptersInfo() and GetAdaptersAddresses()
 	on Linux: getifaddrs()
 */
-int method1_getifaddrs(void)
+int method_getifaddrs(void)
 {
 	int rc = -1;
 	struct ifaddrs *ifap = NULL, *ifap_cur;
@@ -154,6 +152,7 @@ int method1_getifaddrs(void)
 	struct sockaddr_in *addr4; /* netinet/in.h */
 	struct sockaddr_in6 *addr6; /* netinet6/in6.h */
 	struct sockaddr_dl *addr_dl; /* net/if_dl.h */
+	struct ether_addr *addr_eth;
 
 	if(0 != getifaddrs(&ifap)) {
 		printf("ERROR: getifaddrs()\n");
@@ -162,10 +161,15 @@ int method1_getifaddrs(void)
 
 	ifap_cur = ifap;
 	while(ifap_cur) {
-		printf("name:%s flags:%X",
-		  ifap_cur->ifa_name, ifap_cur->ifa_flags);
+		char flags_str[256];
+
+		if_flags_to_str(ifap_cur->ifa_flags, flags_str);
+
+		printf("name:%s flags:0x%X(%s) ",
+		  ifap_cur->ifa_name, ifap_cur->ifa_flags, flags_str);
 
 		family = ifap_cur->ifa_addr->sa_family;
+		printf("family:%d\n", family);
 		switch(family) {
 			case AF_INET:
 				addr4 = (void *)ifap_cur->ifa_addr;
@@ -187,6 +191,7 @@ int method1_getifaddrs(void)
 				addr_dl = (void *)ifap_cur->ifa_addr;
 				printf(" link_addr: %s\n", link_ntoa(addr_dl));
 				break;
+
 			default:
 				printf("unknown (family id: %d)\n", family);
 		}
@@ -202,11 +207,11 @@ int method1_getifaddrs(void)
 
 int main(int ac, char **av)
 {
-	method0_ioctls();
+	method_ioctls();
 
 	printf("--------\n");
 
-	method1_getifaddrs();
+	method_getifaddrs();
 
 	return 0;
 }
