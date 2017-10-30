@@ -26,7 +26,7 @@ int main(int ac, char **av)
 	/* initialize capstone handle */
 	if(cs_open(
 	  CS_ARCH_ARM /* cs_arch */,
-	  CS_MODE_THUMB /* cs_mode */,
+	  CS_MODE_ARM /* cs_mode */,
 	  &handle /* csh * */) != CS_ERR_OK) {
 		printf("ERROR: cs_open()\n");
 		goto cleanup;
