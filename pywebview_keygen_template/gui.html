@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+	<meta charset="UTF-8">
+
+	<style>
+			#response-container {
+					display: none;
+					padding: 3rem;
+					margin: 3rem 5rem;
+					font-size: 120%;
+					border: 5px dashed #ccc;
+			}
+
+			#outer {	width: 100%; }
+			#inner {	width: 640px; 
+						margin: 0 auto;
+						padding: 4px;
+						background-color: red;
+						text-align: center;
+						border-radius: 8px;
+					}
+			button {
+					font-size: 120%;
+					background-color: grey;
+					width: 48%;
+					display: inline-block;
+			}
+
+			input {
+					box-sizing: border-box;
+					width: 100%;
+					margin-bottom: 4px;
+			}
+
+	</style>
+</head>
+
+<script src='logic.js'></script>
+
+<body>
+	<div id="outer">
+		<div id="inner">
+			<h1>Keygen</h1>
+			<input type="text" id="user" placeholder="Username" /><br>
+			<input type="text" id="serial" placeholder="" disabled />
+
+			<span>
+				<button onClick="generate()">Generate</button>
+				<button onClick="clearuser()">Clear</button>
+			</span>
+		</div>
+	</div>
+
+	
+
+
+	<div id="response-container"></div>
+</body>
+
+</html>
+
