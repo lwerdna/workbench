@@ -1,0 +1,9 @@
+[{
+  "id": "pwcrypt_id0",
+  "caption": "Pwcrypt",
+  "children":[
+    { "id":"pwcrypt_id1", "caption": "cache passphrase", "command": "cache_passphrase" },
+    { "id":"pwcrypt_id2", "caption": "encrypt", "command": "encrypt" },
+    { "id":"pwcrypt_id3", "caption": "decrypt", "command": "decrypt" }
+  ]
+}]
