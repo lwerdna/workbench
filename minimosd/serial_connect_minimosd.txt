@@ -1,0 +1,58 @@
+MinimOSD is originally $50 item from 3DR, knockoffs are about $8 now
+
+layout:
+your computer <-> USB <-> FT232R <-uart-> ATmega328P <-> MAX7456
+
+where the MAX7456 is doing the actual analog video modification
+
+ATmega328P doesn't talk to you magically, it executes the bootloader which decides whether to talk or run the flashed app
+
+get the bootloader and programmer with `sudo apt-get install arduino`
+source in /usr/share/arduino/hardware/arduino/bootloaders/atmega/ATmegaBOOT_168.c
+used USBasp with 6-pin connector
+write the bootloader with `avrdude -c usbasp -p m328p -U flash:w:/usr/share/arduino/hardware/arduino/bootloaders/ATmegaBOOT_168_atmega328.hex`
+
+to get the bootloader into talk mode, you need special step
+see arduino.c in the avrdude source http://svn.savannah.nongnu.org/viewvc/?root=avrdude
+function arduino_open():
+...
+  /* Clear DTR and RTS to unload the RESET capacitor 
+   * (for example in Arduino) */
+  serial_set_dtr_rts(&pgm->fd, 0);
+  usleep(50*1000);
+  /* Set DTR and RTS back to high */
+  serial_set_dtr_rts(&pgm->fd, 1);
+  usleep(50*1000);
+...
+
+another good reference is C# is OSD.cs from arducam-osd GUI
+
+and with python, using pyserial, here's POC:
+
+import serial
+import time
+ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=1, dsrdtr=True)
+if not ser.isOpen():
+    print "ERROR: not even open anymore"
+    break
+print "attempting reset"
+ser.setDTR(False)
+time.sleep(.050)
+ser.setDTR(True)
+print "attemting read"
+ser.read(9999)
+ser.write('1 ')
+resp = ser.read(9999);
+print "got back: %s" % repr(resp)
+
+should print "\x14AVR ISP\x10"
+
+how did I know to send 1 to get programmer id?
+from ATmegaBOOT_168_atmega328.hex:
+    ...
+	else if(ch=='1') {
+		if (getch() == ' ') {
+			putch(0x14);
+			putch('A');
+    ...
+
