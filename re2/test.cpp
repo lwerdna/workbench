@@ -23,5 +23,11 @@ int main(int ac, char **av)
 // Example: unsuccessful match (requires full match):
 	//printf("%d", RE2::FullMatch("hello", "JFW(*EFJ(#FJIF(QWFYYFY&&&&(**e"));
 
+	printf("it's byte time baby!");
+	printf("is EFCA found in DEADBEEFCAFEBABE?\n");
+	printf("%d\n", RE2::PartialMatch("\xDE\xAD\xBE\xEF\xCA\xFE\xBA\xBE", "\xEF\xCA"));
+	printf("is AAAA found in DEADBEEFCAFEBABE?\n");
+	printf("%d\n", RE2::PartialMatch("\xDE\xAD\xBE\xEF\xCA\xFE\xBA\xBE", "\xAA\xAA"));
+
 	return 0;
 }
