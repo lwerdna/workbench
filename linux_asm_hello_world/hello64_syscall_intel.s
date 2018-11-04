@@ -5,7 +5,7 @@
 .global	_start
 
 _start:
-	mov		edx, offset len	# arg2: message length
+	mov		rdx, offset len	# arg2: message length
 	mov		rsi, offset msg	# arg1: message
 	mov		rdi, 1			# arg0: stdout
 	mov		rax, 1			# 64-bit syscall number (__NR_write)
