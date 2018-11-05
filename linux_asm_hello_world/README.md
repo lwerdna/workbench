@@ -1,3 +1,12 @@
+There are a few variables across these files:
+
+- Gnu Assembler (gas) or Netwide Assembler (nasm)
+- int 0x80 or syscall instruction used for system call
+- 32-bit vs. 64-bit
+- (for gas) at&t or intel syntax
+
+I tried to encode those in the file names.
+
 In `int 0x80` legacy convention, system call number and parameters go easily into EAX,EBX,ECX,EDX.
 
 In `syscall` convention, system call number is in EAX and then function parameters (RDI, RSI, RDX, RCX, R10, R8, R9) which, according to Wikipedia, deviates from System V X64 convention.
