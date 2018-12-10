@@ -1,0 +1,4 @@
+explore.py reveals that first component of points is [-180,180] and second component is [-90,90]
+taking this to mean latitude/longitude with origin at prime meridian thru Greenwich and equator
+
+earth-coastlines-10km.geo.json from https://github.com/simonepri/geo-maps/blob/master/info/earth-coastlines.md
