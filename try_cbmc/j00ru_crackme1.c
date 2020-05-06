@@ -1,3 +1,5 @@
+// C recreation of http://crackmes.cf/users/j00ru/crackme_1.0_32bit_hash_by_j00ru/
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
