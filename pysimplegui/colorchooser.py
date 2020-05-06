@@ -37,40 +37,57 @@ if __name__ == '__main__':
 		for x in range(width):
 			framebuf[i] = (0,0,0)
 			i += 1
-	# create Tk-compatible image	
+	# create Tk-compatible image
 	imgtk = framebuf_to_tk(framebuf, width, height)
 
-	sgImage = sg.Image(data=imgtk, size=(width,height))
-	gui_rows = [[sg.Text('Color Chooser')],  
+	sgImage = sg.Image(data=imgtk, size=(width,height), key='sgimage', enable_events=True)
+	print(dir(sgImage))
+	gui_rows = [[sg.Text('Color Chooser')],
 				[sg.T('')],
-				[sg.Slider(range=(0,255), default_value=255, orientation='h')],
-				[sg.Slider(range=(0,255), default_value=0, orientation='h')],
-				[sg.Slider(range=(0,255), default_value=0, orientation='h')],
+				[sg.Slider(range=(0,255), default_value=255, orientation='h', key='red', enable_events=True)],
+				[sg.Slider(range=(0,255), default_value=0, orientation='h', key='green', enable_events=True)],
+				[sg.Slider(range=(0,255), default_value=0, orientation='h', key='blue', enable_events=True)],
 				[sg.Quit(button_color=('black', 'orange'))],
 				[sgImage]
-				]  
-	  
-	window = sg.Window('Color Chooser', auto_size_text=True).Layout(gui_rows)  
-	  
-	while (True):  
-		# This is the code that reads and updates your window  
-		event, valuesDict = window.Read(timeout=100)  
-		print(valuesDict)
+				]
+
+	window = sg.Window('Color Chooser', auto_size_text=True).Layout(gui_rows)
+
+	while (True):
+		# This is the code that reads and updates your window
+		event, values = window.Read(timeout=100)
+
+		print(event)
+		update_image = False
 		if event == None:
 			print('None event')
+			break
 		elif event == '__TIMEOUT__':
 			#print('TIMEOUT event')
 			pass
 		elif event == 'Quit':
 			print('Quit event')
 			break
-		elif event == 'Forward':
-			print('FORWARD!')
+		elif event == 'red':
+			update_image = True
+		elif event == 'green':
+			update_image = True
+		elif event == 'blue':
+			update_image = True
+		elif event == 'sgimage':
+			print('YOU CLICKED THE IMAGE!, BUT WHERE?')
+			print('       values: ', values)
 		else:
 			print('unknown event: ', event)
+			print('       values: ', values)
+			pass
 
-		if valuesDict:
-			[r,g,b] = map(int, valuesDict.values())
+		if update_image:
+			print('updating image')
+			r = values['red']
+			g = values['green']
+			b = values['blue']
+			(r,g,b) = map(int, (r,g,b))
 			print("new rgb: (%d,%d,%d)" % (r,g,b))
 
 			i=0
@@ -80,5 +97,5 @@ if __name__ == '__main__':
 					i += 1
 			imgtk = framebuf_to_tk(framebuf, width, height)
 			sgImage.Update(data=imgtk)
- 
+
 	window.Close() # Don't forget to close your window!
