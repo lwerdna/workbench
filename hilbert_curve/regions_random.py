@@ -49,5 +49,7 @@ if __name__ == '__main__':
 		draw_region(start, stop)
 
 	del draw
-	img.save("/tmp/tmp.png")
+	fpath = '/tmp/tmp.png'
+	print('saving %s' % fpath)
+	img.save(fpath)
 

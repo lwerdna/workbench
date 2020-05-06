@@ -42,23 +42,37 @@ def draw_region(start, stop, color1='#00ff00', color2=None):
 
 if __name__ == '__main__':
 	fpath = sys.argv[1]
-	print('get_view_of_file()')
-	bv = BinaryViewType.get_view_of_file(fpath)
-	print('update_analysis_and_wait()')
-	bv.update_analysis_and_wait()
-	print('done!')
 
-	lowest = None
-	highest = None
-	for f in bv.functions:
-		addr_start = f.start
-		addr_end = f.start + f.total_bytes
+	addr2name = {}
+	addr2end = {}
+	fpath_funcs = '/tmp/' + os.path.basename(fpath) + '_functions.txt'
+	print('searching for cached functions in %s' % fpath_funcs)
+	if os.path.exists(fpath_funcs):
+		print('found!')
+		with open(fpath_funcs) as fp:
+			for line in fp.readlines():
+				(start, end, name) = line.split()
+				addr2name[int(start,16)] = name
+				addr2end[int(start,16)] = int(end,16)
+	else:
+		print('not found! binja time!')
+		print('get_view_of_file()')
+		bv = BinaryViewType.get_view_of_file(fpath)
+		print('update_analysis_and_wait()')
+		bv.update_analysis_and_wait()
+		print('done!')
+		for f in bv.functions:
+			addr2name[f.start] = f.symbol.full_name
+			addr2end[f.start] = f.start + f.total_bytes
 
-		if lowest==None or addr_start < lowest:
-			lowest = addr_start
-		if highest==None or addr_end >= highest:
-			highest = addr_end
+		print('writing %s' % fpath_funcs)
+		with open(fpath_funcs, 'w') as fp:
+			for a in addr2name:
+				fp.write('%X %X %s\n' % (a, addr2end[a], addr2name[a]))
 
+	print('loaded %d functions' % len(addr2name))
+	lowest = min(addr2name)
+	highest = max(addr2end.values())
 	print('lowest address: 0x%04X' % lowest)
 	print('highest address: 0x%04X' % highest)
 
@@ -82,17 +96,18 @@ if __name__ == '__main__':
 		'#BCBD22', '#DBDB8D', '#17BECF', '#9EDAE5'
 	]
 
-	for f in bv.functions:
-		addr_start = f.start
-		addr_end = f.start + f.total_bytes
+	for a in addr2name:
+		addr_start = a
+		addr_end = addr2end[a]
 
 		if addr_end - addr_start < 4:
 			continue
 
-		print('drawing %s [0x%04X, 0x%04X)' % (f.symbol.full_name, addr_start, addr_end))
+		print('drawing %s [0x%04X, 0x%04X)' % (addr2name[a], addr_start, addr_end))
 		draw_region(addr_start - lowest, addr_end - lowest, None, palette[palette_i])
 		palette_i = (palette_i+1) % len(palette)
 
 	del draw
-	img.save("/tmp/tmp.png")
-
+	fpath = '/tmp/tmp.png'
+	print('saving %s' % fpath)
+	img.save(fpath)
