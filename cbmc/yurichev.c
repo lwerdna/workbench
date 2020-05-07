@@ -1,4 +1,6 @@
 // from https://yurichev.com/news/20200416_CRC64/
+//
+// $ cbmc --function check --trace ./yurichev.c
 
 #include <assert.h>
 #include <stdio.h>
