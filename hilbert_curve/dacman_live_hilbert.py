@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-# draw functions (identified with Binary Ninja) as Hilbert curve regions
-# usage:
-# ./bin2hilbert.py /path/to/mybinary.exe
-#
-# then check /tmp/tmp.png
+# $ ./thisfile.py /path/to/mybinary.exe
 
 import os
 import sys
