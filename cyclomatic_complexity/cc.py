@@ -13,7 +13,7 @@ from binaryninja.binaryview import BinaryViewType
 if __name__ == '__main__':
 	fpath = sys.argv[1]
 
-	# load functions (from cache or bndb)
+	# load functions
 	print('analyzing')
 	bv = BinaryViewType.get_view_of_file(fpath)
 	bv.update_analysis_and_wait()
