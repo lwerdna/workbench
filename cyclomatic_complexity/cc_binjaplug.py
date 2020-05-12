@@ -3,34 +3,24 @@
 import sys
 import time
 
+bv = None
+lookup = {}
 table_data = []
 
 def gui_thread():
-	global table_data
+	global table_data, bv
 	
-	print('gui thread here')
-
 	# pysimplegui window
 	import PySimpleGUI as sg
 	sg.theme('DarkGrey2')
 	layout = [[sg.Table(values=table_data,
 		headings=['   function   ', ' edges ', ' blocks ', '  cc  '],
-		max_col_width=25,
-		auto_size_columns=True,
-		display_row_numbers=False,
-		justification='left',
-		num_rows=20,
-		key='-TABLE-',
-		row_height=20,
-		change_submits=True,
-		bind_return_key=True
-		)],
-	 ]
+		max_col_width=25, auto_size_columns=True, display_row_numbers=False,
+		justification='left', num_rows=20, key='-TABLE-', row_height=20,
+		change_submits=True, bind_return_key=True)], ]
 
-	print('creating window')
 	window = sg.Window('Cyclomatic Complexity', layout, font='AndaleMono 16')
 
-	print('event loop window')
 	(last_row_clicked, last_time_clicked) = (0, 0)
 	while True:
 		event, values = window.read()
@@ -42,20 +32,24 @@ def gui_thread():
 			now = time.time()
 			if row==last_row_clicked and (now-last_time_clicked)<.25:
 				print('you double clicked row %d' % row)
+				fname = table_data[row][0]
+				faddr = lookup[fname]['address']
+				print('%s at 0x%X' % (fname, faddr))
+				bv.navigate('Graph:' + bv.parent_view.available_view_types[-1].long_name, faddr)				
 			(last_row_clicked, last_time_clicked) = (row, now)
 
-	print('event loop done, closing')
 	window.close()
 
-def show_cyclomatic_complexity_table(bv):
-	global table_data
+def show_cyclomatic_complexity_table(bv_):
+	global bv, table_data, lookup
+	bv = bv_
 
 	lookup = {}
 	for f in bv.functions:
 		blocks = list(f)
 		n_edges = sum([len(b.outgoing_edges) for b in blocks])
 		complexity = n_edges - len(blocks) + 2
-		lookup[f.symbol.full_name] = { 'blocks': len(blocks), 'edges': n_edges, 'complexity': complexity }
+		lookup[f.symbol.full_name] = { 'address':f.start, 'blocks': len(blocks), 'edges': n_edges, 'complexity': complexity }
 
 	# load into table rows
 	table_data = []
@@ -63,11 +57,9 @@ def show_cyclomatic_complexity_table(bv):
 		row = [fname, lookup[fname]['edges'], lookup[fname]['blocks'], lookup[fname]['complexity']]
 		table_data.append(row)
 
-	print(table_data)
 	# launch gui
 	import threading
 	threading.Thread(target=gui_thread).start()
-	#gui_thread()
 
 #
 from binaryninja.plugin import PluginCommand
