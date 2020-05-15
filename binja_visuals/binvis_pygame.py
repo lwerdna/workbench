@@ -10,6 +10,7 @@ from binaryninja.binaryview import BinaryViewType
 
 from sfcurves.hilbert import forward, reverse, outline, generator
 from palettes import to_pygame, viridis, plasma, inferno, cividis
+from utils import function_span
 
 palette_i = 0
 palettes = [to_pygame(viridis), to_pygame(plasma), to_pygame(inferno), to_pygame(cividis)]
@@ -30,51 +31,65 @@ def draw_bytes(surface, data):
 	del px
 
 if __name__ == '__main__':
-	#--------------------------------------------------------------------------
-	# get input data
-	#--------------------------------------------------------------------------
-	fpath = sys.argv[1]
-	bv = BinaryViewType.get_view_of_file(fpath)
+	bv = BinaryViewType.get_view_of_file(sys.argv[1])
 	bv.update_analysis_and_wait()
 
-	# parse funcs, build regions
-	funcs_hi = None
-	regions = []
-	for f in bv.functions:
-		(n, s, e) = (f.symbol.full_name+'()', f.start, f.start+f.total_bytes)
-		regions.append({'name':n, 'start':s, 'end':e})
-	# data is all sections concatenated
-	d = 0
+	# data is all segments concatenated
 	data = b''
-	sections = []
-	for name in sorted(bv.sections, key=lambda sname: bv.sections[sname].start):
-		(s, e) = (bv.sections[name].start, bv.sections[name].end)
-		sections.append({'name':name, 'start':s, 'end':e, 'd0':d, 'd1':d+e-s})
-		data += bv.read(s, e-s)
-		d += e-s
-	base = sections[0]['start']
+	segment2dd = {}
+	for segment in sorted(bv.segments, key=lambda s: s.start):
+		segment2dd[segment] = (len(data), len(data)+len(segment))
+		data += bv.read(segment.start, len(segment))
+
+	for seg in sorted(segment2dd, key=lambda s: segment2dd[s]):
+		(d0, d1) = segment2dd[seg]
+		print('segment %s is mapped to d=[0x%X, 0x%X)' % (seg, d0, d1))
+
+	def d2addr(d):
+		for seg in bv.segments:
+			(d0,d1) = segment2dd[seg]
+			if d>=d0 and d<d1:
+				return seg.start + (d-d0)
+		return None
+
+	def addr2d(addr):
+		seg = bv.get_segment_at(addr)
+		if seg == None:
+			return None
+		(d0,d1) = segment2dd[seg]
+		return d0 + (addr - seg.start)
+
 	# calculate dimensions
 	(width, length) = (2,4)
 	while length < len(data):
 		length *= 4
 		width *= 2
-	# calculate region enclosures with length
-	for r in regions:
-		tmp = outline(r['start']-base, r['end']-1-base, length)
-		r['enclosure'] = [(pt[0], width-1-pt[1]) for pt in tmp]
+
+	#
+	func2outlines = {}
+	for f in bv.functions:
+		outlines = []
+		for (a,b) in function_span(f):
+			d0 = addr2d(a)
+			d1 = addr2d(b)
+			tmp = outline(d0, d1, length)
+			tmp = [(x, width-y) for (x,y) in tmp] # cartesian -> pygame
+			outlines.append(tmp)
+
+		func2outlines[f] = outlines
+		#if f.start == 0x140011990:
+		#	sys.exit(-1)
 
 	#--------------------------------------------------------------------------
 	# pygame
 	#--------------------------------------------------------------------------
 	import pygame
-	from pygame.locals import *	
+	from pygame.locals import *
 	pygame.init()
 	surface_win = pygame.display.set_mode((width, width))
 	pygame.display.set_caption('Hilbert Test')
 
 	current_addr = 0
-	current_func = ''
-	current_section = ''
 
 	# draw
 	draw_bytes(surface_win, data)
@@ -110,36 +125,52 @@ if __name__ == '__main__':
 			surface_win.blit(surface_bg, (0,0))
 
 			(x,y) = pygame.mouse.get_pos() # to pygame coords
+			#print('hovered: ', (x,y))
 			(x,y) = (x, width-1-y) # to cartesian coords
+			#print('cartesian: ', (x,y))
 			d = reverse(x, y, length) # to 1-d hilbert coords
-			section = next((s for s in sections if d>=s['d0'] and d<s['d1']), None) # to section
+			#print('d: ', d)
 
-			if section:
-				current_section = section['name']
-				current_addr = section['start'] + d - section['d0'] # to address
-				current_region = next((r for r in regions if current_addr>=r['start'] and current_addr<r['end']), None)
-				if current_region:
-					current_func = current_region['name']
-					current_addr = current_region['start'] # if clicked func, start there
-					pygame.draw.polygon(surface_win, (255,255,255), current_region['enclosure'], 2)
-				else:
-					current_func = ''
-			else:
-				current_section = ''
-				current_addr = 0
+			# map d back to an address by looking thru segments
+			current_addr = d2addr(d)
+			#print('addr: ', current_addr)
+
+			functions = []
+			if current_addr:
+				functions = bv.get_functions_containing(current_addr)
+
+			for f in functions:
+				for outline in func2outlines[f]:
+					pygame.draw.polygon(surface_win, (255,255,255), outline, 2)
 
 		# mouse click navigates (relies on binja having udp nav plugin)
 		if event.type == MOUSEBUTTONDOWN:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			addr = current_addr
-			if current_region:
-				addr = current_region['start']
-			message = hex(addr).encode('utf-8')
-			sock.sendto(message, ('127.0.0.1', 31337))
-			sock.close()
+			if current_addr:
+				addr = current_addr
+				tmp = bv.get_functions_containing(current_addr)
+				if tmp:
+					addr = tmp[0].start
+
+				sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				print('navigating to 0x%X' % addr)
+				message = hex(addr).encode('utf-8')
+				sock.sendto(message, ('127.0.0.1', 31337))
+				sock.close()
 
 		if redraw:
-			info = '[0x%X] [%s] [%s]' % (current_addr, current_section, current_func)
+			section = ''
+			function = ''
+
+			if current_addr != None:
+				tmp = bv.get_sections_at(current_addr)
+				if tmp: section = tmp[0].name
+
+				tmp = bv.get_functions_containing(current_addr)
+				if tmp: function = tmp[0].name
+			else:
+				current_addr = 0
+
+			info = '[0x%X] [%s] [%s]' % (current_addr, section, function)
 			pygame.display.set_caption(info)
 			pygame.display.update()
 			redraw = False
