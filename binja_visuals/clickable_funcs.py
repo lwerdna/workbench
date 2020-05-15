@@ -5,38 +5,25 @@
 import io
 import os
 import sys
-import math
 import base64
 
 import binaryninja
 from binaryninja.binaryview import BinaryViewType
 
 from PIL import Image, ImageDraw
-from sfcurves import hilbert_d2xy_wikipedia as d2xy, hilbert_xy2d_wikipedia as xy2d, wall_follower
+from sfcurves.hilbert import forward, reverse, outline
 
 import PySimpleGUI as sg
 
 # globals
-n = None
+length = None
 draw = None
 width = None
-height = None
-
-# [start, stop)
-def draw_hilbert(start, stop, color='#ffffff'):
-	global n, draw
-
-	pts = [d2xy(n, x) for x in range(start, stop)]
-	lines = zip(pts[:-1], pts[1:])
-	for line in lines:
-		((x1,y1),(x2,y2)) = line
-		#print('drawing line (%d,%d) -> (%d,%d)' % (x1,y1,x2,y2))
-		draw.line((x1,y1,x2,y2), width=1, fill=color)
 
 def draw_region(start, stop, color1=None, color2=None):
-	global n, draw
-	trace = wall_follower(n, start, stop, d2xy, xy2d)
-	trace = list(map(lambda p: (4*p[0]+1, height - (4*p[1]+1)), trace))
+	global length, draw
+	trace = outline(start, stop, length)
+	trace = list(map(lambda p: (4*p[0]+1, width - (4*p[1]+1)), trace))
 	draw.polygon(trace, outline=color1, fill=color2)
 
 def img_to_b64gif(img):
@@ -89,16 +76,14 @@ if __name__ == '__main__':
 	print('lowest address: 0x%04X' % lowest)
 	print('highest address: 0x%04X' % highest)
 
-	pixels = 1
-	while pixels < (highest-lowest):
-		pixels *= 4
-	n = int(math.sqrt(pixels))
-	print('n:', n)
-	width = n*4
-	height = n*4
+	width = 2
+	length = 4
+	while length < (highest-lowest):
+		width *= 2
+		length *= 4
 
 	# generate background PIL image
-	img_background = Image.new('RGB', (width, height))
+	img_background = Image.new('RGB', (width, width))
 	draw = ImageDraw.Draw(img_background)
 	for a in addr2name:
 		addr_start = a
@@ -110,7 +95,7 @@ if __name__ == '__main__':
 	del draw
 
 	# start
-	graph = sg.Graph((width,height), (0,0), (width-1, height-1), key='_GRAPH_', pad=(0,0), enable_events=True)
+	graph = sg.Graph((width,width), (0,0), (width-1, width-1), key='_GRAPH_', pad=(0,0), enable_events=True)
 	gui_rows = [
 				[graph],
 				[sg.Text('function:'), sg.InputText('dummy', do_not_clear=True, key='_FUNCTION_')],
@@ -145,7 +130,7 @@ if __name__ == '__main__':
 			x = (x-1)//4
 			y = (y-1)//4
 			print('you clicked at (graph) %d,%d' % (x,y))
-			addr = xy2d(n, x,y) + lowest
+			addr = reverse(x, y, length) + lowest
 			print('maps to %d (0x%X)' % (addr,addr))
 			for start in addr2name:
 				end = addr2end[start]
@@ -159,7 +144,8 @@ if __name__ == '__main__':
 					draw = ImageDraw.Draw(img)
 					print('drawing %s [0x%04X, 0x%04X)' % (name, start, end))
 					draw_region(start - lowest, end - lowest, '#FFFFFF', '#FF0000')
-					graph.DrawImage(data=img_to_b64gif(img), location=(0,height-1))
+					graph.erase()
+					graph.DrawImage(data=img_to_b64gif(img), location=(0,width-1))
 					
 		else:
 			print('unknown event: ', event)
@@ -167,7 +153,8 @@ if __name__ == '__main__':
 			pass
 		
 		if initial_loop:
-			graph.DrawImage(data=img_to_b64gif(img_background), location=(0,height-1))
+			graph.erase()
+			graph.DrawImage(data=img_to_b64gif(img_background), location=(0,width-1))
 			initial_loop = False
 
 	window.Close() # Don't forget to close your window!
