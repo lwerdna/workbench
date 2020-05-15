@@ -3,16 +3,12 @@
 # display functions identified with BinaryNinja in a PySimpleGui interface
 
 import io
-import os
 import sys
 import base64
-
+from PIL import Image, ImageDraw
 import binaryninja
 from binaryninja.binaryview import BinaryViewType
-
-from PIL import Image, ImageDraw
 from sfcurves.hilbert import forward, reverse, outline
-
 import PySimpleGUI as sg
 
 # globals
@@ -23,7 +19,8 @@ width = None
 def draw_region(start, stop, color1=None, color2=None):
 	global length, draw
 	trace = outline(start, stop, length)
-	trace = list(map(lambda p: (4*p[0]+1, width - (4*p[1]+1)), trace))
+	#trace = list(map(lambda p: (4*p[0]+1, width - (4*p[1]+1)), trace))
+	trace = list(map(lambda p: (p[0], width - p[1]), trace))
 	draw.polygon(trace, outline=color1, fill=color2)
 
 def img_to_b64gif(img):
@@ -36,6 +33,20 @@ def img_to_b64gif(img):
 	# gif string -> base64
 	return base64.b64encode(gif)
 
+def function_span(func):
+	tmp = [[bb.start, bb.end] for bb in func.basic_blocks]
+	tmp = sorted(tmp, key=lambda x:x[0])
+
+	result = []
+	curr = tmp[0]
+	for foo in tmp[1:]:
+		if curr[1] == foo[0]:
+			curr[1] = foo[1]
+		else:
+			result.append(curr)
+	result.append(curr)
+	return result
+
 #------------------------------------------------------------------------------
 # main()
 #------------------------------------------------------------------------------
@@ -43,38 +54,18 @@ def img_to_b64gif(img):
 if __name__ == '__main__':
 	fpath = sys.argv[1]
 
-	addr2name = {}
-	addr2end = {}
-	fpath_funcs = '/tmp/' + os.path.basename(fpath) + '_functions.txt'
-	print('searching for cached functions in %s' % fpath_funcs)
-	if os.path.exists(fpath_funcs):
-		print('found!')
-		with open(fpath_funcs) as fp:
-			for line in fp.readlines():
-				(start, end, name) = line.split()
-				addr2name[int(start,16)] = name
-				addr2end[int(start,16)] = int(end,16)
-	else:
-		print('not found! binja time!')
-		print('get_view_of_file()')
-		bv = BinaryViewType.get_view_of_file(fpath)
-		print('update_analysis_and_wait()')
-		bv.update_analysis_and_wait()
-		print('done!')
-		for f in bv.functions:
-			addr2name[f.start] = f.symbol.full_name
-			addr2end[f.start] = f.start + f.total_bytes
+	bv = BinaryViewType.get_view_of_file(fpath)
+	bv.update_analysis_and_wait()
 
-		print('writing %s' % fpath_funcs)
-		with open(fpath_funcs, 'w') as fp:
-			for a in addr2name:
-				fp.write('%X %X %s\n' % (a, addr2end[a], addr2name[a]))
-
-	print('loaded %d functions' % len(addr2name))
-	lowest = min(addr2name)
-	highest = max(addr2end.values())
-	print('lowest address: 0x%04X' % lowest)
-	print('highest address: 0x%04X' % highest)
+	func2span = {}
+	(lowest, highest) = (bv.end, bv.start)
+	for f in bv.functions:
+		span = function_span(f)
+		lowest = min(lowest, span[0][0])
+		highest = max(highest, span[-1][1])
+		func2span[f] = span
+	print('lowest addr: 0x%X' % lowest)
+	print('highest addr: 0x%X' % highest)
 
 	width = 2
 	length = 4
@@ -85,14 +76,12 @@ if __name__ == '__main__':
 	# generate background PIL image
 	img_background = Image.new('RGB', (width, width))
 	draw = ImageDraw.Draw(img_background)
-	for a in addr2name:
-		addr_start = a
-		addr_end = addr2end[a]
-		if addr_end - addr_start < 4:
-			continue
-		print('drawing %s [0x%04X, 0x%04X)' % (addr2name[a], addr_start, addr_end))
-		draw_region(addr_start - lowest, addr_end - lowest, '#FFFFFF')
+	for f in bv.functions:
+		for (lo,hi) in function_span(f):
+			draw_region(lo-lowest, hi-lowest, '#FFFFFF')
 	del draw
+	print('total %d functions' % len(bv.functions))
+	print('total %d blocks' % sum([len(f.basic_blocks) for f in bv.functions]))
 
 	# start
 	graph = sg.Graph((width,width), (0,0), (width-1, width-1), key='_GRAPH_', pad=(0,0), enable_events=True)
@@ -100,15 +89,13 @@ if __name__ == '__main__':
 				[graph],
 				[sg.Text('function:'), sg.InputText('dummy', do_not_clear=True, key='_FUNCTION_')],
 				[sg.Text('start:'), sg.InputText('00000000', do_not_clear=True, key='_START_')],
-				[sg.Text('end:'), sg.InputText('DEADBEEF', do_not_clear=True, key='_END_')],
 				[sg.Quit()]
 			]
 
-	window = sg.Window('Hilbert Curve Region', auto_size_text=True).Layout(gui_rows)
+	window = sg.Window('Hilbert Curve Region', auto_size_text=True,  font='AndaleMono 16').Layout(gui_rows)
 
 	initial_loop = True
 	while (True):
-		# This is the code that reads and updates your window
 		event, values = window.Read(timeout=100)
 
 		update_image = False
@@ -127,25 +114,22 @@ if __name__ == '__main__':
 			update_image = True
 		elif event == '_GRAPH_':
 			(x,y) = values['_GRAPH_']
-			x = (x-1)//4
-			y = (y-1)//4
-			print('you clicked at (graph) %d,%d' % (x,y))
+			#x = (x-1)//4
+			#y = (y-1)//4
 			addr = reverse(x, y, length) + lowest
-			print('maps to %d (0x%X)' % (addr,addr))
-			for start in addr2name:
-				end = addr2end[start]
-				if addr >= start and addr < end:
-					name = addr2name[start]
-					window.FindElement('_FUNCTION_').Update(value=name)
-					window.FindElement('_START_').Update(value=hex(start))
-					window.FindElement('_END_').Update(value=hex(end))
-					# draw that
-					img = img_background.copy()
-					draw = ImageDraw.Draw(img)
-					print('drawing %s [0x%04X, 0x%04X)' % (name, start, end))
-					draw_region(start - lowest, end - lowest, '#FFFFFF', '#FF0000')
-					graph.erase()
-					graph.DrawImage(data=img_to_b64gif(img), location=(0,width-1))
+			print('click (%d,%d) -> 0x%X' % (x, y, addr))
+			funcs = bv.get_functions_containing(addr)
+			for f in funcs:
+				print('drawing %d blocks from %s' % (len(f.basic_blocks), f.name))
+				window['_FUNCTION_'].Update(value=f.name)
+				window['_START_'].Update(value=hex(f.start))
+				# draw all basic blocks
+				img = img_background.copy()
+				draw = ImageDraw.Draw(img)
+				for (a,b) in func2span[f]:
+					draw_region(a-lowest, b-lowest, '#FFFFFF', '#FF0000')
+			graph.erase()
+			graph.DrawImage(data=img_to_b64gif(img), location=(0,width-1))
 					
 		else:
 			print('unknown event: ', event)
