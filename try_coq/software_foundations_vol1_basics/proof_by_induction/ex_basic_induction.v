@@ -98,7 +98,38 @@ Proof.
   reflexivity.
 Qed.
   
+
+Print "+".
+Lemma associativity_S : forall a b : nat,
+  (S a) + b = (S (a+b)).
+Proof.
+  intros a b.
+  induction a as [| k IH].
+  (* base case a=0, simply show it's true *)
+  simpl.
+  reflexivity.
+  (* inductive step
+    IH: assume true for a=k
+    with IH, prove true for a=(S k) *)
+  simpl.
+  rewrite <- IH.
+  reflexivity. 
+Qed.
+
 Theorem plus_assoc : forall n m p : nat,
   n + (m + p) = (n + m) + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m p.
+  induction n as [| k IH].
+  (* base case n=0 *)
+  simpl.
+  reflexivity.
+  (* inductive step
+    IH: assume true for n=k
+    with IH, prove true for n=(S k) *)
+  rewrite -> associativity_S.
+  rewrite IH.
+  rewrite <- associativity_S.
+  rewrite <- associativity_S.
+  reflexivity.
+Qed.
