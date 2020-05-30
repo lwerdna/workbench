@@ -48,6 +48,8 @@ Qed.
 
 Print "+".
 
+(* comment this so file can be Load'd from other files
+  (otherwise Abort is disallowed)
 Lemma plus_n_O: forall n:nat,
   n = n + 0.
 Proof.
@@ -58,6 +60,7 @@ Proof.
   rewrite <- IH.
   reflexivity.
 Abort.
+*)
 
 Print "+".
 
