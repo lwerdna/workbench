@@ -1,3 +1,5 @@
+(* these solutions use type bool true/false *)
+
 Theorem conjunction_elimination_left : forall a b : bool,
   (andb a b)=true -> a=true.
 Proof.
@@ -38,5 +40,50 @@ Proof.
   apply conjunction_elimination_left in H.
   rewrite H.
   simpl.
+  reflexivity.
+Qed.
+
+Definition implies (p q:bool) : Prop :=
+  match p, q with
+  | true, false => False
+  | _, _ => True
+end.
+
+Lemma modus_ponens : forall p q : bool,
+  (implies p q) /\ p=true -> q=true.
+Proof.
+  intros p q H.
+  destruct H.
+  destruct q as [|] eqn:q_holds.
+  (* q=true *)
+  reflexivity.
+  (* q=false *)
+  rewrite H0 in H.
+  simpl in H.
+  contradiction.
+Qed.
+
+Lemma modus_easy : forall q : bool,
+  (implies true q) -> q=true.
+Proof.
+  intros q H.
+  destruct q.
+  reflexivity.
+  simpl in H.
+  contradiction.
+Qed.
+
+(* http://intrologic.stanford.edu/exercises/exercise_04_03.html *)
+Theorem fitch_04_03 : forall p q r : bool,
+  (implies p q) /\ (implies q r) -> (implies p r).
+Proof.
+  intros p q r H.
+  destruct H.
+  destruct p as [|] eqn:E.
+  apply modus_easy in H.
+  rewrite H in H0.
+  apply modus_easy in H0.
+  rewrite H0.
+  reflexivity.
   reflexivity.
 Qed.

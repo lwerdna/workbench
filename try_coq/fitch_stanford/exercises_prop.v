@@ -1,5 +1,4 @@
-(* these solutions map the natural deduction true/false to the coq
-  type Prop True/False *)
+(* these solutions use type Prop True/False *)
 
 Require Import Bool.
 
@@ -26,4 +25,14 @@ Proof.
   assumption.
 Qed.
 
-
+(* http://intrologic.stanford.edu/exercises/exercise_04_03.html *)
+Theorem fitch_04_03 : forall p q r : Prop,
+  ((p->q) /\ (q<->r)) -> (p->r).
+Proof.
+  intros p q r H.
+  destruct H.
+  intros p_holds.
+  apply H in p_holds as q_holds.
+  apply H0 in q_holds as r_holds.
+  assumption.
+Qed.
