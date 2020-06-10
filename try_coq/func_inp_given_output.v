@@ -63,7 +63,7 @@ Definition implies (p q:bool) : Prop :=
   | _, _ => True
 end.
 
-Lemma modus_ponens : forall p q : bool,
+Theorem modus_ponens : forall p q : bool,
   (implies p q) /\ p=true -> q=true.
 Proof.
   intros p q H.
@@ -78,7 +78,7 @@ Proof.
 Qed.
 
 (* tollens *)
-Lemma modus_tollens : forall p q : bool,
+Theorem modus_tollens : forall p q : bool,
   (implies p q) /\ q=false -> p=false.
 Proof.
   intros p q H.
@@ -91,3 +91,32 @@ Proof.
 Qed.
 
 (* greater than some num *)
+
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | O => true
+  | S n' =>
+      match m with
+      | O => false
+      | S m' => leb n' m'
+      end
+  end.
+
+Compute leb 6 7.
+Compute leb 8 7.
+
+Theorem test : forall x : nat,
+  (leb x 5)=true -> (leb x 10)=true.
+Proof.
+  intros x H.
+  induction x as [|k IHk].
+  reflexivity.
+  
+Qed.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
