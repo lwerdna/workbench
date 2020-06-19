@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Music Tool</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+  </head>
+  <body>
+<!-- EMBED:keyboard.svg -->
+
+  <br>
+  major/minor chords:
+  <button onclick="major_triad('C4')">C</button>
+  <button onclick="major_triad('D4')">D</button>
+  <button onclick="major_triad('E4')">E</button>
+  <button onclick="major_triad('F4')">F</button>
+  <button onclick="major_triad('G4')">G</button>
+  <button onclick="major_triad('A4')">A</button>
+  <button onclick="major_triad('B4')">B</button>
+  |
+  <button onclick="minor_triad('C4')">c</button>
+  <button onclick="minor_triad('D4')">d</button>
+  <button onclick="minor_triad('E4')">e</button>
+  <button onclick="minor_triad('F4')">f</button>
+  <button onclick="minor_triad('G4')">g</button>
+  <button onclick="minor_triad('A4')">a</button>
+  <button onclick="minor_triad('B4')">b</button>
+  <br>
+  seventh chords:
+  <button onclick="major_seventh('C4')">Cmaj7</button>
+  <button onclick="major_seventh('D4')">Dmaj7</button>
+  <button onclick="major_seventh('E4')">Emaj7</button>
+  <button onclick="major_seventh('F4')">Fmaj7</button>
+  <button onclick="major_seventh('G4')">Gmaj7</button>
+  <button onclick="major_seventh('A4')">Amaj7</button>
+  <button onclick="major_seventh('B4')">Bmaj7</button>
+  <br>
+  major scales:
+  <button onclick="major_scale('C4')">C</button>
+  <button onclick="major_scale('G4')">G</button>
+  <button onclick="major_scale('D4')">D</button>
+  <button onclick="major_scale('A4')">A</button>
+  <button onclick="major_scale('E4')">E</button>
+  <button onclick="major_scale('B4')">B/Cb</button>
+  <button onclick="major_scale('F#4')">Gb/F#</button>
+  <button onclick="major_scale('C#4')">Db/C#</button>
+  <button onclick="major_scale('G#4')">Ab</button>
+  <button onclick="major_scale('D#4')">Eb</button>
+  <button onclick="major_scale('A#4')">Bb</button>
+  <button onclick="major_scale('F4')">F</button>
+  <br>
+  minor scales:
+  <button onclick="minor_scale('A4')">a</button>
+  <button onclick="minor_scale('E4')">e</button>
+  <button onclick="minor_scale('B4')">b</button>
+  <button onclick="minor_scale('F#4')">f#</button>
+  <button onclick="minor_scale('C#4')">c#</button>
+  <button onclick="minor_scale('G#4')">g#</button>
+  <button onclick="minor_scale('D#4')">eb/d#</button>
+  <button onclick="minor_scale('A#4')">bb</button>
+  <button onclick="minor_scale('F4')">f</button>
+  <button onclick="minor_scale('C4')">c</button>
+  <button onclick="minor_scale('G4')">g</button>
+  <button onclick="minor_scale('D4')">d</button>
+  <br>
+  <button onclick="highlight_clear()">clear</button>
+  </body>
+</html>
+
