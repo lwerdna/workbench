@@ -65,7 +65,7 @@ function minor_triad(root)
 function major_scale(tonic)
 {
 	/* intervals: whole, whole, half, whole, whole, whole, half */
-	degrees = [1,3,5,6,8,10,12]
+	degrees = [1,3,5,6,8,10,12,1]
 	i = notes88.indexOf(tonic)
 	notes = degrees.map(x => notes88[i+x-1])
 	highlight_clear()
@@ -76,7 +76,17 @@ function minor_scale(tonic)
 {
 	/* intervals: whole, half, whole, whole, half, whole, whole 
 		(notice this is major scaled rotated left) */
-	degrees = [1,3,4,6,8,9,11]
+	degrees = [1,3,4,6,8,9,11,1]
+	i = notes88.indexOf(tonic)
+	notes = degrees.map(x => notes88[i+x-1])
+	highlight_clear()
+	highlight(notes)
+}
+
+function pentatonic_minor_scale(tonic)
+{
+	/* minor scale with the 2nd and 2nd-to-last notes removed */
+	degrees = [1,4,6,8,11,1]
 	i = notes88.indexOf(tonic)
 	notes = degrees.map(x => notes88[i+x-1])
 	highlight_clear()
