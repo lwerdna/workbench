@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+
 n_frets = 20
 
 # dark2 from matplotlib
@@ -18,11 +20,19 @@ for fret in range(n_frets):
 	print('    <th>%d</th>' % fret)
 print('  </tr>')
 
+nocolor = sys.argv[1:] and sys.argv[1]=='nocolor'
+
 for note in ['E4','B3','G3','D3','A2','E2']:
 	print('  <tr>')
 	for fret in range(n_frets):
-		color = palette[int(note[-1])]
-		print('    <td bgcolor="%s">%s</td>' % (color, note))
+		bgcolor = palette[int(note[-1])]
+		if nocolor:
+			bgcolor = '#e0e0e0'
+
+		color = 'black'
+		if nocolor:
+			color = '#B0B0B0'
+		print('    <td bgcolor="%s"><font color=%s>%s</font></td>' % (bgcolor, color, note))
 		note = notes[notes.index(note)+1]
 	print('  </tr>')
 
