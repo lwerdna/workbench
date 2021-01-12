@@ -1,0 +1,3 @@
+target remote :31337
+c
+info registers
