@@ -1,0 +1,12 @@
+git checkout 3f31f85277ed331180650b8968eb50e2c09020d9
+
+arm_disassembler is a submodule, enter and `get submodule update`
+
+gnuplot> plot 'out.dat'
+gnuplot> plot 'out.dat' with lines
+gnuplot> plot 'out.dat' with impulses
+gnuplot> set ^C
+gnuplot> set key off
+gnuplot> unset xtics
+gnuplot> unset ytics
+gnuplot> plot 'out.dat' with impulses
