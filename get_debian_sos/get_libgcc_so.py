@@ -2,6 +2,8 @@
 
 # download debian shared objects, separate debug symbols, and unstrip them
 
+# apt-get install elfutils to get eu-unstrip tool
+
 import os, sys, re
 
 from subprocess import Popen, PIPE
@@ -17,6 +19,10 @@ def get_files(ext=''):
 	return sum([[os.path.join(r, f) for f in
 		[f for f in fs if f.endswith(ext)]]
 		for (r,d,fs) in os.walk('.')], [])
+
+def undeb(fpath):
+    os.system('ar -vx '+fpath)
+    os.system('tar -xvf data.tar.xz')
 
 if __name__ == '__main__':
 	if sys.argv[1] == 'fetch':
@@ -34,18 +40,16 @@ if __name__ == '__main__':
 		]
 
 		for fname in fnames:
-			if os.path.exists(fname): continue
-			url = 'http://http.us.debian.org/debian/pool/main/g/gcc-6/' + fname
-			os.system('wget '+url)
+			if not os.path.exists(fname):
+				url = 'http://http.us.debian.org/debian/pool/main/g/gcc-6/' + fname
+				os.system('wget '+url)
+			undeb(fname)
 
-			fname2 = fname.replace('-gdb', '')
-			if os.path.exists(fname2): continue
-			url = 'http://http.us.debian.org/debian/pool/main/g/gcc-6/' + fname2
-			os.system('wget '+url)
-
-		for fname in fnames:
-			os.system('ar -vx '+fname)
-			os.system('tar -xvf data.tar.xz')
+			fname2 = fname.replace('-dbg', '')
+			if not os.path.exists(fname2):
+				url = 'http://http.us.debian.org/debian/pool/main/g/gcc-6/' + fname2
+				os.system('wget '+url)
+			undeb(fname2)
 
 	elif sys.argv[1] == 'harvest':
 		for fpath in get_files('.so.1'):
@@ -62,4 +66,13 @@ if __name__ == '__main__':
 			print('\tendian=%s' % endian)
 			print('\tarch=%s, %s' % (info[1], info[2]))
 			print('\tdebug: %s' % debug_path)
+
+			output_path = fpath.replace('.so.1', '-unstripped.so.1')
+			if output_path.startswith('./'):
+				output_path = output_path[2:]
+			output_path = output_path.replace('/', '_')
+			output_path = './'+output_path
+			cmd = 'eu-unstrip %s %s --output=%s' % (fpath, debug_path, output_path)
+			print(cmd)
+			os.system(cmd)
 
