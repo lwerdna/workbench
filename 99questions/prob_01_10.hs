@@ -46,6 +46,34 @@ isPalindrome [] = True
 isPalindrome [x] = True
 isPalindrome x = head x == last x && isPalindrome (init (tail x))
 
+-- prob7 --
+data NestedList a = Elem a | List [NestedList a]
+-- TIL: type sig names TYPE, pattern matching names CONSTRUCTOR
+flatten :: NestedList a -> [a]
+flatten (Elem x) = [x]
+flatten (List []) = []
+flatten (List x) = foldr1 (++) [flatten k | k <- x]
+
+-- prob8 --
+compress :: Eq a => [a] -> [a]
+compress [] = []
+compress (x:y:[])
+    | (x == y) = [x]
+    | otherwise = [x,y]
+compress (x:y:xs)
+    | (x == y) = compress(x:xs)
+    | otherwise = x:compress(y:xs)
+
+-- prob9 --
+-- ['a', 'a', 'a', 'a', 'b', 'b', 'c', 'd'] -> ['a', 'a', 'a', 'a'], [b', 'b', 'c', 'd']
+runsplit :: Eq a => [a] -> ([a], [a])
+runsplit (x:xs) =
+    | (x == head xs) = (x ++ consec xs
+    | otherwise = x
+
+pack :: Eq a => [a] -> [a]
+
+
 main = do
     print (myLast [1,2,3])
     print (myButLast ['a', 'b', 'c'])
@@ -60,3 +88,8 @@ main = do
     print (isPalindrome [1,2,3])
     print (isPalindrome "madamimadam")
     print (isPalindrome [1,2,4,8,16,8,4,2,1])
+    print (flatten (Elem 5))
+    print (flatten (List [Elem 1, List [Elem 2, List [Elem 3, Elem 4], Elem 5]]))
+    print (flatten (List []) :: [Int])
+    print ([] :: [Int])
+    print (compress "aaaabccaadeeee")
