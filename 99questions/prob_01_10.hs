@@ -65,13 +65,20 @@ compress (x:y:xs)
     | otherwise = x:compress(y:xs)
 
 -- prob9 --
--- ['a', 'a', 'a', 'a', 'b', 'b', 'c', 'd'] -> ['a', 'a', 'a', 'a'], [b', 'b', 'c', 'd']
-runsplit :: Eq a => [a] -> ([a], [a])
-runsplit (x:xs) =
-    | (x == head xs) = (x ++ consec xs
-    | otherwise = x
+-- ['a', 'a', 'a', 'a', 'b', 'b', 'c', 'd'] -> 4
+runlength :: Eq a => [a] -> Int
+runlength (x:[]) = 1
+runlength (x:xs)
+    | (x == head xs) = 1 + runlength xs
+    | otherwise = 1
 
-pack :: Eq a => [a] -> [a]
+slice :: [a] -> Int -> Int -> [a]
+slice x i j = take (j-i) (drop i x)
+
+pack :: Eq a => [a] -> [[a]]
+pack [] = []
+pack x = [slice x 0 rl] ++ pack (slice x rl (length x))
+             where rl = runlength x
 
 
 main = do
