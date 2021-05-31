@@ -80,6 +80,9 @@ pack [] = []
 pack x = [slice x 0 rl] ++ pack (slice x rl (length x))
              where rl = runlength x
 
+-- prob10 --
+encode :: Eq a => [a] -> [(Int, a)]
+encode list = [(length sublist, sublist !! 0) | sublist <- pack list]
 
 main = do
     print (myLast [1,2,3])
@@ -100,3 +103,5 @@ main = do
     print (flatten (List []) :: [Int])
     print ([] :: [Int])
     print (compress "aaaabccaadeeee")
+    print (pack ['a', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'd', 'e', 'e', 'e', 'e'])
+    print (encode "aaaabccaadeeee")
