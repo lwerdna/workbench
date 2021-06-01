@@ -31,14 +31,14 @@ Inductive color : Type :=
   | red
   | green
   | blue.
-  
+
 Definition johns_favorite_color (c:color) : bool :=
   match c with
   | red => true
   | green => false
   | blue => false
   end.
-  
+
 Theorem test_theorem : forall c:color,
   (johns_favorite_color c)=true -> c=red.
 Proof.
@@ -53,7 +53,7 @@ Proof.
   (* c is blue *)
   simpl in H.
   discriminate.
-Qed. 
+Qed.
 
 (* modus ponens on bool is an example *)
 
@@ -105,18 +105,99 @@ Fixpoint leb (n m : nat) : bool :=
 Compute leb 6 7.
 Compute leb 8 7.
 
+Fixpoint yesman (n:nat) : bool :=
+  match n with
+    | _ => true
+  end.
+
+Lemma never_says_no : forall n : nat,
+  (yesman n)=true.
+Proof.
+  intros n.
+  destruct n.
+  reflexivity.
+  reflexivity.
+Qed.
+
+Lemma no_succ_leb_O : forall n : nat,
+  (leb (S n) O)=false.
+Proof.
+  destruct n.
+  reflexivity.
+  reflexivity.
+Qed.
+
+Lemma only_O_leb_O : forall a : nat,
+  (leb a O)=true -> a=O.
+Proof.
+  intros a H.
+  destruct a as [|k].
+  reflexivity.
+  rewrite no_succ_leb_O in H.
+  discriminate.
+Qed.
+
+
+
+Theorem aaa : forall a b : nat,
+  (leb (S a) b)=true -> (leb a b)=true.
+Proof.
+  intros a b H.
+  induction a as [|k IH].
+    (* 0 *)
+    reflexivity.
+    (* Sk *)
+    apply IH in H.
+
+
+
+Theorem test : forall a b : nat,
+  (leb a b)=true -> (leb a (S b))=true.
+Proof.
+  intros a b H.
+  destruct a as [|a'].
+  (* a=O *)
+  reflexivity.
+  destruct a' as [|a''].
+  reflexivity.
+  simpl.
+  (* a=Sa' *)
+  simpl.
+
+  simpl.
+  simpl in H.
+Qed.
+
+Theorem aaa : forall a b : nat,
+  (leb (S a) b)=true -> (leb a b)=true.
+Proof.
+  intros a b H.
+  destruct b as [|k].
+  (* case b=0 *)
+  rewrite no_succ_leb_O in H.
+  discriminate.
+  (* case b=Sk *)
+  simpl in H.
+  simpl.
+  destruct a.
+  reflexivity.
+
+
+
+
+
 Theorem test : forall x : nat,
   (leb x 5)=true -> (leb x 10)=true.
 Proof.
   intros x H.
-  induction x as [|k IHk].
+  destruct x as [|] eqn:E.
   reflexivity.
-  
+
 Qed.
- 
- 
- 
- 
- 
- 
- 
+
+
+
+
+
+
+
