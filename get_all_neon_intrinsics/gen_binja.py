@@ -64,6 +64,7 @@ class LineSipper:
 		assert not self.empty()
 		tmp = self.peek()
 		self.i += 1
+		print('consumed %s' % repr(tmp))
 		return tmp
 
 	def empty(self):
@@ -71,6 +72,7 @@ class LineSipper:
 
 class Intrinsic():
 	def from_lines(self, sipper):
+		# parse FSIG
 		assert sipper.peek().startswith('FSIG: ')
 		self.fsig = sipper.consume()[6:]
 		m = re.match(r'^(\w+) (\w+)\((.*)\)', self.fsig)
@@ -80,9 +82,14 @@ class Intrinsic():
 		for type_name in args.split(', '):
 			type_name = type_name.replace('const ', '')
 			(type_, name) = type_name.rsplit(' ', 1)
+
+			# split stuff like int16x4x2_t into into int16x4, int16x4
+			#m = re.match(r'^(\w+?\d+x\d+)x(\d+)_t$', type_)
 			self.arg_types.append(type_)
 			self.arg_names.append(name)
 
+		# parse ASIG
+		self.asig = re.match(r'^ASIG: ?(.*)$', sipper.consume()).group(1)
 		# parse ARGPREP
 		while not sipper.consume().startswith('ARGPREP:'):
 			pass
@@ -110,8 +117,12 @@ class Intrinsic():
 			sipper.consume()
 
 		# skip to end
-		while not sipper.peek()=='':
+		while sipper.peek() != '':
 			sipper.consume()
+
+	def binja_input_types(self):
+		print(str(self))
+		assert len(self.arg_types) == len(self.argprep)
 
 	def binja_output_types(self):
 		n_results = 0
@@ -125,23 +136,21 @@ class Intrinsic():
 		return ', '.join(result)
 
 	def __str__(self):
-		result = ''
-		result += self.ret_type
-		result += ' ' + self.name + '('
+		result = 'FSIG: %s %s(' % (self.ret_type, self.name)
 		for i in range(len(self.arg_names)):
 			result += '%s %s' % (self.arg_types[i], self.arg_names[i])
 			if i != len(self.arg_names)-1:
 				result += ', '
 		result += ')\n'
-		result += '\tARGPREP: '
+		result += 'ASIG: %s\n' % self.asig
+		result += 'ARGPREP:\n'
 		for (k,v) in self.argprep.items():
-			result += '%s->%s ' % (k,v)
-		result += '\n'
-		result += '\tRESULTS: '
+			result += '\t%s -> %s\n' % (k,v)
+		result += 'RESULTS:\n'
 		for (k,v) in self.results.items():
-			result += '%s->%s ' % (k,v)
-		result += '\n'
-		result += '\tBINJA_OUTPUT: ' + self.binja_output_types()
+			result += '\t%s -> %s\n' % (k,v)
+		#result += '\n'
+		#result += '\tBINJA_OUTPUT: ' + self.binja_output_types()
 		return result
 
 if __name__ == '__main__':
@@ -151,17 +160,25 @@ if __name__ == '__main__':
 
 	intrinsics = []
 	while not sipper.empty():
+		print('startswith: -%s-' % sipper.peek())
 		assert sipper.peek().startswith('FSIG:')
 		intrinsic = Intrinsic()
 		intrinsic.from_lines(sipper)
-
-		if 'vreinterpret' in intrinsic.name:
-			pass
-		else:
-			intrinsics.append(intrinsic)
-
 		assert sipper.peek() == ''
 		sipper.consume()
+
+		if 'vreinterpret' in intrinsic.name: continue
+		if intrinsic.asig.startswith('RESULT[I]'): continue
+		if len(intrinsic.results)==1 and 'void' in intrinsic.results: continue
+		if re.match(r'^st\d+', intrinsic.name): continue
+		if re.match(r'^vst\d+', intrinsic.name): continue
+		if re.match(r'^ld\d+', intrinsic.name): continue
+		if re.match(r'^vld\d+', intrinsic.name): continue
+		if re.match(r'^vtbl\d+', intrinsic.name): continue
+		if re.match(r'^vtbx', intrinsic.name): continue
+		if re.match(r'^vqtbl', intrinsic.name): continue
+		if re.match(r'^vqtbx', intrinsic.name): continue
+		intrinsics.append(intrinsic)
 
 	cmd = sys.argv[1]
 	if cmd in ['dump']:
@@ -178,4 +195,17 @@ if __name__ == '__main__':
 			for name in sorted(type_to_intrinsics[type_]):
 				print('\t\tcase ARM_INTRINS_%s:' % name.upper())
 			print('\t\t\treturn {%s};' % type_)
+	elif cmd in ['input', 'inputs', 'getintrinsicinputs']:
+		type_to_intrinsics = {}
+		for intrinsic in intrinsics:
+			intrinsic.binja_input_types()
+
+#			type_ = intrinsic.binja_output_types()
+#			if not type_ in type_to_intrinsics:
+#				type_to_intrinsics[type_] = []
+#			type_to_intrinsics[type_].append(intrinsic.name)
+#		for type_ in sorted(type_to_intrinsics):
+#			for name in sorted(type_to_intrinsics[type_]):
+#				print('\t\tcase ARM_INTRINS_%s:' % name.upper())
+#			print('\t\t\treturn {%s};' % type_)
 
