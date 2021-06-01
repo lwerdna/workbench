@@ -19,6 +19,9 @@ methodA: methodA.cpp
 methodB: methodB.cpp
 	g++ $(FLAGS_COMPILE) methodB.cpp help.cpp $(FLAGS_LINK) -o methodB
 
+methodC: methodC.cpp
+	g++ $(FLAGS_COMPILE) methodC.cpp help.cpp $(FLAGS_LINK) -o methodC
+
 clean:
 	rm methodA
 
