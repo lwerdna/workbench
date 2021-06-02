@@ -1,4 +1,4 @@
--- https://wiki.haskell.org/99_questions/10_to_20
+-- https://wiki.haskell.org/99_questions/11_to_20
 
 -- from prob_01_10.hs:
 
