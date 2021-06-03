@@ -1,0 +1,21 @@
+@@grammar::FORMULAS
+
+start =
+    expression $
+    ;
+
+expression =
+    | expression '^' factor
+    | expression 'v' factor
+    | expression '->' factor
+    | factor
+    ;
+
+factor =
+    | '(' expression ')'
+    | variable
+    ;
+
+variable =
+    /[ABCDEFGHIJKLMNOPQRSTUVWXYZ]/
+    ;
