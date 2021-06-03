@@ -28,11 +28,28 @@ def AndIntroduction(arg0:str, arg1:str):
     formula = Conjunction(arg0, arg1)
     return str(formula)
 
+def AndElimination(arg0:str, which='left'):
+    arg0 = parse(arg0)
+    assert type(arg0) == Conjunction
+
+    if which == 'left':
+        return str(arg0.left)
+    elif which == 'right':
+        return str(arg0.right)
+    assert False
+
+def OrIntroduction(arg0:str, arg1:str):
+    arg0 = parse(arg0)
+    arg1 = parse(arg1)
+    formula = Disjunction(arg0, arg1)
+    return str(formula)
+
 def Assumption(formula):
     formula = parse(formula)
     return str(formula)
 
 if __name__ == '__main__':
+    # http://logic.stanford.edu/intrologic/exercises/exercise_04_01.html
     # given p, q, (p^q -> r) prove r
     proof = \
         ImplicationElimination(
@@ -43,4 +60,17 @@ if __name__ == '__main__':
             ),
         )
     print(proof)
+    assert proof == 'R'
 
+    # http://logic.stanford.edu/intrologic/exercises/exercise_04_02.html
+    # given (p ^ q) prove (q v r)
+    proof = \
+        OrIntroduction(
+            AndElimination(
+                Assumption('(P^Q)'),
+                'right'
+            ),
+            'R'
+        )
+    print(proof)
+    assert proof == '(Q v R)'
