@@ -5,10 +5,10 @@ start =
     ;
 
 expression =
-    | expression '^' factor
-    | expression 'v' factor
-    | expression '->' factor
-    | expression '<->' factor
+    | expression '&' factor
+    | expression '|' factor
+    | expression '=>' factor
+    | expression '<=>' factor
     | factor
     ;
 

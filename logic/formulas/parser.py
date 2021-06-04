@@ -37,19 +37,19 @@ class ASTNode():
 
 class Conjunction(ASTNode):
     def __str__(self):
-        return '(%s ^ %s)' % (str(self.left), str(self.right))
+        return '(%s & %s)' % (str(self.left), str(self.right))
 
 class Disjunction(ASTNode):
     def __str__(self):
-        return '(%s v %s)' % (str(self.left), str(self.right))
+        return '(%s | %s)' % (str(self.left), str(self.right))
 
 class Implication(ASTNode):
     def __str__(self):
-        return '(%s -> %s)' % (str(self.left), str(self.right))
+        return '(%s => %s)' % (str(self.left), str(self.right))
 
 class BiImplication(ASTNode):
     def __str__(self):
-        return '(%s <-> %s)' % (str(self.left), str(self.right))
+        return '(%s <=> %s)' % (str(self.left), str(self.right))
 
 class Variable(ASTNode):
     def __str__(self):
@@ -61,13 +61,13 @@ class FormulasSemantics(object):
 
         if type(ast) == list:
             assert len(ast)==3, str(ast)
-            if ast[1] == '^':
+            if ast[1] == '&':
                 return Conjunction(ast[0], ast[2])
-            elif ast[1] == 'v':
+            elif ast[1] == '|':
                 return Disjunction(ast[0], ast[2])
-            elif ast[1] == '->':
+            elif ast[1] == '=>':
                 return Implication(ast[0], ast[2])
-            elif ast[1] == '<->':
+            elif ast[1] == '<=>':
                 return BiImplication(ast[0], ast[2])
             assert False
         else:
@@ -91,7 +91,7 @@ class FormulasSemantics(object):
         return Variable(ast[0])
             
 if __name__ == '__main__':
-    ast = parse('(A^B)->(C v   D)->E->F')
+    ast = parse('(A&B)=>(C |   D)=>E=>F')
     pprint.pprint(ast, width=20, indent=4)
 
     print(ast)

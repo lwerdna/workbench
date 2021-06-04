@@ -3,10 +3,10 @@
 from stanford_fitch import *
 
 # http://logic.stanford.edu/intrologic/exercises/exercise_04_01.html
-# given p, q, (p^q -> r) prove r
+# given p, q, (p^q => r) prove r
 tree = \
     ImplicationElimination(
-        Assumption('(P^Q)->R', label='premise3'),
+        Assumption('(P&Q)=>R', label='premise3'),
         AndIntroduction(
             Assumption('P', label='premise1'),
             Assumption('Q', label='premise2')
@@ -22,13 +22,13 @@ print('--------')
 tree = \
     OrIntroduction(
         AndElimination(
-            Assumption('(P^Q)', label='premise1'),
+            Assumption('(P&Q)', label='premise1'),
             'right'
         ),
         'R'
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '(Q v R)'
+assert str(tree.deduce()) == '(Q | R)'
 
 print('--------')
 
@@ -37,18 +37,18 @@ print('--------')
 tree = \
     ImplicationIntroduction(
         ImplicationElimination( # R
-            BiImplicationElimination( # Q -> R
-                Assumption('Q <-> R', label='premise2'),
+            BiImplicationElimination( # Q => R
+                Assumption('Q <=> R', label='premise2'),
             ),
             ImplicationElimination( # Q
-                Assumption('P -> Q', label='premise1'),
+                Assumption('P => Q', label='premise1'),
                 Assumption('P', label="assumption1")
             )
         ),
         discharge=['assumption1']
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '(P -> R)'
+assert str(tree.deduce()) == '(P => R)'
 
 print('--------')
 
@@ -58,13 +58,13 @@ tree = \
     ImplicationIntroduction( # M
         OrElimination( # Q
             ImplicationElimination( # P v Q
-                Assumption('M -> (P v Q)', label='premise2'),
+                Assumption('M => (P | Q)', label='premise2'),
                 Assumption('M', label='assumption1')
             ),
 
-            Assumption('P -> Q', label='premise1'),
+            Assumption('P => Q', label='premise1'),
 
-            ImplicationIntroduction( # Q -> Q
+            ImplicationIntroduction( # Q => Q
                 Assumption('Q', label='assumption2'),
                 discharge=['assumption2']
             )
@@ -72,6 +72,6 @@ tree = \
         discharge=['assumption1']
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '(M -> Q)'
+assert str(tree.deduce()) == '(M => Q)'
 
 
