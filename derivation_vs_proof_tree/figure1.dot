@@ -1,0 +1,20 @@
+digraph G {
+    {
+        p0 [label="premise #0"]
+        p1 [label="premise #1"]
+        p2 [label="premise #2"]
+        ai0 [label="and intro" shape="rectangle"]
+        ie0 [label="impl elim" shape="rectangle"]
+        ii0 [label="impl intro" shape="rectangle" color="red" fontcolor="red"]
+    }
+    p0 -> ai0 [label="p"];
+    p1 -> ai0 [label="q"];
+    ai0 -> ie0 [label="p∧q"];
+    p2 -> ie0 [label="p∧q ⇒ r"];
+    p0 -> ii0 [label="" color="red" fontcolor="red" dir="both"];
+    p1 -> ii0 [label="" color="red" fontcolor="red" dir="both"];
+    p2 -> ii0 [label="" color="red" fontcolor="red" dir="both"];
+    ie0 -> ii0 [label="r"];
+    ii0 -> "result" [label="p∧q∧(p∧q⇒r)⇒r"];
+}
+
