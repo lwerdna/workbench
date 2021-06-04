@@ -2,56 +2,113 @@
 
 from formulas.parser import *
 
-def ImplicationElimination(implication:str, antecedent:str):
-    implication = parse(implication)
-    antecedent = parse(antecedent)
+class ProofTreeNode(object):
+    def __init__(self):
+        self.new_prop = None
+        self.children = []
 
-    assert type(implication) == Implication
-    assert implication.left == antecedent
+    def deduce(self):
+        pass
 
-    return str(implication.right)
+    def str_tree(self, depth=0):
+        components = []
+        components.append('  '*depth + str(self))
+        components.extend([c.str_tree(depth+1) for c in self.children])
+        return '\n'.join(components)
 
-#def AndIntroduction(formula:str, arg0:str, arg1:str):
-#    formula = parse(formula)
-#    arg0 = parse(arg0)
-#    arg1 = parse(arg1)
-#
-#    assert type(formula) == Conjunction
-#    assert (formula.left == arg0 and formula.right == arg1) or \
-#            (formula.left == arg1 and formula.right == arg0)
-#
-#    return str(formula)
+    def __str__(self):
+        return type(self).__name__ + ': ' + str(self.deduce())
 
-def AndIntroduction(arg0:str, arg1:str):
-    arg0 = parse(arg0)
-    arg1 = parse(arg1)
-    formula = Conjunction(arg0, arg1)
-    return str(formula)
+class ImplicationElimination(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, b:ProofTreeNode):
+        super().__init__()
+        self.children = [a,b]
 
-def AndElimination(arg0:str, which='left'):
-    arg0 = parse(arg0)
-    assert type(arg0) == Conjunction
+    # A->B, A
+    # -------
+    #    B
+    def deduce(self):
+        implication = self.children[0].deduce()
+        assert type(implication) == Implication
 
-    if which == 'left':
-        return str(arg0.left)
-    elif which == 'right':
-        return str(arg0.right)
-    assert False
+        antecedent = self.children[1].deduce()
+        assert implication.left == antecedent
 
-def OrIntroduction(arg0:str, arg1:str):
-    arg0 = parse(arg0)
-    arg1 = parse(arg1)
-    formula = Disjunction(arg0, arg1)
-    return str(formula)
+        return implication.right
 
-def Assumption(formula):
-    formula = parse(formula)
-    return str(formula)
+class BiImplicationElimination(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, which='left'):
+        super().__init__()
+        self.children = [a]
+        assert which in ['left', 'right']
+        self.which = which
+
+    # A<->B
+    # -----
+    #  A->B
+    def deduce(self):
+        biimplication = self.children[0].deduce()
+        assert type(biimplication) == BiImplication
+
+        if self.which == 'left':
+            return Implication(biimplication.left, biimplication.right)
+        else:
+            return Implication(biimplication.right, biimplication.left)
+
+class AndIntroduction(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, b:ProofTreeNode):
+        super().__init__()
+        self.children = [a,b]
+
+    def deduce(self):
+        return Conjunction(self.children[0].deduce(), self.children[1].deduce())
+
+class AndElimination(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, which='left'):
+        super().__init__()
+        self.children = [a]
+        assert which in ['left', 'right']
+        self.which = which
+
+    # A^B
+    # ---
+    #  A
+    def deduce(self):
+        conjunction = self.children[0].deduce()
+        assert type(conjunction) == Conjunction
+
+        if self.which == 'left':
+            return conjunction.left
+        else:
+            return conjunction.right
+
+class OrIntroduction(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, new_prop:str):
+        super().__init__()
+        self.children = [a]
+        self.new_prop = parse(new_prop)
+
+    # A, B
+    # ----
+    # AvB
+    def deduce(self):
+        return Disjunction(self.children[0].deduce(), self.new_prop)
+
+class Assumption(ProofTreeNode):
+    def __init__(self, formula:str):
+        super().__init__()
+        self.new_prop = parse(formula)
+
+    #
+    # ---
+    #  A
+    def deduce(self):
+        return self.new_prop
 
 if __name__ == '__main__':
     # http://logic.stanford.edu/intrologic/exercises/exercise_04_01.html
     # given p, q, (p^q -> r) prove r
-    proof = \
+    tree = \
         ImplicationElimination(
             Assumption('(P^Q)->R'),
             AndIntroduction(
@@ -59,12 +116,14 @@ if __name__ == '__main__':
                 Assumption('Q')
             ),
         )
-    print(proof)
-    assert proof == 'R'
+    print(tree.str_tree())
+    assert str(tree.deduce()) == 'R'
+
+    print('--------')
 
     # http://logic.stanford.edu/intrologic/exercises/exercise_04_02.html
     # given (p ^ q) prove (q v r)
-    proof = \
+    tree = \
         OrIntroduction(
             AndElimination(
                 Assumption('(P^Q)'),
@@ -72,5 +131,16 @@ if __name__ == '__main__':
             ),
             'R'
         )
-    print(proof)
-    assert proof == '(Q v R)'
+    print(tree.str_tree())
+    assert str(tree.deduce()) == '(Q v R)'
+
+#    # http://logic.stanford.edu/intrologic/exercises/exercise_04_03.html
+#    # Given p ⇒ q and q ⇔ r, use the Fitch system to prove p ⇒ r
+#    proof = \
+#        Assumption('P')
+#
+#            Assumption('P -> Q')
+#                Assumption('P')
+#            BiImplicationElimination( # Q -> R
+#                Assumption('Q <-> R')
+#            )
