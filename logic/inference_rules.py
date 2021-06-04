@@ -18,11 +18,16 @@ class ProofTreeNode(object):
         components.extend([c.str_tree(depth+1) for c in self.children])
         return '\n'.join(components)
 
-    def find_assumption(self, label):
-        if type(self) == Assumption and self.label == label:
-            return self
+    def find_assumptions(self, label):
+        result = []
 
-        return next(filter(lambda x: x, [c.find_assumption(label) for c in self.children]), None)
+        if type(self) == Assumption and self.label == label:
+            result = [self]
+        else:
+            for c in self.children:
+                result.extend(c.find_assumptions(label))
+
+        return result
 
     def __str__(self):
         return type(self).__name__ + ': ' + str(self.deduce())
@@ -45,13 +50,17 @@ class ImplicationIntroduction(ProofTreeNode):
         # build the antecedent
         antecedent:ASTNode = None
         for label in self.discharge:
-            pn = self.find_assumption(label)
-            assert pn
-            pn.discharge()
+            # discharge all nodes with this label
+            tree_nodes = self.find_assumptions(label)
+            assert tree_nodes != []
+            assert all(e == tree_nodes[0] for e in tree_nodes), 'different nodes labelled %s' % label
+            [tn.discharge() for tn in tree_nodes]
+
+            # build antecedent with this label
             if antecedent == None:
-                antecedent = pn.deduce()
+                antecedent = tree_nodes[0].deduce()
             else:
-                antecedent = Conjunction(antecedent, pn.deduce())
+                antecedent = Conjunction(antecedent, tree_nodes[0].deduce())
 
         return Implication(antecedent, consequent)
 
@@ -188,79 +197,7 @@ class Assumption(ProofTreeNode):
         self.state = 'discharged'
 
     def __str__(self):
-        return '%s: %s "%s" %s' % (type(self).__name__, self.deduce(), self.label or '', self.state)
+        return '%s: [%s] "%s" %s' % (type(self).__name__, self.deduce(), self.label or '', self.state)
 
-if __name__ == '__main__':
-    # http://logic.stanford.edu/intrologic/exercises/exercise_04_01.html
-    # given p, q, (p^q -> r) prove r
-    tree = \
-        ImplicationElimination(
-            Assumption('(P^Q)->R', label='premise3'),
-            AndIntroduction(
-                Assumption('P', label='premise1'),
-                Assumption('Q', label='premise2')
-            ),
-        )
-    print(tree.str_tree())
-    assert str(tree.deduce()) == 'R'
-
-    print('--------')
-
-    # http://logic.stanford.edu/intrologic/exercises/exercise_04_02.html
-    # given (p ^ q) prove (q v r)
-    tree = \
-        OrIntroduction(
-            AndElimination(
-                Assumption('(P^Q)', label='premise1'),
-                'right'
-            ),
-            'R'
-        )
-    print(tree.str_tree())
-    assert str(tree.deduce()) == '(Q v R)'
-
-    print('--------')
-
-    # http://logic.stanford.edu/intrologic/exercises/exercise_04_03.html
-    # Given p ⇒ q and q ⇔ r, use the Fitch system to prove p ⇒ r
-    tree = \
-        ImplicationIntroduction(
-            ImplicationElimination( # R
-                BiImplicationElimination( # Q -> R
-                    Assumption('Q <-> R', label='premise2'),
-                ),
-                ImplicationElimination( # Q
-                    Assumption('P -> Q', label='premise1'),
-                    Assumption('P', label="assumption1")
-                )
-            ),
-            discharge=['assumption1']
-        )
-    print(tree.str_tree())
-    assert str(tree.deduce()) == '(P -> R)'
-
-    print('--------')
-
-    # http://logic.stanford.edu/intrologic/exercises/exercise_04_04.html
-    # Given p ⇒ q and m ⇒ p ∨ q, use the Fitch System to prove m ⇒ q
-    tree = \
-        ImplicationIntroduction( # M
-            OrElimination( # Q
-                ImplicationElimination( # P v Q
-                    Assumption('M -> (P v Q)', label='premise2'),
-                    Assumption('M', label='assumption1')
-                ),
-
-                Assumption('P -> Q', label='premise1'),
-
-                ImplicationIntroduction( # Q -> Q
-                    Assumption('Q', label='assumption2'),
-                    discharge=['assumption2']
-                )
-            ),
-            discharge=['assumption1']
-        )
-    print(tree.str_tree())
-    assert str(tree.deduce()) == '(M -> Q)'
-
-
+    def __eq__(self, other):
+        return type(self)==type(other) and self.new_prop==other.new_prop and self.state == other.state
