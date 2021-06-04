@@ -35,13 +35,24 @@ class ASTNode():
                (self.left == other.left) and \
                (self.right == other.right)
 
+    def __eq_commutative__(self, other):
+        return type(self) == type(other) and \
+               ( ((self.left, self.right) == (other.left, other.right)) or
+                 ((self.left, self.right) == (other.right, other.left)) )
+
 class Conjunction(ASTNode):
     def __str__(self):
         return '(%s & %s)' % (str(self.left), str(self.right))
 
+    def __eq__(self, other):
+        return self.__eq_commutative__(other)
+
 class Disjunction(ASTNode):
     def __str__(self):
         return '(%s | %s)' % (str(self.left), str(self.right))
+
+    def __eq__(self, other):
+        return self.__eq_commutative__(other)
 
 class Implication(ASTNode):
     def __str__(self):
@@ -50,6 +61,9 @@ class Implication(ASTNode):
 class BiImplication(ASTNode):
     def __str__(self):
         return '(%s <=> %s)' % (str(self.left), str(self.right))
+
+    def __eq__(self, other):
+        return self.__eq_commutative__(other)
 
 class Variable(ASTNode):
     def __str__(self):
