@@ -47,6 +47,10 @@ class Implication(ASTNode):
     def __str__(self):
         return '(%s -> %s)' % (str(self.left), str(self.right))
 
+class BiImplication(ASTNode):
+    def __str__(self):
+        return '(%s <-> %s)' % (str(self.left), str(self.right))
+
 class Variable(ASTNode):
     def __str__(self):
         return self.left
@@ -63,6 +67,8 @@ class FormulasSemantics(object):
                 return Disjunction(ast[0], ast[2])
             elif ast[1] == '->':
                 return Implication(ast[0], ast[2])
+            elif ast[1] == '<->':
+                return BiImplication(ast[0], ast[2])
             assert False
         else:
             # expression -> factor, pass through
