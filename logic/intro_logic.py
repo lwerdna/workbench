@@ -13,7 +13,7 @@ tree = \
         ),
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == 'R'
+assert tree.check_deduction('R')
 
 print('--------')
 
@@ -28,7 +28,7 @@ tree = \
         'R'
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '(Q | R)'
+assert tree.check_deduction('(Q | R)')
 
 print('--------')
 
@@ -48,7 +48,7 @@ tree = \
         discharge=['assumption1']
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '(P => R)'
+assert tree.check_deduction('(P => R)')
 
 print('--------')
 
@@ -72,6 +72,6 @@ tree = \
         discharge=['assumption1']
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '(M => Q)'
+assert tree.check_deduction('(M => Q)')
 
 

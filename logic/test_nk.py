@@ -5,6 +5,10 @@ from NK import *
 # from Takahashi's "A Primer on Proofs and Types"
 # (A&B)|(A&C) => A&(B|C)
 
+# note our OrElimination is a bit more stringent than the paper's
+# ours takes implications as input so there's implication introduction wrapping
+# the two inputs into OrElimination and a1 and a2 are discharged there
+
 tree = \
     ImplicationIntroduction( # (A&B)|(A&C) -> A&(B|C)
 	    OrElimination( # A&(B|C)
@@ -43,4 +47,4 @@ tree = \
 	    discharge=['a3']
     )
 print(tree.str_tree())
-assert str(tree.deduce()) == '((A & B) => (A & (B | C)))'
+assert tree.check_proof('((A & B)|(A & C)) => (A & (B | C))')

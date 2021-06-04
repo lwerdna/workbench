@@ -18,10 +18,10 @@ class ProofTreeNode(object):
         components.extend([c.str_tree(depth+1) for c in self.children])
         return '\n'.join(components)
 
-    def find_assumptions(self, label):
+    def find_assumptions(self, label=None):
         result = []
 
-        if type(self) == Assumption and self.label == label:
+        if type(self) == Assumption and (not label or self.label == label):
             result = [self]
         else:
             for c in self.children:
@@ -29,8 +29,18 @@ class ProofTreeNode(object):
 
         return result
 
+    def check_deduction(self, goal:str):
+        return self.deduce() == parse(goal)
+
+    def check_proof(self, goal:str):
+        if not self.check_deduction(goal):
+            return False
+
+        return all(a.state == 'discharged' for a in self.find_assumptions())
+
     def __str__(self):
         return type(self).__name__ + ': ' + str(self.deduce())
+
 
 class ImplicationIntroduction(ProofTreeNode):
     def __init__(self, a:ProofTreeNode, discharge=[]):
