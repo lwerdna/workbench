@@ -65,6 +65,14 @@ class BiImplication(ASTNode):
     def __eq__(self, other):
         return self.__eq_commutative__(other)
 
+class Negation(ASTNode):
+    def __str__(self):
+        return '~' + str(self.left)
+
+class Contradiction(ASTNode):
+    def __str__(self):
+        return '_'
+
 class Variable(ASTNode):
     def __str__(self):
         return self.left
@@ -74,7 +82,9 @@ class FormulasSemantics(object):
         #print('expression: %s' % ast)
 
         if type(ast) == list:
-            assert len(ast)==3, str(ast)
+            assert len(ast)==3
+            assert ast[1] in ['&', '|', '=>', '<=>']
+
             if ast[1] == '&':
                 return Conjunction(ast[0], ast[2])
             elif ast[1] == '|':
@@ -83,7 +93,6 @@ class FormulasSemantics(object):
                 return Implication(ast[0], ast[2])
             elif ast[1] == '<=>':
                 return BiImplication(ast[0], ast[2])
-            assert False
         else:
             # expression -> factor, pass through
             return ast
@@ -92,8 +101,13 @@ class FormulasSemantics(object):
         #print('factor: %s' % ast)
 
         if type(ast) == list:
-            assert ast[0]=='(' and ast[2]==')'
-            return ast[1]
+            if len(ast) == 3:
+                assert ast[0]=='(' and ast[2]==')'
+                return ast[1]
+            elif len(ast) == 2:
+                assert ast[0]=='~'
+                return Negation(ast[1])
+            assert False
         else:
             # factor -> variable, pass through
             return ast
@@ -105,7 +119,7 @@ class FormulasSemantics(object):
         return Variable(ast[0])
             
 if __name__ == '__main__':
-    ast = parse('(A&B)=>(C |   D)=>E=>F')
+    ast = parse('~(A&B)=>(C |   ~D)=>E=>F')
     pprint.pprint(ast, width=20, indent=4)
 
     print(ast)

@@ -7,6 +7,7 @@ class ProofTreeNode(object):
     def __init__(self):
         self.new_prop = None # used in or introduction and assumptions
         self.label = None # to refer to during discharging
+        self.discharge_label = None
         self.children = []
 
     def deduce(self):
@@ -38,15 +39,29 @@ class ProofTreeNode(object):
 
         return all(a.state == 'discharged' for a in self.find_assumptions())
 
+    def discharge(self, optional=False):
+        if not self.discharge_label:
+            if optional:
+                return
+            else:
+                assert self.discharge_label, "discharge() called when no discharge label set"
+
+        tree_nodes = self.find_assumptions(self.discharge_label)
+        assert tree_nodes != []
+        assert all(e == tree_nodes[0] for e in tree_nodes), 'different nodes labelled %s' % label
+        for tn in tree_nodes:
+            tn.state = 'discharged'
+        return tree_nodes[0]
+
     def __str__(self):
         return type(self).__name__ + ': ' + str(self.deduce())
 
 
 class ImplicationIntroduction(ProofTreeNode):
-    def __init__(self, a:ProofTreeNode, discharge=[]):
+    def __init__(self, a:ProofTreeNode, discharge=None):
         super().__init__()
         self.children = [a]
-        self.discharge = discharge
+        self.discharge_label = discharge
 
     # [A]
     #  .
@@ -56,27 +71,12 @@ class ImplicationIntroduction(ProofTreeNode):
     # A -> B
     def deduce(self):
         consequent = self.children[0].deduce()
-
-        # build the antecedent
-        antecedent:ASTNode = None
-        for label in self.discharge:
-            # discharge all nodes with this label
-            tree_nodes = self.find_assumptions(label)
-            assert tree_nodes != []
-            assert all(e == tree_nodes[0] for e in tree_nodes), 'different nodes labelled %s' % label
-            [tn.discharge() for tn in tree_nodes]
-
-            # build antecedent with this label
-            if antecedent == None:
-                antecedent = tree_nodes[0].deduce()
-            else:
-                antecedent = Conjunction(antecedent, tree_nodes[0].deduce())
-
+        antecedent = self.discharge().deduce()
         return Implication(antecedent, consequent)
 
     def __str__(self):
         return '%s: %s discharges: %s' % (type(self).__name__, str(self.deduce()),
-            ','.join(self.discharge))
+            self.discharge_label)
 
 
 class ImplicationElimination(ProofTreeNode):
@@ -155,10 +155,10 @@ class OrIntroduction(ProofTreeNode):
         return Disjunction(self.children[0].deduce(), self.new_prop)
 
 class OrElimination(ProofTreeNode):
-    def __init__(self, a:ProofTreeNode, b:ProofTreeNode, c:ProofTreeNode, discharge=[]):
+    def __init__(self, a:ProofTreeNode, b:ProofTreeNode, c:ProofTreeNode, discharge=None):
         super().__init__()
         self.children = [a, b, c]
-        self.discharge = discharge
+        self.discharge_label = discharge
 
     # A v B, A->C, B->C
     # -----------------
@@ -177,18 +177,67 @@ class OrElimination(ProofTreeNode):
         assert implication1.right == implication2.right
 
         # discharge assumptions
-        for label in self.discharge:
-            pn = implication1.find_assumption(label)
-            if not pn:
-                pn = implication2.find_assumption(label)
-            assert pn
-            pn.discharge()
+        self.discharge(optional=True)
 
         return implication1.right
 
     def __str__(self):
-        return '%s: %s discharges: %s' % (type(self).__name__, str(self.deduce()),
-            ','.join(self.discharge))
+        result = '%s: %s' % (type(self).__name__, str(self.deduce()))
+        if self.discharge_label:
+            result += ' discharges: %s' % self.discharge_label
+        return result
+
+class NegationIntroduction(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, discharge=None):
+        super().__init__()
+        self.children = [a]
+        self.discharge_label = discharge
+
+    # [A]      note: this only _ADDS_ negation
+    #  .       classic absurdity is needed to remove negation
+    #  .       ~~A == A is not taken for granted
+    #  .
+    #  _
+    # ------
+    #  ~A
+    def deduce(self):
+        assert type(self.children[0].deduce()) == Contradiction
+        astnode = self.discharge().deduce()
+        assert type(astnode) != Negation
+        return Negation(astnode)
+
+class NegationElimination(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, b:ProofTreeNode):
+        super().__init__()
+        self.children = [a,b]
+
+    # A & ~A
+    # ------
+    #   _
+    def deduce(self):
+        a:ASTNode = self.children[0].deduce()
+        b:ASTNode = self.children[1].deduce()
+        assert a == Negation(b) or Negation(a) == b
+        return Contradiction()
+
+class ClassicalAbsurdity(ProofTreeNode):
+    def __init__(self, a:ProofTreeNode, discharge=None):
+        super().__init__()
+        self.children = [a]
+        self.discharge_label = discharge
+
+    # [A]      note: only _REMOVES_ negation
+    #  .       ~~A == A is not taken for granted
+    #  .
+    #  .
+    #  _
+    # ---
+    # ~A
+    def deduce(self):
+        assert type(self.children[0].deduce()) == Contradiction
+        astnode = self.discharge().deduce()
+        assert type(astnode) == Negation
+        return astnode.left
 
 class Assumption(ProofTreeNode):
     def __init__(self, formula:str, label:str=None):

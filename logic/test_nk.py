@@ -26,7 +26,7 @@ tree = \
 	                    'C'
 	                )
 	            ),
-	            discharge=['a1']
+	            discharge='a1'
 	        ),
 	        ImplicationIntroduction(
 	            AndIntroduction( # A&C -> A&(B|C)
@@ -41,10 +41,36 @@ tree = \
 	                    'B'
 	                )
 	            ),
-	            discharge=['a2']
+	            discharge='a2'
 	        )
 	    ),
-	    discharge=['a3']
+	    discharge='a3'
     )
 print(tree.str_tree())
 assert tree.check_proof('((A & B)|(A & C)) => (A & (B | C))')
+
+print('--------')
+
+# law of excluded middle
+tree = \
+    ClassicalAbsurdity( # A | ~A
+		NegationElimination( # _
+		    OrIntroduction( # A | ~A
+		        NegationIntroduction( # ~A
+		            NegationElimination( # _
+		            Assumption('~(A|~A)', label='a2'),
+		                OrIntroduction( # A | ~A
+		                    Assumption('A', label='a1'),
+		                    '~A'
+		                    )
+		            ),
+		            discharge='a1'
+		        ),
+		        'A'
+		    ),
+		    Assumption('~(A|~A)', label='a2')
+		),
+		discharge='a2'
+	)
+print(tree.str_tree())
+assert tree.check_proof('A|~A')

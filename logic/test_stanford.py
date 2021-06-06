@@ -45,7 +45,7 @@ tree = \
                 Assumption('P', label="assumption1")
             )
         ),
-        discharge=['assumption1']
+        discharge='assumption1'
     )
 print(tree.str_tree())
 assert tree.check_deduction('(P => R)')
@@ -66,10 +66,10 @@ tree = \
 
             ImplicationIntroduction( # Q => Q
                 Assumption('Q', label='assumption2'),
-                discharge=['assumption2']
+                discharge='assumption2'
             )
         ),
-        discharge=['assumption1']
+        discharge='assumption1'
     )
 print(tree.str_tree())
 assert tree.check_deduction('(M => Q)')
