@@ -1,0 +1,20 @@
+# apt-get install gcc-arm-linux-gnueabi
+GCC = arm-linux-gnueabi-gcc
+
+all: test
+
+test: test.c libaaa.so libbbb.so
+	$(GCC) -O0 test.c -o test -L. -laaa -lbbb
+
+libaaa.so: aaa.c
+	$(GCC) -O0 aaa.c -shared -fPIC -o libaaa.so
+
+libbbb.so: bbb.c
+	$(GCC) -O0 bbb.c -shared -fPIC -o libbbb.so
+
+relocs:
+	readelf --relocs libaaa.so
+	readelf --relocs libbbb.so
+
+clean:
+	rm -f test *.so *.out
