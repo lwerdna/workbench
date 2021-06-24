@@ -29,15 +29,15 @@ class ClangNode(object):
         self.kind = kind
         self.name = name
         self.children = children or []
-        self.length = 0 # used in ConstantArrayType
+        self.value = 0 # used in ConstantArrayType
         self.ntr = None # used in FieldDecl
 
     def tostr(self, depth=0):
         result = '%s%s' % ('  '*depth, self.kind)
         if self.name:
             result += ' name:"%s"' % self.name
-        if self.length:
-            result += ' length:%d' % self.length
+        if self.value:
+            result += ' value:%d' % self.value
         if self.ntr:
             result += ' ntr:"%s"' % self.ntr
         result += "\n"
@@ -102,7 +102,7 @@ class LineNode(object):
         if m:
             assert len(self.children) == 1
             node = ClangNode('ConstantArrayType')
-            node.length = int(m.group(2))
+            node.value = int(m.group(2)) # number of elements
             node.children.append(self.children[0].toClangNode())
             return node
 
@@ -117,7 +117,7 @@ class LineNode(object):
         m = re.match(r"^FieldDecl (.*) '(.*)'$", self.line)
         if m:
             assert len(self.children) == 0
-            node = ClangNode('RecordDecl')
+            node = ClangNode('FieldDecl')
             node.name = m.group(1)
             node.ntr = m.group(2)
             return node
@@ -142,7 +142,34 @@ class LineNode(object):
         if m:
             assert len(self.children) == 0
             node = ClangNode('BuiltinType')
+            node.ntr = m.group(1)
+            return node
+
+        m = re.match(r"^ConstantExpr '.*'$", self.line)
+        if m:
+            node = ClangNode('ConstantExpr')
+            node.children = [n.toClangNode() for n in self.children]
+            return node
+
+        m = re.match(r"^IntegerLiteral '(.*)' (\d+)$", self.line)
+        if m:
+            node = ClangNode('ConstantExpr')
+            node.value = int(m.group(2))
+            node.children = [n.toClangNode() for n in self.children]
+            return node
+
+        m = re.match(r"^EnumDecl$", self.line)
+        if m:
+            assert len(self.children) > 0
+            node = ClangNode('EnumDecl')
+            node.children = [n.toClangNode() for n in self.children]
+            return node
+
+        m = re.match(r"^EnumConstantDecl (.*) '(.*)'$", self.line)
+        if m:
+            node = ClangNode('EnumConstantDecl')
             node.name = m.group(1)
+            node.children = [n.toClangNode() for n in self.children]
             return node
 
         print(repr(self.line))
@@ -154,7 +181,7 @@ class LineNode(object):
             result += str(c)
         return result
 
-def parse(fpath):
+def parse_to_line_nodes(fpath):
     cmd = ['clang', '-Xclang', '-ast-dump', '-fsyntax-only', fpath]
     (stdout, stderr) = shellout(cmd)
 
@@ -178,7 +205,17 @@ def parse(fpath):
         stack.append(newnode)
 
     root = stack[0]
-    lnodes = root.children
+    return root.children
+
+def parse_to_clang_nodes(fpath):
+    lnodes = parse_to_line_nodes(fpath)
+    return [lnode.toClangNode() for lnode in lnodes]
+
+def parse(fpath):
+    return parse_to_clang_nodes(fpath)
+
+if __name__ == '__main__':
+    lnodes = parse_to_line_nodes(sys.argv[1])
 
     for (i, ln) in enumerate(lnodes):
         print('LineNode %d:' % i)
@@ -186,15 +223,8 @@ def parse(fpath):
 
     print('--------')
 
-    tnodes = [lnode.toClangNode() for lnode in lnodes]
-    for (i, tn) in enumerate(tnodes):
+    cnodes = [lnode.toClangNode() for lnode in lnodes]
+
+    for (i, cn) in enumerate(cnodes):
         print('ClangNode %d:' % i)
-        print(tn.tostr())
-
-    #print('stdout:')
-    #print(stdout)
-    #print('stderr:')
-    #print(stderr)
-
-if __name__ == '__main__':
-    types = parse(sys.argv[1]) 
+        print(cn.tostr())
