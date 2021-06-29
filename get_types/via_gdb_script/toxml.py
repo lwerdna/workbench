@@ -90,7 +90,6 @@ def get_type_name(t):
         return 'enum ' + t.tag
     return t.name
 
-
 def process_type(t, var_name=None, depth=0, stop_at_first_named=False):
     indent = '  '*depth
 
@@ -107,8 +106,13 @@ def process_type(t, var_name=None, depth=0, stop_at_first_named=False):
     if t.code == gdb.TYPE_CODE_ARRAY:
         result += ' size="%d"' % array_size(t)
 
+
     # end XML tag
-    result += '>\n'
+    if t.code in [gdb.TYPE_CODE_INT]:
+        result += ' />\n'
+        return result
+    else:
+        result += '>\n'
 
     # enqueue others
     if type_name:
@@ -158,9 +162,26 @@ if 0:
     gdb.execute('q')
 
 #
+# loop over all data returned from "info functions"
+#
+named_objects = []
+lines = [x.rstrip() for x in gdb.execute('info functions', False, True).split('\n')]
+for line in lines:
+    if not line or line.isspace(): continue
+    if line.startswith('File '): continue
+    if line.startswith('All defined functions:'): continue
+    m = re.search(r'^.*?(\w+)\(', line)
+    if not m:
+        print('wtf: %s' % line)
+    func_name = m.group(1)
+    func_val = gdb.parse_and_eval(func_name)
+    result = process_type(func_val.type, func_name)
+    named_objects.append(result)
+
+#
 # loop over all data returned from "info types"
 #
-results = []
+named_types = []
 lines = [x.rstrip() for x in gdb.execute('info types', False, True).split('\n')]
 i = 0
 while i<len(lines):
@@ -197,7 +218,7 @@ while i<len(lines):
     if m:
         #print('looking up %s' % line[0:-1])
         result = process_type(gdb.lookup_type(line[0:-1]))
-        results.append(result)
+        named_types.append(result)
         continue
 
     # typedef struct {\n ... \n} foo;
@@ -209,7 +230,7 @@ while i<len(lines):
             i += 1
         name = re.match(r'^} (\w+);', lines[i]).group(1)
         result = process_type(gdb.lookup_type(name))
-        results.append(result)
+        named_types.append(result)
         i += 1;
         continue
 
@@ -218,25 +239,34 @@ while i<len(lines):
     if m:
         name = m.group(1)
         result = process_type(gdb.lookup_type(name))
-        results.append(result)
+        named_types.append(result)
         continue
 
     # enumerations
     m = re.match(r'^enum (\w+);$', line)
     if m:
         result = process_type(gdb.lookup_type(line[0:-1]))
-        results.append(result)
+        named_types.append(result)
         continue
 
     raise Exception('dunno how to handle line: %s' % line)
 
 with open('/tmp/tmp.xml', 'w') as fp:
     fp.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    fp.write('<types>\n')
+    fp.write('<type_library>\n')
 
-    for result in results:
+    fp.write('<!-- %d named objects -->\n' % len(named_objects))
+    fp.write('<named_objects>\n')
+    for result in named_objects:
         fp.write(result)
+    fp.write('</named_objects>\n')
 
-    fp.write('</types>')
+    fp.write('<!-- %d named types -->\n' % len(named_types))
+    fp.write('<named_types>\n')
+    for result in named_types:
+        fp.write(result)
+    fp.write('</named_types>\n')
+
+    fp.write('</type_library>')
 
 gdb.execute('q')
