@@ -153,7 +153,7 @@ def process_type(t, trail=[]):
         lines = ['struct %s {' % (t.tag or '')]
         for field in t.fields():
             ftype = field.type
-            log_edge(t,  ftype)
+            #log_edge(t,  ftype)
             declare_str = process_type(ftype, trail+[fn])
             lines.append('\t%s;' % define(declare_str, field.name))
         lines.append('}')
@@ -169,7 +169,7 @@ def process_type(t, trail=[]):
     elif t.code == gdb.TYPE_CODE_TYPEDEF:
         assert t.name == fn
         target = t.target()
-        log_edge(t, target)
+        #log_edge(t, target)
         subdecl = process_type(target, trail+[fn])
         declaration = 'typedef ' + define(subdecl, t.name)
         declarations[fn] = declaration
@@ -177,14 +177,14 @@ def process_type(t, trail=[]):
 
     elif t.code == gdb.TYPE_CODE_ARRAY:
         target = t.target()
-        log_edge(t, target)
+        #log_edge(t, target)
         declaration = '%s [%d]' % (process_type(target, trail+[fn]), array_size(t))
         # arrays of existing types don't add any new type names
         return declaration
 
     elif t.code == gdb.TYPE_CODE_PTR:
         target = t.target()
-        log_edge(t, target)
+        #log_edge(t, target)
         # pointers to existing types don't add any new type names
         tmp = process_type(target, trail+[fn])
         
@@ -210,14 +210,14 @@ def process_type(t, trail=[]):
         # return type
         declaration = ''
         return_type = t.target()
-        log_edge(t, return_type)
+        #log_edge(t, return_type)
         declaration += process_type(return_type, trail+[fn])
         declaration += ' (*)('
         # arguments
         lines = []
         for field in t.fields():
             field_type = field.type
-            log_edge(t, field_type)
+            #log_edge(t, field_type)
             lines.append(process_type(field_type, trail+[fn]))
         declaration = ','.join(lines) + ')'
         return declaration
@@ -250,25 +250,26 @@ def print_basic_info(mytype):
         print_basic_info(mytype.target())
 
 #targets = ['struct tzstring_l']
-if 0:
+if 1:
     targets = ['__gconv_fct']
     targets = ['_IO_close_t']
     targets = ['struct argp']
     targets = ['struct _IO_marker']
     #targets = ['struct argp_option']
     targets = ['_IO_finish_t']
+    targets = ['__gconv_fct']
 
     for target in targets:
         mytype = gdb.lookup_type(target)
-        #print_basic_info(mytype)
+        print_basic_info(mytype)
         ptr = process_type(mytype)
-        #print('process_type returned: ', str(ptr))
+        print('process_type returned: ', str(ptr))
                 
-    print('digraph MyGraph {')
-    for edge in graph_edges:
-        print(edge)
-    print('}')
-    gdb.execute('q')
+    #print('digraph MyGraph {')
+    #for edge in graph_edges:
+    #    print(edge)
+    #print('}')
+    #gdb.execute('q')
 
     emit_all_declarations()
     gdb.execute('q')
@@ -300,6 +301,7 @@ while i<len(lines):
     if line.startswith('typedef signed char;'): continue
     if line.startswith('typedef unsigned char;'): continue
     if line.startswith('typedef unsigned int;'): continue
+    if line.startswith('typedef __int128;'): continue
     if line.startswith('typedef __int128 unsigned;'): continue
 
     # terminating condition
@@ -340,16 +342,16 @@ while i<len(lines):
     raise Exception('dunno how to handle line: %s' % line)
 
 
-print('digraph MyGraph {')
-for edge in graph_edges:
-    print(edge)
-print('}')
+#print('digraph MyGraph {')
+#for edge in graph_edges:
+#    print(edge)
+#print('}')
 
 
-#with open('/tmp/tmp.c', 'w') as fp:
-#    for (i, (name,decl)) in enumerate(declarations.items()):
-#        fp.write('// declaration #%d of %s\n' % (i, name))
-#        fp.write(decl + ';')
+with open('/tmp/tmp.c', 'w') as fp:
+    for (i, (name,decl)) in enumerate(declarations.items()):
+        fp.write('// declaration #%d of %s\n' % (i, name))
+        fp.write(decl + ';\n')
 
 
 

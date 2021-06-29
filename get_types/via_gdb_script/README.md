@@ -5,6 +5,7 @@ Extract type information from DWARF by gdb script.
 unsorted notes:
 
 ```
+(gdb) ptype <typename>
 gdb -q ./linux/aarch64/libc.so -ex 'maint print symbols' -ex 'q' > /tmp/out.txt
 gdb -q ./linux/aarch64/libc.so -ex 'info types' -ex 'q' > /tmp/out.txt
 gdb -q ./linux/aarch64/libc.so -ex 'info functions' -ex 'q' > /tmp/out.txt
