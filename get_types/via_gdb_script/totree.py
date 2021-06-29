@@ -12,13 +12,13 @@ def queue_add(type_name):
         return
     seen.add(type_name)
 
-    exceptions = ['_Bool', 'char', 'int', 'long', 'float', 'double',
+    ignore = ['_Bool', 'char', 'int', 'long', 'float', 'double',
         'long double', 'long long', 'unsigned long long', 'unsigned long',
         'short', 'unsigned short', 'signed char', 'unsigned char',
-        'unsigned int', '__int128', '__int128 unsigned']
+        'unsigned int', '__int128', '__int128 unsigned', 'long unsigned int']
 
-    if type_name in exceptions:
-        print('// %s is in exceptions' % type_name)
+    if type_name in ignore:
+        print('<!-- "%s" is in ignore list -->' % type_name)
         return
 
     queue = [type_name] + queue
@@ -92,80 +92,72 @@ def get_type_name(t):
 
 
 def process_type(t, var_name=None, depth=0, stop_at_first_named=False):
-    def indent(d=depth):
-        return '  '*d
+    indent = '  '*depth
 
-    result = ''
+    # start XML tag
+    tcode = type_code_tostr(t.code)
+    result = '%s<%s' % (indent, tcode)
 
-    tmp = '%s%s\n' % (indent(), type_code_tostr(t.code))
-    result += tmp
-
+    # add attributes
     type_name = get_type_name(t)
     if type_name:
-        result += '%s.tname="%s"\n' % (indent(depth+1), type_name)
+        result += ' tname="%s"' % type_name
     if var_name:
-        result += '%s.vname="%s"\n' % (indent(depth+1), var_name)
-
-    tmp += ' "%s"' % (type_name) if type_name else ' ""'
-    tmp += ' "%s"' % (var_name) if var_name else ' ""'
-    tmp += '\n'
-
+        result += ' vname="%s"' % var_name
     if t.code == gdb.TYPE_CODE_ARRAY:
-        result += '%s.size=%d\n' % (indent(depth+1), array_size(t))
+        result += ' size="%d"' % array_size(t)
 
+    # end XML tag
+    result += '>\n'
+
+    # enqueue others
     if type_name:
         queue_add(type_name)
-        if stop_at_first_named:
-            return result
 
-    #if t.code in [gdb.TYPE_CODE_UNION]:
-    #    breakpoint()
-    if t.code in [gdb.TYPE_CODE_UNION, gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_ENUM]:
-        for field in t.fields():
-            result += process_type(field.type, field.name, depth+1, True)
-    elif t.code in [gdb.TYPE_CODE_TYPEDEF, gdb.TYPE_CODE_ARRAY, gdb.TYPE_CODE_PTR]:
-        result += process_type(t.target(), None, depth+1, True)
-    elif t.code == gdb.TYPE_CODE_FUNC:
-        # return type
-        result += process_type(t.target(), None, depth+1, False)
-        # arguments
-        for field in t.fields():
-            result += process_type(field.type, field.name, depth+1, True)
+    if not (type_name and stop_at_first_named):
+        #if t.code in [gdb.TYPE_CODE_UNION]:
+        #    breakpoint()
+        if t.code in [gdb.TYPE_CODE_UNION, gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_ENUM]:
+            for field in t.fields():
+                result += process_type(field.type, field.name, depth+1, True)
+        elif t.code in [gdb.TYPE_CODE_TYPEDEF, gdb.TYPE_CODE_ARRAY, gdb.TYPE_CODE_PTR]:
+            result += process_type(t.target(), None, depth+1, True)
+        elif t.code == gdb.TYPE_CODE_FUNC:
+            # return type
+            result += process_type(t.target(), None, depth+1, False)
+            # arguments
+            for field in t.fields():
+                result += process_type(field.type, field.name, depth+1, True)
 
+    result += '%s</%s>\n' % (indent, tcode)
     return result
 
-def print_basic_info(mytype):
-    print('str(mytype): %s' % str(mytype))
-    print('mytype.code: %s' % type_code_tostr(mytype.code))
-    print('mytype.name: %s' % mytype.name)
-    print('mytype.tag: %s' % mytype.tag)
-    if type_test_fields(mytype):
-        print('mytype.fields: %s' % mytype.fields())
-    if mytype.code in [gdb.TYPE_CODE_TYPEDEF, gdb.TYPE_CODE_PTR]:
-        print('dereferencing type...')
-        print_basic_info(mytype.target())
-
-#targets = ['struct tzstring_l']
 if 1:
-    #queue = ['__gconv_fct']
-    queue_add('__mbstate_t')
+    print('<?xml version="1.0" encoding="UTF-8"?>')
+    print('<types>')
+
+    queue = ['__gconv_fct']
+    queue = ['struct r_debug']
+    #queue_add('__mbstate_t')
     while queue:
         target = queue.pop()
 
         try:
             mytype = gdb.lookup_type(target)
         except gdb.error as e:
-            print('// %s' % str(e))
+            print('<!-- "%s" errored in gdb -->' % str(e))
             continue
 
         #print_basic_info(mytype)
         print(process_type(mytype))
 
+    print('</types>')
     gdb.execute('q')
 
 #
 # loop over all data returned from "info types"
 #
+results = []
 lines = [x.rstrip() for x in gdb.execute('info types', False, True).split('\n')]
 i = 0
 while i<len(lines):
@@ -200,7 +192,9 @@ while i<len(lines):
     # union foo;
     m = re.match(r'^(struct|union) (\w+);$', line)
     if m:
-        process_type(gdb.lookup_type(line[0:-1]))
+        print('looking up %s' % line[0:-1])
+        result = process_type(gdb.lookup_type(line[0:-1]))
+        results.append(result)
         continue
 
     # typedef struct {\n ... \n} foo;
@@ -211,7 +205,8 @@ while i<len(lines):
         while not re.match(r'^} (\w+);', lines[i]):
             i += 1
         name = re.match(r'^} (\w+);', lines[i]).group(1)
-        process_type(gdb.lookup_type(name))
+        result = process_type(gdb.lookup_type(name))
+        results.append(result)
         i += 1;
         continue
 
@@ -219,29 +214,26 @@ while i<len(lines):
     m = re.match(r'^typedef .* (\w+);$', line)
     if m:
         name = m.group(1)
-        process_type(gdb.lookup_type(name))
+        result = process_type(gdb.lookup_type(name))
+        results.append(result)
         continue
 
     # enumerations
     m = re.match(r'^enum (\w+);$', line)
     if m:
-        process_type(gdb.lookup_type(line[0:-1]))
+        result = process_type(gdb.lookup_type(line[0:-1]))
+        results.append(result)
         continue
 
     raise Exception('dunno how to handle line: %s' % line)
 
+with open('/tmp/tmp.xml', 'w') as fp:
+    fp.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+    fp.write('<types>\n')
 
-#print('digraph MyGraph {')
-#for edge in graph_edges:
-#    print(edge)
-#print('}')
+    for result in results:
+        print(result)
 
-
-with open('/tmp/tmp.c', 'w') as fp:
-    for (i, (name,decl)) in enumerate(declarations.items()):
-        fp.write('// declaration #%d of %s\n' % (i, name))
-        fp.write(decl + ';\n')
-
-
+    print('</types>')
 
 gdb.execute('q')
