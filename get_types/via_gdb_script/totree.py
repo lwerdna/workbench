@@ -117,9 +117,12 @@ def process_type(t, var_name=None, depth=0, stop_at_first_named=False):
     if not (type_name and stop_at_first_named):
         #if t.code in [gdb.TYPE_CODE_UNION]:
         #    breakpoint()
-        if t.code in [gdb.TYPE_CODE_UNION, gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_ENUM]:
+        if t.code in [gdb.TYPE_CODE_UNION, gdb.TYPE_CODE_STRUCT]:
             for field in t.fields():
                 result += process_type(field.type, field.name, depth+1, True)
+        elif t.code in [gdb.TYPE_CODE_ENUM]:
+            for field in t.fields():
+                result += '%s<FIELD name="%s" val="%s" />\n' % ('  '*(depth+1), field.name, field.enumval)
         elif t.code in [gdb.TYPE_CODE_TYPEDEF, gdb.TYPE_CODE_ARRAY, gdb.TYPE_CODE_PTR]:
             result += process_type(t.target(), None, depth+1, True)
         elif t.code == gdb.TYPE_CODE_FUNC:
@@ -132,7 +135,7 @@ def process_type(t, var_name=None, depth=0, stop_at_first_named=False):
     result += '%s</%s>\n' % (indent, tcode)
     return result
 
-if 1:
+if 0:
     print('<?xml version="1.0" encoding="UTF-8"?>')
     print('<types>')
 
@@ -192,7 +195,7 @@ while i<len(lines):
     # union foo;
     m = re.match(r'^(struct|union) (\w+);$', line)
     if m:
-        print('looking up %s' % line[0:-1])
+        #print('looking up %s' % line[0:-1])
         result = process_type(gdb.lookup_type(line[0:-1]))
         results.append(result)
         continue
@@ -232,8 +235,8 @@ with open('/tmp/tmp.xml', 'w') as fp:
     fp.write('<types>\n')
 
     for result in results:
-        print(result)
+        fp.write(result)
 
-    print('</types>')
+    fp.write('</types>')
 
 gdb.execute('q')
