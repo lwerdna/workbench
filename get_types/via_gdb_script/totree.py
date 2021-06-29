@@ -2,11 +2,26 @@ import os, sys, re
 
 import gdb
 
-# name: declaration
-# eg: 'foo'; 'typedef int *foo'
-# eg: 'unsigned int':
-# eg: 'struct foo': 'struct foo {int A; intB;};'
-declarations = {}
+seen = set()
+queue = []
+
+def queue_add(type_name):
+    global seen, queue
+
+    if type_name in seen:
+        return
+    seen.add(type_name)
+
+    exceptions = ['_Bool', 'char', 'int', 'long', 'float', 'double',
+        'long double', 'long long', 'unsigned long long', 'unsigned long',
+        'short', 'unsigned short', 'signed char', 'unsigned char',
+        'unsigned int', '__int128', '__int128 unsigned']
+
+    if type_name in exceptions:
+        print('// %s is in exceptions' % type_name)
+        return
+
+    queue = [type_name] + queue
 
 def type_code_tostr(code):
     if code==gdb.TYPE_CODE_PTR: return 'PTR'
@@ -48,7 +63,8 @@ def type_test_funcptr(t):
     return t.code == gdb.TYPE_CODE_PTR and t.target().code == gdb.TYPE_CODE_FUNC
 
 def array_size(t):
-    assert t.code == gdb.TYPE_CODE_ARRAY
+    if not t.code == gdb.TYPE_CODE_ARRAY:
+        return None
     r = t.range()
     return r[1]-r[0]+1
 
@@ -60,7 +76,7 @@ def array_size(t):
 # enum {A=1,B=2} foo;"         -> NO, anonymous enum applied to variable foo
 # struct {int A; int B;"} foo; -> NO, anonymous struct applied to variable foo
 #
-def full_name(t):
+def get_type_name(t):
     if not t:
         return None
     if t.code == gdb.TYPE_CODE_STRUCT:
@@ -74,38 +90,36 @@ def full_name(t):
         return 'enum ' + t.tag
     return t.name
 
-# recursively traverse type tree, adding to global declarations
-# return code that can be used to declare a variable of this type
-#
-# examples for named types:
-#   "unsigned char"
-#   "int"
-#   "struct mystruct"
-# examples for anonymous types:
-#   "struct {int A; int B;}"
-#   "union {int A; int B;}"
-#
-def process_type(t, name_hint=None, depth=0, stop_at_first_named=False):
-    indent = '  '*depth
-    result = indent
 
-    print('// working on full_name: %s' % full_name(t))
+def process_type(t, var_name=None, depth=0, stop_at_first_named=False):
+    def indent(d=depth):
+        return '  '*d
 
-    label = ''
-    if t.code in [gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_ENUM] and t.tag:
-        label = t.tag
-    elif t.name:
-        label = t.name
-    elif name_hint:
-        label = name_hint
-    if label:
-        label = ' "%s"' % label
+    result = ''
 
-    result += '%s%s%s\n' % (indent, type_code_tostr(t.code), label)
+    tmp = '%s%s\n' % (indent(), type_code_tostr(t.code))
+    result += tmp
 
-    if label and stop_at_first_named:
-        return result
+    type_name = get_type_name(t)
+    if type_name:
+        result += '%s.tname="%s"\n' % (indent(depth+1), type_name)
+    if var_name:
+        result += '%s.vname="%s"\n' % (indent(depth+1), var_name)
 
+    tmp += ' "%s"' % (type_name) if type_name else ' ""'
+    tmp += ' "%s"' % (var_name) if var_name else ' ""'
+    tmp += '\n'
+
+    if t.code == gdb.TYPE_CODE_ARRAY:
+        result += '%s.size=%d\n' % (indent(depth+1), array_size(t))
+
+    if type_name:
+        queue_add(type_name)
+        if stop_at_first_named:
+            return result
+
+    #if t.code in [gdb.TYPE_CODE_UNION]:
+    #    breakpoint()
     if t.code in [gdb.TYPE_CODE_UNION, gdb.TYPE_CODE_STRUCT, gdb.TYPE_CODE_ENUM]:
         for field in t.fields():
             result += process_type(field.type, field.name, depth+1, True)
@@ -117,7 +131,7 @@ def process_type(t, name_hint=None, depth=0, stop_at_first_named=False):
         # arguments
         for field in t.fields():
             result += process_type(field.type, field.name, depth+1, True)
-    
+
     return result
 
 def print_basic_info(mytype):
@@ -133,19 +147,19 @@ def print_basic_info(mytype):
 
 #targets = ['struct tzstring_l']
 if 1:
-    targets = ['__gconv_fct']
-    targets = ['_IO_close_t']
-    targets = ['struct argp']
-    targets = ['struct _IO_marker']
-    #targets = ['struct argp_option']
-    targets = ['_IO_finish_t']
-    targets = ['__gconv_fct']
+    #queue = ['__gconv_fct']
+    queue_add('__mbstate_t')
+    while queue:
+        target = queue.pop()
 
-    for target in targets:
-        mytype = gdb.lookup_type(target)
-        print_basic_info(mytype)
-        ptr = process_type(mytype)
-        print('process_type returned:\n', str(ptr))
+        try:
+            mytype = gdb.lookup_type(target)
+        except gdb.error as e:
+            print('// %s' % str(e))
+            continue
+
+        #print_basic_info(mytype)
+        print(process_type(mytype))
 
     gdb.execute('q')
 
@@ -189,7 +203,7 @@ while i<len(lines):
         process_type(gdb.lookup_type(line[0:-1]))
         continue
 
-    # typedef struct {\n ... \n} foo; 
+    # typedef struct {\n ... \n} foo;
     m = re.match(r'^typedef (struct|union) {', line)
     if m:
         # search for end of typedef
