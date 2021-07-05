@@ -16,15 +16,21 @@ int main(int ac, char **av)
 	BNInstructionTextToken *itt = NULL;
 	size_t token_n;
 	const char *path_bundled_plugins;
-	char BN_INSTALL_DIR[1024] = {'\0'};
 
+	printf("printf(): Hello, world!\n");
+	BNLogToStdout(DebugLog);
+	BNLogInfo("BNLogInfo(): Hello, world!\n");
+
+	// fucked up plugin path
 	path_bundled_plugins = BNGetBundledPluginDirectory();
 	printf("BNGetBundledPluginDirectory() returns: %s\n", path_bundled_plugins);
+	// tell binja what's up
 	if(!getenv("BN_INSTALL_DIR")) goto cleanup;
-	strncpy(BN_INSTALL_DIR, getenv("BN_INSTALL_DIR"), 1024-1);
-	path_bundled_plugins = BN_INSTALL_DIR;
-	printf("using bundled plugin path: %s\n", path_bundled_plugins);
-	BNSetBundledPluginDirectory(path_bundled_plugins);
+	char plugin_path[2048] = {'\0'};
+	strncpy(plugin_path, getenv("BN_INSTALL_DIR"), 1024-1);
+	strcat(plugin_path, "/Contents/MacOS/plugins/");
+	printf("setting bundled plugin path: %s\n", plugin_path);
+	BNSetBundledPluginDirectory(plugin_path);
 	BNInitPlugins(true);
 
 	arch = BNGetArchitectureByName("x86_64");
