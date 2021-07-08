@@ -18,7 +18,8 @@ def bytes_to_function(data, plat_name='linux-x86_64'):
 
 def print_basic_block_disasm(bb):
 	disassembly_text_lines = bb.get_disassembly_text()
-	print(Fore.GREEN, '; %s has %d instructions' % (str(bb), len(disassembly_text_lines)), Style.RESET_ALL)
+	print(Fore.GREEN, '; %s has %d instructions' % \
+	  (str(bb), len(disassembly_text_lines)), Style.RESET_ALL)
 	for disassembly_text_line in disassembly_text_lines:
 		print(Style.DIM, '%08X:' % disassembly_text_line.address, Style.RESET_ALL, end='')
 		print('%s' % (str(disassembly_text_line)))
