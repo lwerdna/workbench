@@ -25,7 +25,7 @@
 import os, sys, struct
 
 #------------------------------------------------------------------------------
-# top elf structures
+# elf32_hdr, elf64_hdr
 #------------------------------------------------------------------------------
 
 def validate_elf(data):
@@ -36,21 +36,26 @@ def validate_elf(data):
     assert data[6] == 1 # e_ident[EI_VERSION] should be version 1
     return width
 
-def get_elf_hdr(data, width):
-    if width == 32:
-        hdr_len = 0x34
-        fmt = 'HHIIIIIHHHHHH'
-    else:
-        hdr_len = 0x40
-        fmt = 'HHIQQQIHHHHHH'
+def data_to_elf32_hdr(data):
     (a,b,c,d,e,f,g,h,i,j,k,l,m) = \
-        struct.unpack(fmt, data[16:16+hdr_len-16])
+        struct.unpack('HHIIIIIHHHHHH', data[16:16+0x34-16])
     return { 'e_type':a, 'e_machine':b, 'e_version':c, 'e_entry':d, 'e_phoff':e,
             'e_shoff':f, 'e_flags':g, 'e_ehsize':h, 'e_phentsize':i,
             'e_phnum':j, 'e_shentsize':k, 'e_shnum':l, 'e_shstrndx':m }
 
+def data_to_elf64_hdr(data):
+    (a,b,c,d,e,f,g,h,i,j,k,l,m) = \
+        struct.unpack('HHIQQQIHHHHHH', data[16:16+0x40-16])
+    return { 'e_type':a, 'e_machine':b, 'e_version':c, 'e_entry':d, 'e_phoff':e,
+            'e_shoff':f, 'e_flags':g, 'e_ehsize':h, 'e_phentsize':i,
+            'e_phnum':j, 'e_shentsize':k, 'e_shnum':l, 'e_shstrndx':m }
+
+def data_to_elf_hdr(data, width):
+    if width==32: return data_to_elf32_hdr(data)
+    else: return data_to_elf64_hdr(data)
+
 #------------------------------------------------------------------------------
-# elfXX_sym
+# elf32_sym, elf64_sym
 #------------------------------------------------------------------------------
 
 def ELF_ST_BIND(x):
@@ -70,25 +75,30 @@ def data_to_elf64_sym(data):
     return {'st_name':a, 'st_info':b, 'st_other':c, 'st_shndx':d, 'st_value':e, 'st_size':f,
       'st_bind':ELF_ST_BIND(b), 'st_type':ELF_ST_TYPE(b)}
 
-def data_to_elf_sym(width, data):
+def data_to_elf_sym(data, width):
     if width==32: return data_to_elf32_sym(data)
     else: return data_to_elf64_sym(data)
 
 #------------------------------------------------------------------------------
-# elf sections
+# elf32_shdr, elf64_shdr
 #------------------------------------------------------------------------------
-
-def get_section_header(data, width, e_shoff, index):
+def data_to_elf32_shdr(data):
     struct_size = 40 if width==32 else -1
-    offs = e_shoff + index*struct_size
-    if width==32:
-        (sh_name,sh_type,sh_flags,sh_addr,sh_offset,sh_size,sh_link,sh_info,sh_addralign,sh_entsize) = \
-          struct.unpack('IIIIIIIIII', data[offs:offs+struct_size])
-    else:
-        assert False
-    return { 'sh_name':sh_name, 'sh_type':sh_type, 'sh_flags':sh_flags, 'sh_addr':sh_addr, 
-            'sh_offset':sh_offset, 'sh_size':sh_size, 'sh_link':sh_link, 'sh_info':sh_info,
-            'sh_addralign':sh_addralign, 'sh_entsize':sh_entsize }
+    (a,b,c,d,e,f,g,h,i,j) = struct.unpack('IIIIIIIIII', data[0:0x28])
+    return { 'sh_name':a, 'sh_type':b, 'sh_flags':c, 'sh_addr':d,
+            'sh_offset':e, 'sh_size':f, 'sh_link':g, 'sh_info':h,
+            'sh_addralign':i, 'sh_entsize':j }
+
+def data_to_elf64_shdr(data):
+    struct_size = 40 if width==32 else -1
+    (a,b,c,d,e,f,g,h,i,j) = struct.unpack('IIQQQQIIQQ', data[0:0x40])
+    return { 'sh_name':a, 'sh_type':b, 'sh_flags':c, 'sh_addr':d,
+            'sh_offset':e, 'sh_size':f, 'sh_link':g, 'sh_info':h,
+            'sh_addralign':i, 'sh_entsize':j }
+
+def data_to_elf_shdr(data, width):
+    if width==32: return data_to_elf32_shdr(data)
+    else: return data_to_elf64_shdr(data)
 
 #------------------------------------------------------------------------------
 # misc
@@ -124,7 +134,7 @@ if __name__ == '__main__':
     STT_IFUNC = 10 # mostly sure
     SHN_UNDEF = 0
 
-    ehdr = get_elf_hdr(data, width)
+    ehdr = data_to_elf_hdr(data[0:SIZE_ELF_HDR], width)
     e_shoff = ehdr['e_shoff']
 
     #print('section header offset: 0x%X\n' % ehdr['e_shoff'])
@@ -133,15 +143,18 @@ if __name__ == '__main__':
     # find dynamic symbol section
     strdata = None
     for i in range(ehdr['e_shnum']):
-        shdr = get_section_header(data, width, e_shoff, i)
+        offs = e_shoff + i*SIZE_ELF_SHDR
+        shdr = data_to_elf_shdr(data[offs:offs+SIZE_ELF_SHDR], width)
         if shdr['sh_type'] != 11: # SHT_DYNSYM
             continue
 
-        print('the %dth section header is SHT_DYNSYM' % i)
-        dynsyms = [data_to_elf_sym(width, ch) for ch in \
+        #print('the %dth section header is SHT_DYNSYM' % i)
+        dynsyms = [data_to_elf_sym(ch, width) for ch in \
             chunks(data[shdr['sh_offset']: shdr['sh_offset']+shdr['sh_size']], SIZE_ELF_SYM)]
 
-        shdr = get_section_header(data, width, e_shoff, shdr['sh_link'])
+        assert shdr['sh_link'] < ehdr['e_shnum']
+        offs = e_shoff + shdr['sh_link']*SIZE_ELF_SHDR
+        shdr = data_to_elf_shdr(data[offs:offs+SIZE_ELF_SHDR], width)
         dynstr = data[shdr['sh_offset']: shdr['sh_offset']+shdr['sh_size']]
 
         break
@@ -160,8 +173,8 @@ if __name__ == '__main__':
         o_str = ds['st_name']
         name = dynstr[o_str: dynstr.find(0, o_str)].decode('utf-8')
         exported_names.append(name)
-        print(name)
-        print(ds)
-        print('----')
+        #print(name)
+        #print(ds)
+        #print('----')
 
     print('\n'.join(sorted(exported_names)))
