@@ -3,24 +3,14 @@
 # based off http://www.m4b.io/elf/export/binary/analysis/2015/05/25/what-is-an-elf-export.html
 # - in a section type SHT_SYMTAB or SHT_DYNSYM (usually ".dynsym") you have array of:
 #
-#typedef struct {
-#        Elf32_Word      st_name;   // idx to string table
-#        Elf32_Addr      st_value;  // address, offset, ??? (it depends)
-#        Elf32_Word      st_size;
-#        unsigned char   st_info;   // binding, type, info
-#        unsigned char   st_other;
-#        Elf32_Half      st_shndx;
-#} Elf32_Sym;
-#
-# criteria
-#   - .st_value != 0
-#   - .st_shndx != 0 (SHN_UNDEF)
-#   - .st_info.bind \in {GLOBAL, WEAK}
-#   - .st_info.type \in {FUNC, IFUNC, OBJECT}
-#
-# - in a section type SHT_DYNAMIC (usually ".dynamic") you should find
-#   array of Elf32_Dyn or Elf64_Dyn with:
-#   ???
+# elf header point to list of program headers
+#   (execution view)
+#   program headers has an entry for type PT_DYNAMIC (-> SHT_DYNSYM ".dynamic" section)
+#     dynamic entries have an antry for DT_SYMTAB (-> SHT_DYNSYM ".dynsym" section)
+#     dynamic entries have an entry for DT_STRTAB (-> SHT_STRTAB ".dynstr" section)
+#   (file view)
+#   section headers has an entry for type SHT_DYNSYM (usually named ".dynsym")
+#     its .sh_link is reference for entry of type SHT_STRTAB (usually named ".dynstr")
 
 import os, sys, struct
 
@@ -55,6 +45,59 @@ def data_to_elf_hdr(data, width):
     else: return data_to_elf64_hdr(data)
 
 #------------------------------------------------------------------------------
+# elf32_phdr, elf64_phdr
+#------------------------------------------------------------------------------
+def data_to_elf32_phdr(data):
+    (a,b,c,d,e,f,g,h) = struct.unpack('IIIIIIII', data[0:32])
+    return { 'p_type':a, 'p_flags':b, 'p_offset':c, 'p_vaddr':d,
+            'p_paddr':e, 'p_filesz':f, 'p_memsz':g, 'p_align':h }
+
+def data_to_elf64_phdr(data):
+    (a,b,c,d,e,f,g,h) = struct.unpack('IIQQQQQQ', data[0:56])
+    return { 'p_type':a, 'p_flags':b, 'p_offset':c, 'p_vaddr':d,
+            'p_paddr':e, 'p_filesz':f, 'p_memsz':g, 'p_align':h }
+
+def data_to_elf_phdr(data, width):
+    if width==32: return data_to_elf32_phdr(data)
+    else: return data_to_elf64_phdr(data)
+
+#------------------------------------------------------------------------------
+# elf32_dyn, elf64_dyn
+#------------------------------------------------------------------------------
+def data_to_elf32_dyn(data):
+    (a,b) = struct.unpack('II', data[0:8])
+    return { 'd_tag':a, 'val_ptr':b }
+
+def data_to_elf64_dyn(data):
+    (a,b) = struct.unpack('QQ', data[0:16])
+    return { 'd_tag':a, 'val_ptr':b }
+
+def data_to_elf_dyn(data, width):
+    if width==32: return data_to_elf32_dyn(data)
+    else: return data_to_elf64_dyn(data)
+
+#------------------------------------------------------------------------------
+# elf32_shdr, elf64_shdr
+#------------------------------------------------------------------------------
+def data_to_elf32_shdr(data):
+    struct_size = 40 if width==32 else -1
+    (a,b,c,d,e,f,g,h,i,j) = struct.unpack('IIIIIIIIII', data[0:0x28])
+    return { 'sh_name':a, 'sh_type':b, 'sh_flags':c, 'sh_addr':d,
+            'sh_offset':e, 'sh_size':f, 'sh_link':g, 'sh_info':h,
+            'sh_addralign':i, 'sh_entsize':j }
+
+def data_to_elf64_shdr(data):
+    struct_size = 40 if width==32 else -1
+    (a,b,c,d,e,f,g,h,i,j) = struct.unpack('IIQQQQIIQQ', data[0:0x40])
+    return { 'sh_name':a, 'sh_type':b, 'sh_flags':c, 'sh_addr':d,
+            'sh_offset':e, 'sh_size':f, 'sh_link':g, 'sh_info':h,
+            'sh_addralign':i, 'sh_entsize':j }
+
+def data_to_elf_shdr(data, width):
+    if width==32: return data_to_elf32_shdr(data)
+    else: return data_to_elf64_shdr(data)
+
+#------------------------------------------------------------------------------
 # elf32_sym, elf64_sym
 #------------------------------------------------------------------------------
 
@@ -78,27 +121,6 @@ def data_to_elf64_sym(data):
 def data_to_elf_sym(data, width):
     if width==32: return data_to_elf32_sym(data)
     else: return data_to_elf64_sym(data)
-
-#------------------------------------------------------------------------------
-# elf32_shdr, elf64_shdr
-#------------------------------------------------------------------------------
-def data_to_elf32_shdr(data):
-    struct_size = 40 if width==32 else -1
-    (a,b,c,d,e,f,g,h,i,j) = struct.unpack('IIIIIIIIII', data[0:0x28])
-    return { 'sh_name':a, 'sh_type':b, 'sh_flags':c, 'sh_addr':d,
-            'sh_offset':e, 'sh_size':f, 'sh_link':g, 'sh_info':h,
-            'sh_addralign':i, 'sh_entsize':j }
-
-def data_to_elf64_shdr(data):
-    struct_size = 40 if width==32 else -1
-    (a,b,c,d,e,f,g,h,i,j) = struct.unpack('IIQQQQIIQQ', data[0:0x40])
-    return { 'sh_name':a, 'sh_type':b, 'sh_flags':c, 'sh_addr':d,
-            'sh_offset':e, 'sh_size':f, 'sh_link':g, 'sh_info':h,
-            'sh_addralign':i, 'sh_entsize':j }
-
-def data_to_elf_shdr(data, width):
-    if width==32: return data_to_elf32_shdr(data)
-    else: return data_to_elf64_shdr(data)
 
 #------------------------------------------------------------------------------
 # misc
@@ -133,33 +155,63 @@ if __name__ == '__main__':
     STT_FUNC = 2
     STT_IFUNC = 10 # mostly sure
     SHN_UNDEF = 0
+    SHT_DYNSYM = 11
+    PT_DYNAMIC = 2
+    DT_STRTAB = 5
+    DT_SYMTAB = 6
 
     ehdr = data_to_elf_hdr(data[0:SIZE_ELF_HDR], width)
     e_shoff = ehdr['e_shoff']
 
     #print('section header offset: 0x%X\n' % ehdr['e_shoff'])
     #print('section header count: %d\n' % ehdr['e_shnum'])
+    
+    # scan program headers for .p_type == PT_DYNAMIC
+    phdr_claims_offset_dynamic = None
+    phdr_claims_offset_dynsym = None
+    phdr_claims_offset_dynstr = None
+    for i in range(ehdr['e_phnum']):
+        offs = ehdr['e_phoff'] + i*SIZE_ELF_PHDR
+        phdr = data_to_elf_phdr(data[offs:offs+SIZE_ELF_SHDR], width)
+        if phdr['p_type'] != PT_DYNAMIC:
+            continue
 
-    # find dynamic symbol section
+        phdr_claims_offset_dynamic = phdr['p_offset']
+        dyns = [data_to_elf_dyn(chunk, width) for chunk in \
+            chunks(data[phdr_claims_offset_dynamic:phdr_claims_offset_dynamic+phdr['p_filesz']], SIZE_ELF_DYN)]
+
+        print(dyns)
+        phdr_claims_offset_dynsym = [d for d in dyns if d['d_tag']==DT_SYMTAB][0]['val_ptr']
+        phdr_claims_offset_dynstr = [d for d in dyns if d['d_tag']==DT_STRTAB][0]['val_ptr']
+        break
+    else:
+        assert False, 'no program header with type PT_DYNAMIC'
+    assert phdr_claims_offset_dynamic, 'program header missing PT_DYNAMIC'
+    assert phdr_claims_offset_dynsym, 'PT_DYNAMIC missing entry DT_SYMTAB'
+    assert phdr_claims_offset_dynstr, 'PT_DYNAMIC missing entry DT_STRTAB'
+
+    # scan section table for dynamic symbol section
     strdata = None
     for i in range(ehdr['e_shnum']):
         offs = e_shoff + i*SIZE_ELF_SHDR
         shdr = data_to_elf_shdr(data[offs:offs+SIZE_ELF_SHDR], width)
-        if shdr['sh_type'] != 11: # SHT_DYNSYM
+        if shdr['sh_type'] != SHT_DYNSYM:
             continue
 
         #print('the %dth section header is SHT_DYNSYM' % i)
+        assert shdr['sh_offset'] == phdr_claims_offset_dynsym
         dynsyms = [data_to_elf_sym(ch, width) for ch in \
             chunks(data[shdr['sh_offset']: shdr['sh_offset']+shdr['sh_size']], SIZE_ELF_SYM)]
 
         assert shdr['sh_link'] < ehdr['e_shnum']
         offs = e_shoff + shdr['sh_link']*SIZE_ELF_SHDR
         shdr = data_to_elf_shdr(data[offs:offs+SIZE_ELF_SHDR], width)
+        assert shdr['sh_offset'] == phdr_claims_offset_dynstr
         dynstr = data[shdr['sh_offset']: shdr['sh_offset']+shdr['sh_size']]
 
         break
     else:
-        assert False
+        assert False, 'no section header with type SHT_DYNSYM'
 
     # loop over dynamic symbols
     exported_names = []
