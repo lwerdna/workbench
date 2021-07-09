@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
 # based off http://www.m4b.io/elf/export/binary/analysis/2015/05/25/what-is-an-elf-export.html
-# - in a section type SHT_SYMTAB or SHT_DYNSYM (usually ".dynsym") you have array of:
 #
+# (execution view)
 # elf header point to list of program headers
-#   (execution view)
 #   program headers has an entry for type PT_DYNAMIC (-> SHT_DYNSYM ".dynamic" section)
 #     dynamic entries have an antry for DT_SYMTAB (-> SHT_DYNSYM ".dynsym" section)
 #     dynamic entries have an entry for DT_STRTAB (-> SHT_STRTAB ".dynstr" section)
-#   (file view)
+#
+# (file view)
+# elf header points to list of section headers
 #   section headers has an entry for type SHT_DYNSYM (usually named ".dynsym")
 #     its .sh_link is reference for entry of type SHT_STRTAB (usually named ".dynstr")
 
@@ -49,10 +50,11 @@ def data_to_elf_hdr(data, width):
 #------------------------------------------------------------------------------
 def data_to_elf32_phdr(data):
     (a,b,c,d,e,f,g,h) = struct.unpack('IIIIIIII', data[0:32])
-    return { 'p_type':a, 'p_flags':b, 'p_offset':c, 'p_vaddr':d,
-            'p_paddr':e, 'p_filesz':f, 'p_memsz':g, 'p_align':h }
+    return { 'p_type':a, 'p_offset':b, 'p_vaddr':c, 'p_paddr':d,
+            'p_filesz':e, 'p_memsz':f, 'p_flags':g, 'p_align':h }
 
 def data_to_elf64_phdr(data):
+    # WARNING: completely different ordering of fields than elf32_phdr
     (a,b,c,d,e,f,g,h) = struct.unpack('IIQQQQQQ', data[0:56])
     return { 'p_type':a, 'p_flags':b, 'p_offset':c, 'p_vaddr':d,
             'p_paddr':e, 'p_filesz':f, 'p_memsz':g, 'p_align':h }
@@ -176,11 +178,12 @@ if __name__ == '__main__':
         if phdr['p_type'] != PT_DYNAMIC:
             continue
 
+        #breakpoint()
         phdr_claims_offset_dynamic = phdr['p_offset']
         dyns = [data_to_elf_dyn(chunk, width) for chunk in \
             chunks(data[phdr_claims_offset_dynamic:phdr_claims_offset_dynamic+phdr['p_filesz']], SIZE_ELF_DYN)]
 
-        print(dyns)
+        #print(dyns)
         phdr_claims_offset_dynsym = [d for d in dyns if d['d_tag']==DT_SYMTAB][0]['val_ptr']
         phdr_claims_offset_dynstr = [d for d in dyns if d['d_tag']==DT_STRTAB][0]['val_ptr']
         break
