@@ -7,6 +7,18 @@ from colorama import Fore, Back, Style
 import os, sys, re
 
 #------------------------------------------------------------------------------
+# misc
+#------------------------------------------------------------------------------
+
+def bbid(bb):
+    return 'b%d' % bb.index
+
+def bbtext(bb):
+    return '\n'.join(
+        ['%08X: %s' % (l.address, l) for l in bb.get_disassembly_text()]
+    )
+
+#------------------------------------------------------------------------------
 # printing (usually to console) utilities
 #------------------------------------------------------------------------------
 
@@ -25,12 +37,14 @@ def bytes_to_function(data, plat_name='linux-x86_64'):
 
 # print basic block
 def print_basic_block_disasm(bb):
-    disassembly_text_lines = bb.get_disassembly_text()
-    print(Fore.GREEN, '; b%d: %s has %d instructions' % \
-      (bb.index, str(bb), len(disassembly_text_lines)), Style.RESET_ALL)
-    for disassembly_text_line in disassembly_text_lines:
-        print(Style.DIM, '%08X:' % disassembly_text_line.address, Style.RESET_ALL, end='')
-        print('%s' % (str(disassembly_text_line)))
+    lines = bbtext(bb).split('\n')
+
+    print('%s; %s: %s has %d instructions' % \
+      (Fore.GREEN, bbid(bb), str(bb), len(lines)), Style.RESET_ALL)
+
+    for line in lines:
+        (addr, rest) = re.match(r'^([a-hA-H0-9]{8}): (.*)$', line).group(1,2)
+        print('%s%s: %s%s' % (Style.DIM, addr, Style.RESET_ALL, rest))
 
 # print function, split into basic blocks
 def print_function_disasm(func):
@@ -49,27 +63,24 @@ def print_binary_view(bv):
 # graphing utilities
 #------------------------------------------------------------------------------
 
-def bbname(bb):
-    return 'b%d' % bb.index
-
 def graph_func(fname, func, reds=[], greens=[], blues=[]):
     attrs = []
     edges = []
 
     # write attributes
     for bb in func.basic_blocks:
-        if bb in reds:
-            attrs.append('%s [color=red];' % bbname(bb))
-        if bb in greens:
-            attrs.append('%s [color=green];' % bbname(bb))
-        if bb in blues:
-            attrs.append('%s [color=blue];' % bbname(bb))
+        label = '\\l'.join(['; '+bbid(bb)] + bbtext(bb).split('\n')) + '\\l'
+        color = 'black'
+        if bb in reds: color='red'
+        if bb in greens: color='green'
+        if bb in blues: color='blue'
+        attrs.append('%s [shape=box color=%s fontname="Courier" label="%s"];' % (bbid(bb), color, label))
 
     # write edges
     for src in func.basic_blocks:
         for edge in src.outgoing_edges:
             dst = edge.target
-            edges.append('%s -> %s;' % (bbname(src), bbname(dst)))
+            edges.append('%s -> %s;' % (bbid(src), bbid(dst)))
 
     dot = []
     dot.append('digraph G {')
