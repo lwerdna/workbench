@@ -13,8 +13,8 @@ I recommend you reference [1][1] and [2][2] while reading the FAQ.
 
 Some variable definitions have type information, but don't produce a type name useful for future definitions, examples:
 
-* `enum {A=1,B=2} foo;` foo has type with no name
-* `struct {int A; int B;} bar;` bar has type with no name
+* `enum {A=1,B=2} foo;` foo has type with no type name (it does have a variable name)
+* `struct {int A; int B;} bar;` bar has type with no type name
 
 In C, enum and struct definitions can create a new type name as a byproduct of a definition by using a "tag name":
 
@@ -45,7 +45,7 @@ typedef int (MyFunc)(int ac, char **av); // type int ()(int, char **), name:MyFu
 
 ### What's the difference between a named type and a named object?
 
-A named type is the name name of a type. Like `Color` is the name of type `enum {RED=0, ORANGE=1, YELLOW=2, ...}`.
+A named type is a type with a name that can identify it. Like `Color` is the name of type `enum {RED=0, ORANGE=1, YELLOW=2, ...}`.
 
 A named object is the name of an external/imported symbol for which the typelibrary has type information. Like `MessageBoxA` is the name of a function whose type is `int ()(HWND, LPCSTR, LPCSTR, UINT)`.
 
@@ -100,7 +100,7 @@ For example, examine this struct from [1][1]:
 
 ```C
 struct Rectangle2 {
-	int width;
+  int width;
   int height;
   struct Point center;
 }
@@ -198,6 +198,9 @@ Type class=Function
 
 ### References
 
+1. [https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_create.py](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_create.py)
 [1]: https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_create.py "typelib_create.py"
+
+2. [https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_dump.py](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_dump.py)
 [2]: https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_dump.py "typelib_dump.py"
 
