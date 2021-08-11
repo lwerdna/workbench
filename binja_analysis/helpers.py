@@ -19,6 +19,58 @@ def bbtext(bb):
     )
 
 #------------------------------------------------------------------------------
+# attempt map between IL levels
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# access instrutions at various IL levels
+#------------------------------------------------------------------------------
+
+def get_instruction_addresses(func):
+    addrs = []
+    for bb in func.basic_blocks:
+        bb._buildStartCache()
+        addrs.extend(bb._instStarts)
+    return sorted(addrs)
+
+# func: binaryninja.function.Function
+#       binaryninja.lowlevelil.LowLevelILFunction
+#       binaryninja.mediumlevelil.MediumLevelILFunction
+#       binaryninja.highlevelil.HighLevelILFunction
+# 
+def get_function_instruction_by_address(func, addr):
+    result = []
+    for bb in func.basic_blocks:
+        for instr in bb:
+            if instr.address == addr:
+                result.append(instr)
+    return result
+
+# returns [string]
+def get_disassembly_at(bv, addr):
+    return bv.get_disassembly(addr)
+
+# returns [binaryninja.lowlevelil.LowLevelILInstruction, ...]
+def get_lifted_il_at(bv, addr):
+    func = bv.get_functions_containing(addr)[0]
+    return get_function_instruction_by_address(func.lifted_il, addr)
+
+# returns [binaryninja.lowlevelil.LowLevelILInstruction, ...]
+def get_llil_at(bv, addr):
+    func = bv.get_functions_containing(addr)[0]
+    return get_function_instruction_by_address(func.llil, addr)
+
+# returns [binaryninja.mediumlevelil.MediumLevelILInstruction, ...]
+def get_mlil_at(bv, addr):
+    func = bv.get_functions_containing(addr)[0]
+    return get_function_instruction_by_address(func.mlil, addr)
+
+# returns [binaryninja.highlevelil.HighLevelILInstruction, ...]
+def get_hlil_at(bv, addr):
+    func = bv.get_functions_containing(addr)[0]
+    return get_function_instruction_by_address(func.hlil, addr)
+
+#------------------------------------------------------------------------------
 # printing (usually to console) utilities
 #------------------------------------------------------------------------------
 
@@ -74,7 +126,7 @@ def graph_func(fname, func, reds=[], greens=[], blues=[]):
         if bb in reds: color='red'
         if bb in greens: color='green'
         if bb in blues: color='blue'
-        attrs.append('%s [shape=box color=%s fontname="Courier" label="%s"];' % (bbid(bb), color, label))
+        attrs.append('%s [shape=box color=%s fontname="Courier" fontsize=10 label="%s"];' % (bbid(bb), color, label))
 
     # write edges
     for src in func.basic_blocks:
