@@ -194,9 +194,36 @@ Type class=Function
     Type class=Integer width=4 // .parameters[2]
 ```
 
+### How does Binja decide when to use a typelibrary file?
 
+Binja reads the ELF's .dynstr section for the requested name. It kind of behaves like the dynamic linker in this regard.
 
-### References
+This requested name _should_ be a soname, like "libfoo.so.1" but could be a linkname like "libfoo.so". See [3][3].
+
+Binja's logic for determining a match is straightforward:
+
+```python
+typelibname.removesuffix('.bntl') == requestedname or requestedname in alternativenames
+```
+
+Therefore, without any alternative names, libc.so.bntl will not be loaded by Binja if an ELF requests libc.so.6.
+
+We recommend and follow the following convention. Type libraries should be named for the filename from which they were generated with the phrase ".bntl" added. When the source library contains additional minor and release number, like libfoo.so.1.2.3 Binja would not load the resulting type library libfoo.so.1.2.3.bntl for an ELF requesting soname libfoo.so.1. Therefore the alternative names list should include the most specific version numbers, incrementally stripped down to the soname, and finally a linkname for good measure.
+
+Example:
+
+libfoo.so.1.2.3 is used to generated libfoo.so.1.2.3.bntl
+
+Alternative names list should have:
+
+```
+libfoo.so.1.2.3 <-- includes version, minor, release (most specific)
+libfoo.so.1.2   <-- includes version, minor (less specific)
+libfoo.so.1     <-- includes version (soname)
+libfoo.so       <-- linkname
+```
+
+### References and Notes
 
 1. [https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_create.py](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_create.py)
 [1]: https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_create.py "typelib_create.py"
@@ -204,3 +231,4 @@ Type class=Function
 2. [https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_dump.py](https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_dump.py)
 [2]: https://github.com/Vector35/binaryninja-api/blob/dev/python/examples/typelib_dump.py "typelib_dump.py"
 
+3. The ldconfig tool is responsible for creating symlinks from soname to realnames, like /usr/lib/libfoo.so.1 -> /usr/lib/libfoo.so.1.0. At library installation time, a symlink from linkname to soname may have been created, like /usr/lib/liboo.so -> /usr/lib/libfoo.so.1. See [https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html](https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html).
