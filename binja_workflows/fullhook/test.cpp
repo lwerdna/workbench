@@ -25,373 +25,637 @@ using namespace std;
 
 BN_DECLARE_CORE_ABI_VERSION
 
-extern "C" void hook_core_function_findStringReferences(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_findStringReferences()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_checkForPureFunction(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_checkForPureFunction()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_module_freeAllUnusedAdvancedAnalysisData(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_module_freeAllUnusedAdvancedAnalysisData()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
 extern "C" void hook_core_function_advancedSelector(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_advancedSelector()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_advancedSelector()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_advancedSelector()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeStackAdjustment(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeStackAdjustment()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_modeSelector(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_modeSelector()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
 extern "C" void hook_core_function_processAnalysisSkip(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_processAnalysisSkip()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_processAnalysisSkip()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_processAnalysisSkip()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_controlFlowAnalysis(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_controlFlowAnalysis()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_checkForReturnWithBasicBlocksOnly(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_checkForReturnWithBasicBlocksOnly()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeSystemCalls(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeSystemCalls()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeConstantReferences(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeConstantReferences()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_concurrent_advancedAnalysis(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_concurrent_advancedAnalysis()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_generateLiftedIL(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_generateLiftedIL()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeCachedIndirectStructureReferences(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeCachedIndirectStructureReferences()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeAndExpandFlags(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeAndExpandFlags()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeStackVariableReferences(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeStackVariableReferences()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_update(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_update()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_runCompletionCallbacks(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_runCompletionCallbacks()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeMLILTypeReferences(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeMLILTypeReferences()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_finishUpdate(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_finishUpdate()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_generateMediumLevelIL(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_generateMediumLevelIL()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_checkForReturn(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_checkForReturn()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_processConstantPointerReferences(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_processConstantPointerReferences()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_basicBlockAnalysis(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_basicBlockAnalysis()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeIndirectBranches(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeIndirectBranches()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_fullAnalysis(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_fullAnalysis()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_resetIndirectBranchesOnFullUpdate(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_resetIndirectBranchesOnFullUpdate()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_translateTailCalls(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_translateTailCalls()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_processCompletionState(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_processCompletionState()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_generateHighLevelIL(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_generateHighLevelIL()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_propagateAnalysis(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_propagateAnalysis()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_runFunctionRecognizers(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_runFunctionRecognizers()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_advancedAnalysis(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_advancedAnalysis()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
-}
-
-extern "C" void hook_core_function_analyzeCallsites(Ref<AnalysisContext> analysisContext)
-{
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeCallsites()\n", function->GetStart());
-
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
 extern "C" void hook_core_function_basicAnalysis(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_basicAnalysis()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_basicAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_basicAnalysis()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
-extern "C" void hook_core_function_intermediateAnalysis(Ref<AnalysisContext> analysisContext)
+extern "C" void hook_core_function_modeSelector(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_intermediateAnalysis()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_modeSelector()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_modeSelector()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
-extern "C" void hook_core_function_commitAnalysisData(Ref<AnalysisContext> analysisContext)
+extern "C" void hook_core_function_advancedAnalysis(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_commitAnalysisData()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_advancedAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_advancedAnalysis()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_generateMediumLevelIL(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_generateMediumLevelIL()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_generateMediumLevelIL()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_runFunctionRecognizers(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_runFunctionRecognizers()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_runFunctionRecognizers()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_update(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_update()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_update()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_fullAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_fullAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_fullAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeIndirectBranches(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeIndirectBranches()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeIndirectBranches()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_translateTailCalls(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_translateTailCalls()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_translateTailCalls()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_generateLiftedIL(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_generateLiftedIL()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_generateLiftedIL()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_processConstantPointerReferences(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_processConstantPointerReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_processConstantPointerReferences()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeCallsites(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeCallsites()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeCallsites()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_controlFlowAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_controlFlowAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_controlFlowAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
 extern "C" void hook_core_function_analyzeCallTypes(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeCallTypes()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeCallTypes()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeCallTypes()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
-extern "C" void hook_core_function_analyzeDataVariables(Ref<AnalysisContext> analysisContext)
+extern "C" void hook_core_function_checkForReturnWithBasicBlocksOnly(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeDataVariables()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_checkForReturnWithBasicBlocksOnly()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_checkForReturnWithBasicBlocksOnly()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_propagateAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_propagateAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_propagateAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
 extern "C" void hook_core_function_analyzeTailCalls(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeTailCalls()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeTailCalls()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeTailCalls()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeDataVariables(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeDataVariables()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeDataVariables()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeConstantReferences(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeConstantReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeConstantReferences()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_defaultAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_defaultAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_defaultAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_commitAnalysisData(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_commitAnalysisData()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_commitAnalysisData()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_module_freeAllUnusedAdvancedAnalysisData(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function) {
+		printf("0x%" PRIx64 " hook_core_module_freeAllUnusedAdvancedAnalysisData()\n", function->GetStart());
+	} else {
+		printf("???????? hook_core_module_freeAllUnusedAdvancedAnalysisData()\n");
+		//return;
+	}
+		
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc) {
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	}
+}
+
+extern "C" void hook_core_function_concurrent_advancedAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_concurrent_advancedAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_concurrent_advancedAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_resetIndirectBranchesOnFullUpdate(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_resetIndirectBranchesOnFullUpdate()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_resetIndirectBranchesOnFullUpdate()\n");
+		//return;
+	}
+
+	printf("you know it\n");
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedIL();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeStackVariableReferences(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeStackVariableReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeStackVariableReferences()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeCachedIndirectStructureReferences(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeCachedIndirectStructureReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeCachedIndirectStructureReferences()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_finishUpdate(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_finishUpdate()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_finishUpdate()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_findStringReferences(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_findStringReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_findStringReferences()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeStackAdjustment(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeStackAdjustment()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeStackAdjustment()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_runCompletionCallbacks(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_runCompletionCallbacks()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_runCompletionCallbacks()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_generateHighLevelIL(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_generateHighLevelIL()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_generateHighLevelIL()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeAndExpandFlags(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeAndExpandFlags()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeAndExpandFlags()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_checkForPureFunction(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_checkForPureFunction()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_checkForPureFunction()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
 extern "C" void hook_core_function_analyzeHLILTypeReferences(Ref<AnalysisContext> analysisContext)
 {
-    Ref<Function> function = analysisContext->GetFunction();
-    printf("0x%" PRIx64 " hook_core_function_analyzeHLILTypeReferences()\n", function->GetStart());
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeHLILTypeReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeHLILTypeReferences()\n");
+		//return;
+	}
 
-    Ref<LowLevelILFunction> llilFunc = analysisContext->GetLowLevelILFunction();
-    printf("LLIL instruction count is: %zu\n", llilFunc->GetInstructionCount());
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_intermediateAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_intermediateAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_intermediateAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_basicBlockAnalysis(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_basicBlockAnalysis()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_basicBlockAnalysis()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeMLILTypeReferences(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeMLILTypeReferences()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeMLILTypeReferences()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_processCompletionState(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_processCompletionState()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_processCompletionState()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_checkForReturn(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_checkForReturn()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_checkForReturn()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+}
+
+extern "C" void hook_core_function_analyzeSystemCalls(Ref<AnalysisContext> analysisContext)
+{
+	Ref<Function> function = analysisContext->GetFunction();
+	if(function)
+		printf("0x%" PRIx64 " hook_core_function_analyzeSystemCalls()\n", function->GetStart());
+	else {
+		printf("???????? hook_core_function_analyzeSystemCalls()\n");
+		//return;
+	}
+
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
+	if(liftedFunc)
+		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
 }
 
 extern "C" BINARYNINJAPLUGIN bool CorePluginInit()
