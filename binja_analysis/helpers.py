@@ -23,7 +23,7 @@ def bbtext(bb):
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# access instrutions at various IL levels
+# access instrutions at various IL levels by address
 #------------------------------------------------------------------------------
 
 def get_instruction_addresses(func):
@@ -95,7 +95,10 @@ def print_basic_block_disasm(bb):
       (Fore.GREEN, bbid(bb), str(bb), len(lines)), Style.RESET_ALL)
 
     for line in lines:
-        (addr, rest) = re.match(r'^([a-hA-H0-9]{8}): (.*)$', line).group(1,2)
+        m = re.match(r'^([a-hA-H0-9]{8,16}): (.*)$', line)
+        if not m:
+            breakpoint()
+        (addr, rest) = m.group(1,2)
         print('%s%s: %s%s' % (Style.DIM, addr, Style.RESET_ALL, rest))
 
 # print function, split into basic blocks
