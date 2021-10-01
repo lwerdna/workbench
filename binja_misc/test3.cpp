@@ -4,7 +4,7 @@ A: see below
 
 this is cribbed from the llil_parser.cpp example in the API
 
-g++ -std=c++11 -I$BN_API_PATH test3.cpp $BN_LIBBINARYNINJAAPI $BN_LIBBINARYNINJACORE -o test3
+g++ -g -O0 -std=c++11 -I$BN_API_PATH test3.cpp $BN_LIBBINARYNINJAAPI $BN_LIBBINARYNINJACORE -o test3
 install_name_tool -change @rpath/libbinaryninjacore.1.dylib $BN_LIBBINARYNINJACORE ./test3
 */
 

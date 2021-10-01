@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-# is LLIL/MLIL/HLIL saved and available after .bndb load?
+# Q: is LLIL/MLIL/HLIL saved and available after .bndb load?
+# A: no
 
 import binaryninja
 

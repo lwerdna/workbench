@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Q: how much faster are different initial analysis options?
+# Q: How much faster are different initial analysis options?
 # A: controlFlow and basic are around a quarter, intermediate is around three quarters of full
 
 # /bin/ls
