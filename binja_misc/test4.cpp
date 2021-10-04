@@ -88,43 +88,48 @@ int main(int ac, char **av)
 	bv = open_view(av[1]);
 	if(!bv) { printf("ERROR: opening file\n"); return -1; }
 
+	Ref<DisassemblySettings> settings = new DisassemblySettings();
+	settings->SetOption(ShowAddress, true);
+	settings->SetOption(ShowOpcode, true);
+	settings->SetOption(ExpandLongOpcode, true);
+	settings->SetOption(ShowVariablesAtTopOfGraph, true);
+	settings->SetOption(ShowVariableTypesWhenAssigned, true);
+	settings->SetOption(ShowCallParameterNames, true);
+	settings->SetOption(ShowRegisterHighlight, true);
+	settings->SetOption(ShowFunctionAddress, true);
+	settings->SetOption(ShowFunctionHeader, true);
+
 	/* what type of linear view object?
 	 * CreateLiftedIL()
 	 * CreateLowLevelIL()
 	 * CreateMediumLevelIL()
 	 * etc. */
-	Ref<LinearViewObject> lvo = LinearViewObject::CreateDisassembly(bv, new DisassemblySettings());
+	Ref<LinearViewObject> lvo = LinearViewObject::CreateDisassembly(bv, settings);
 	if(!lvo) { printf("ERROR: creating linear view object\n"); return -1; }
 
 	Ref<LinearViewCursor> lvc = new LinearViewCursor(lvo);
 	if(!lvc) { printf("ERROR: creating cursor\n"); return -1; }
 	
-//	for(int i=0; 1; ++i) {
-//		printf("before:%d after:%d valid:%d\n", lvc->IsBeforeBegin(), lvc->IsAfterEnd(), lvc->IsValid());
-//		bool tmp = lvc->Next();
-//		printf("%d lvc->Next(): %d\n", i, tmp);
-//		if(!tmp) break;
-//	}
-//	printf("before:%d after:%d valid:%d\n", lvc->IsBeforeBegin(), lvc->IsAfterEnd(), lvc->IsValid());
-//
-//	lvc->Previous();
-	vector<LinearDisassemblyLine> lines = lvc->GetLines();
-	for(const auto& line : lines) {
-		for(const auto& token : line.contents.tokens){
-			printf("%s\n", token.text.c_str());
+	while(lvc->IsValid()) {
+		vector<LinearDisassemblyLine> lines = lvc->GetLines();
+		for(const auto& line : lines) {
+			for(const auto& token : line.contents.tokens){
+				/* no tags/emojis */
+				if(token.type == TagToken)
+					continue;
+
+				printf("%s", token.text.c_str());
+			}
+			printf("\n");
 		}
+
+		lvc->Next();
 	}
-	//if(!lvc) { printf("ERROR: creating linear view cursor\n"); return -1; }
-	//vector<LinearDisassemblyLine> lines = lvc->GetLines();
-//	for(int i=0; i<lines.size(); ++i) {
-//		LinearDisassemblyLine ldl = lines[i];
-//		DisassemblyTextLine dtl = ldl.contents;
-//		std::vector<InstructionTextToken> &tokens = dtl.tokens;
-//		for(int j=0; j<tokens.size(); ++j) {
-//			InstructionTextToken itt = dtl.tokens[j];
-//			printf("%s", itt.text.c_str());
-//		}
-//	}
+
+	/* reference counted objects auto-deleted if reference count to zero at scope exit */
+	//delete lvc;
+	//delete lvo;
+	//delete settings;
 
 	printf("OK!\n");
 	return 0;
