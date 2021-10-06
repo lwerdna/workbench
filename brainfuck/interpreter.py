@@ -11,17 +11,14 @@ code = list(code)
 code = [c for c in code if not c.isspace()]
 
 # validate matching []'s
-brackets = {}
+jmp = {}
 stack = []
 for (i,c) in enumerate(code):
     if c == '[':
         stack.append(i)
     elif c == ']':
-        src = stack[-1]
-        dst = i
-        brackets[src] = dst
-        brackets[dst] = src
-        stack.pop()
+        jmp[stack[-1]] = i
+        jmp[i] = stack.pop()
 
 #
 data = defaultdict(int)
@@ -47,19 +44,19 @@ while True:
     elif c == '<':
         data_ptr -= 1
     elif c == '+':
-        data[data_ptr] += 1
+        data[data_ptr] = (data[data_ptr] + 1) % 256
     elif c == '-':
-        data[data_ptr] -= 1
+        data[data_ptr] = (data[data_ptr] - 1) % 256
     elif c == '.':
         print(chr(data[data_ptr]), end='')
     elif c == ',':
         data[data_ptr] = int(input())
     elif c == '[':
         if data[data_ptr] == 0:
-            instr_ptr = brackets[instr_ptr]
+            instr_ptr = jmp[instr_ptr]
     elif c == ']':
         if data[data_ptr] != 0:
-            instr_ptr = brackets[instr_ptr]
+            instr_ptr = jmp[instr_ptr]
     else:
         # ...possibly interspersed with other characters (which are ignored)
         pass
