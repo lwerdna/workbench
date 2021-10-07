@@ -2,26 +2,30 @@
 
 # translate brainfuck to x64
 # + trivial intermediate language
-# + trivial optimizations 
+# + trivial optimizations
 
 import os, sys, re, pprint
 
 print('; brainfuck assembly translation of %s\n' % sys.argv[1])
 
-with open('prologue.s') as fp:
-    print(fp.read())
+
 
 # convert bf commands to IL
-def to_il(c):
-    if c == '>': return {'op':'right', 'repeat':1}
-    if c == '<': return {'op':'left', 'repeat':1}
-    if c == '+': return {'op':'inc', 'repeat':1}
-    if c == '-': return {'op':'dec', 'repeat':1}
-    if c == '.': return {'op':'out', 'repeat':1}
-    if c == ',': return {'op':'in', 'repeat':1}
-    if c == '[': return {'op':'loop_start', 'repeat':1}
-    if c == ']': return {'op':'loop_end', 'repeat':1}
-    return {'op':'nop', 'repeat':1}
+def to_il(code):
+    result = []
+    for (i,c) in enumerate(code):
+        entry = {'repeat':1, 'location':i}
+        if c == '>': entry['op'] = 'right'
+        elif c == '<': entry['op'] = 'left'
+        elif c == '+': entry['op'] = 'inc'
+        elif c == '-': entry['op'] = 'dec'
+        elif c == '.': entry['op'] = 'out'
+        elif c == ',': entry['op'] = 'in'
+        elif c == '[': entry['op'] = 'loop_start'
+        elif c == ']': entry['op'] = 'loop_end'
+        else: entry['op'] = 'nop'
+        result.append(entry)
+    return result
 
 def remove_nops(code):
     return [il for il in code if il['op'] != 'nop']
@@ -34,9 +38,9 @@ def collapse(code):
         if not code[i]['op'] in ['loop_start', 'loop_end', 'out', 'in']:
             while (i+n)<len(code)-1 and code[i]['op'] == code[i+n]['op']:
                 n += 1
-        result.append({'op':code[i]['op'], 'repeat':n})
+        result.append({'op':code[i]['op'], 'repeat':n, 'location':code[i]['location']})
         i += n
-    return result 
+    return result
 
 def collapse_recursive(code):
     if len(code)<=1:
@@ -55,27 +59,32 @@ def print_il(code):
     for (i,il) in enumerate(code):
         print('%s.%d' % (il['op'], il['repeat']))
 
+# pre-code
+with open('prologue.s') as fp:
+    print(fp.read())
+
 # code from file
 with open(sys.argv[1]) as fp:
     code = fp.read()
-# code to IL
-code = [to_il(c) for c in code]
-code = remove_nops(code)
-code = collapse(code)
 
-# validate matching []'s
+# validate matching []'s, save indices to match input file
 jmp = {}
 stack = []
-for (i,il) in enumerate(code):
-    if il['op'] == 'loop_start':
+for (i,c) in enumerate(code):
+    if c == '[':
         stack.append(i)
-    elif il['op'] == 'loop_end':
+    elif c == ']':
         jmp[stack[-1]] = i
         jmp[i] = stack.pop()
 
+# code to IL
+code = to_il(code)
+code = remove_nops(code)
+code = collapse(code)
+
 #
-for (i,il) in enumerate(code):
-    (op, repeat) = (il['op'], il['repeat'])
+for il in code:
+    (op, repeat, location) = (il['op'], il['repeat'], il['location'])
     if op == 'right':
         if repeat==1:
             print('\tinc rdi')
@@ -102,12 +111,12 @@ for (i,il) in enumerate(code):
         print('\tcall input')
     elif op == 'loop_start':
         print('\tcmp byte [rdi], 0')
-        print('\tjz loc_%d' % jmp[i]) 
-        print('loc_%d:' % i)
+        print('\tjz loc_%d' % jmp[location])
+        print('loc_%d:' % location)
     elif op == 'loop_end':
         print('\tcmp byte [rdi], 0')
-        print('\tjnz loc_%d' % jmp[i])     
-        print('loc_%d:' % i)
+        print('\tjnz loc_%d' % jmp[location])
+        print('loc_%d:' % location)
     else:
         # ...possibly interspersed with other characters (which are ignored)
         pass

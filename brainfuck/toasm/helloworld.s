@@ -15,17 +15,17 @@ _main:
 body:
 
 	cmp byte [rdi], 0
-	jz loc_23
+	jz loc_571
 loc_0:
 	call input
 	call output
 	cmp byte [rdi], 0
-	jz loc_5
-loc_3:
+	jz loc_137
+loc_113:
 	call output
 	cmp byte [rdi], 0
-	jnz loc_3
-loc_5:
+	jnz loc_113
+loc_137:
 	call input
 	call output
 	call output
@@ -40,25 +40,25 @@ loc_5:
 	inc rdi
 	call input
 	cmp byte [rdi], 0
-	jz loc_20
-loc_19:
+	jz loc_381
+loc_373:
 	cmp byte [rdi], 0
-	jnz loc_19
-loc_20:
+	jnz loc_373
+loc_381:
 	call output
 	call output
 	cmp byte [rdi], 0
 	jnz loc_0
-loc_23:
+loc_571:
 	add byte [rdi], 8
 	cmp byte [rdi], 0
-	jz loc_53
-loc_25:
+	jz loc_1443
+loc_613:
 	inc rdi
 	add byte [rdi], 4
 	cmp byte [rdi], 0
-	jz loc_39
-loc_28:
+	jz loc_985
+loc_695:
 	inc rdi
 	add byte [rdi], 2
 	inc rdi
@@ -70,8 +70,8 @@ loc_28:
 	sub rdi, 4
 	dec byte [rdi]
 	cmp byte [rdi], 0
-	jnz loc_28
-loc_39:
+	jnz loc_695
+loc_985:
 	inc rdi
 	inc byte [rdi]
 	inc rdi
@@ -81,17 +81,17 @@ loc_39:
 	add rdi, 2
 	inc byte [rdi]
 	cmp byte [rdi], 0
-	jz loc_50
-loc_48:
+	jz loc_1236
+loc_1234:
 	dec rdi
 	cmp byte [rdi], 0
-	jnz loc_48
-loc_50:
+	jnz loc_1234
+loc_1236:
 	dec rdi
 	dec byte [rdi]
 	cmp byte [rdi], 0
-	jnz loc_25
-loc_53:
+	jnz loc_613
+loc_1443:
 	add rdi, 2
 	call output
 	inc rdi

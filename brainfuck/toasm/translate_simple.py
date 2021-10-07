@@ -33,15 +33,15 @@ for (i,c) in enumerate(code):
     elif c == '-':
         print('\tdec byte [rdi]')
     elif c == '.':
-        print('\tcall output ; "%s"' % c)
+        print('\tcall output')
     elif c == ',':
         print('\tcall input')
     elif c == '[':
-        print('\tcmp byte[rdi], 0')
+        print('\tcmp byte [rdi], 0')
         print('\tjz loc_%d' % jmp[i]) 
         print('loc_%d:' % i)
     elif c == ']':
-        print('\tcmp byte[rdi], 0')
+        print('\tcmp byte [rdi], 0')
         print('\tjnz loc_%d' % jmp[i])     
         print('loc_%d:' % i)
     else:
