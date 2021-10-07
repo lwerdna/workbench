@@ -1,30 +1,30 @@
 
 exit:
-	mov		rax, 0x2000001 ; exit
-	mov		rdi, 0
+	mov rax, 0x2000001 ; exit
+	mov rdi, 0
 	syscall
 
 input:
-	push	rdi
+	push rdi
 
-	mov		rdx, 1 ; size
-	mov		rsi, rdi ; ptr to string
-	mov		rdi, 0 ; input stream: stdin
-	mov		rax, 0x2000003 ; read
+	mov rdx, 1 ; size
+	mov rsi, rdi ; ptr to string
+	mov rdi, 0 ; input stream: stdin
+	mov rax, 0x2000003 ; read
 	syscall
 
-	pop		rdi
+	pop rdi
 	retn
 
 output:
-	push	rdi
+	push rdi
 
-	mov		rdx, 1	; size
-	mov		rsi, rdi ; ptr to string
-	mov		rdi, 1 ; output stream: stdout
-	mov		rax, 0x2000004 ; write
+	mov rdx, 1 ; size
+	mov rsi, rdi ; ptr to string
+	mov rdi, 1 ; output stream: stdout
+	mov rax, 0x2000004 ; write
 	syscall
 
-	pop		rdi
+	pop rdi
 	retn
 
