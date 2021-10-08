@@ -22,6 +22,8 @@ for bb in func.basic_blocks:
             print('back edge %s -> %s' % (bbid(edge.source), bbid(edge.target)))
 
 # collect all nodes between header and bottom
+reds_all = []
+
 for edge in back_edges:
     (header, footer) = (edge.target, edge.source)
     print('collecting blocks for loop fenced between %s and %s:' % (bbid(header), bbid(footer)))
@@ -34,5 +36,8 @@ for edge in back_edges:
         queue.extend(new_batch)
     print(','.join([bbid(n) for n in loop_blocks]))
     reds = list(loop_blocks)
-    graph_func('loop_%s_%s.png' % (bbid(header), bbid(footer)), func, reds, [])
+    graph_func('loop_%s_%s' % (bbid(header), bbid(footer)), func, reds, [])
 
+    reds_all.extend(reds)
+
+graph_func('loops', func, reds_all, [])
