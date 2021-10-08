@@ -5,7 +5,7 @@ import os, sys, re
 import fizzbuzz
 from helpers import *
 
-func = bytes_to_function(fizzbuzz.binary)
+(bv, func) = quick_get_func()
 
 print('; function disassembly')
 print_function_disasm(func)

@@ -1,6 +1,7 @@
 import binaryninja
 from binaryninja import core
 from binaryninja import binaryview
+from binaryninja import BinaryViewType
 
 from colorama import Fore, Back, Style
 
@@ -17,6 +18,21 @@ def bbtext(bb):
     return '\n'.join(
         ['%08X: %s' % (l.address, l) for l in bb.get_disassembly_text()]
     )
+
+def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
+    if sys.argv[1:]:
+        fpath = sys.argv[1]
+    if sys.argv[2:]:
+        fpath = sys.argv[2]
+
+    bv = BinaryViewType.get_view_of_file(fpath)
+    if not bv:
+        raise Exception('binary ninja didnt return analysis on -%s-' % fpath)
+    bv.update_analysis_and_wait()
+    func = bv.get_functions_by_name(symbol)[0]
+    if not func:
+        raise Exception('binary ninja didnt return func on -%s-' % symbol)
+    return (bv, func)
 
 #------------------------------------------------------------------------------
 # attempt map between IL levels
@@ -103,8 +119,9 @@ def print_basic_block_disasm(bb):
 
 # print function, split into basic blocks
 def print_function_disasm(func):
-    print(Fore.GREEN, '; %s has %d basic blocks' % (str(func), len(func.basic_blocks)), Style.RESET_ALL)
-    for bb in sorted(func.basic_blocks, key=lambda bb: bb.start):
+    basic_blocks = list(func.basic_blocks)
+    print(Fore.GREEN, '; %s has %d basic blocks' % (str(func), len(basic_blocks)), Style.RESET_ALL)
+    for bb in sorted(basic_blocks, key=lambda bb: bb.start):
         print_basic_block_disasm(bb)
 
 # print all functions in a binary view
@@ -125,6 +142,8 @@ def graph_func(fname, func, reds=[], greens=[], blues=[]):
     # write attributes
     for bb in func.basic_blocks:
         label = '\\l'.join(['; '+bbid(bb)] + bbtext(bb).split('\n')) + '\\l'
+        label = label.replace('\\n', '\\\\n')
+        label = label.replace('"', '\\"')
         color = 'black'
         if bb in reds: color='red'
         if bb in greens: color='green'
