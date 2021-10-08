@@ -23,7 +23,7 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
     if sys.argv[1:]:
         fpath = sys.argv[1]
     if sys.argv[2:]:
-        fpath = sys.argv[2]
+        symbol = sys.argv[2]
 
     bv = BinaryViewType.get_view_of_file(fpath)
     if not bv:

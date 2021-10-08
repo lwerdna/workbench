@@ -2,7 +2,6 @@
 
 import os, sys, re
 
-import fizzbuzz
 from helpers import *
 
 (bv, func) = quick_get_func()

@@ -42,6 +42,30 @@ int collatz_message(char *message, int n)
 	return n;
 }
 
+void some_loops(void)
+{
+	int i = 0;
+
+	printf("even numbers:\n");
+	for(i=0; i<16; i+=2)
+		printf("%d ", i);
+
+	printf("\nnot a loop: %d\n", i);
+
+	printf("\nnumbers with b1 set:\n");
+	for(i=0; i<16; i++)
+		if(i & 2)
+			printf("%d ", i);
+
+	printf("\nnot a loop: %d\n", i);
+
+	printf("\nperfect squares:\n");
+	for(i=0; i<16; i++)
+		printf("%d ", i*i);
+
+	printf("\nnot a loop: %d\n", i);
+}
+
 int main(int ac, char **av)
 {
 	fizzbuzz();
