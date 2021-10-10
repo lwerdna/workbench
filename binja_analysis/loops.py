@@ -28,12 +28,13 @@ for edge in back_edges:
     (header, footer) = (edge.target, edge.source)
     print('collecting blocks for loop fenced between %s and %s:' % (bbid(header), bbid(footer)))
     loop_blocks = set([header, footer])
-    queue = [edge.source]
-    while queue:
-        cur = queue.pop(0)
-        loop_blocks.add(cur)
-        new_batch = [e.source for e in cur.incoming_edges if (not e.source in loop_blocks)]
-        queue.extend(new_batch)
+    if header != footer:
+        queue = [edge.source]
+        while queue:
+            cur = queue.pop(0)
+            loop_blocks.add(cur)
+            new_batch = [e.source for e in cur.incoming_edges if (not e.source in loop_blocks)]
+            queue.extend(new_batch)
     print(','.join([bbid(n) for n in loop_blocks]))
     reds = list(loop_blocks)
     graph_func('loop_%s_%s' % (bbid(header), bbid(footer)), func, reds, [])

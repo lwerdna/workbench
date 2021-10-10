@@ -46,6 +46,10 @@ void some_loops(void)
 {
 	int i = 0;
 
+	while(i<10) {
+		printf("i: %d\n", i++);
+	}
+
 	printf("even numbers:\n");
 	for(i=0; i<16; i+=2)
 		printf("%d ", i);
@@ -62,6 +66,11 @@ void some_loops(void)
 	printf("\nperfect squares:\n");
 	for(i=0; i<16; i++)
 		printf("%d ", i*i);
+
+	printf("\nnot a loop: %d\n", i);
+
+	while(1)
+		printf("forever loop!\n");
 
 	printf("\nnot a loop: %d\n", i);
 }
