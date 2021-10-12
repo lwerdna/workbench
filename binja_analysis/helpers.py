@@ -223,9 +223,9 @@ def nx_graph_from_binja(func):
     return G
 
 # return the dominators (non-strict) of target
-def nx_dominators(G, node_target):
+def nx_dominators(G, node_target, node_start='b0'):
     # get dominator tree, parent is immediate dominator
-    lookup = nx.immediate_dominators(G, 'b0')
+    lookup = nx.immediate_dominators(G, node_start)
     assert node_target in lookup
 
     # walk up the tree
@@ -233,9 +233,17 @@ def nx_dominators(G, node_target):
     current = node_target
     while True:
         result.append(current)
-        if current == 'b0':
+        if current == node_start:
             break
         current = lookup[current]
 
     return result
+
+def nx_draw(path_png, G):
+    path_dot = '/tmp/tmp.dot'
+    print('writing '+path_dot)
+    nx.drawing.nx_pydot.write_dot(G, path_dot) 
+
+    print('writing '+path_png)
+    os.system('dot %s -Tpng -o %s' % (path_dot, path_png))
 
