@@ -3,7 +3,6 @@
 # test loop detection by comparison against NetworkX (graph theory library)
 
 import sys
-from binaryninja import BinaryViewType
 import networkx as nx
 from helpers import *
 from loops import get_loops
@@ -20,25 +19,24 @@ if __name__ == '__main__':
     for func in functions:
         print('-------- analyzing function %s --------' % func.name)
 
-        # get binja's answer
-        #
-        answer_binja = set()
-        for (i,loop) in enumerate(get_loops(func)):
-            answer_binja.update([bbid(bb) for bb in loop])
-        print('binja says:', answer_binja)
-
-        # get networkx's answer
-        #
         G = nx_graph_from_binja(func)
-        answer_nx = set()
-        for cycle in nx.simple_cycles(G):
-            print('nx cycle at:', cycle)
-            answer_nx.update(cycle)
-        print('networkx says:', answer_nx)
 
-        # compare answers
-        #
-        if answer_binja == answer_nx:
-            print('PASS!')
-        else:
-            raise Exception('FAIL!')
+        for bb in func.basic_blocks:
+            print('for basic block %s' % bbid(bb))
+
+            # get binja's answer
+            #
+            answer_binja = set([bbid(x) for x in bb.dominators])
+            print('binja says:', answer_binja)
+
+            # get networkx's answer
+            #
+            answer_nx = set(nx_dominators(G, bbid(bb)))
+            print('networkx says:', answer_nx)
+
+            # compare answers
+            #
+            if answer_binja == answer_nx:
+                print('PASS!')
+            else:
+                raise Exception('FAIL!')

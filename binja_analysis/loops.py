@@ -26,7 +26,7 @@ def get_loops(func):
                 back_edges.append(edge)
                 print('back edge %s -> %s' % (bbid(edge.source), bbid(edge.target)))
 
-    # collect all nodes between header and footer
+    # reverse breadth-first search from footer to header, collecting all nodes
     for edge in back_edges:
         (header, footer) = (edge.target, edge.source)
         print('collecting blocks for loop fenced between %s and %s:' % (bbid(header), bbid(footer)))

@@ -5,6 +5,8 @@ from binaryninja import BinaryViewType
 
 from colorama import Fore, Back, Style
 
+import networkx as nx
+
 import os, sys, re, time
 
 #------------------------------------------------------------------------------
@@ -68,7 +70,7 @@ def get_instruction_addresses(func):
 #       binaryninja.lowlevelil.LowLevelILFunction
 #       binaryninja.mediumlevelil.MediumLevelILFunction
 #       binaryninja.highlevelil.HighLevelILFunction
-# 
+#
 def get_function_instruction_by_address(func, addr):
     result = []
     for bb in func.basic_blocks:
@@ -199,6 +201,41 @@ def graph_func(fname, func, reds=[], greens=[], blues=[]):
         #os.system('fdp ./cfg.dot -Tpng -o cfg_fdp.png')
         #os.system('sfdp ./cfg.dot -Tpng -o cfg_sfdp.png')
         #os.system('twopi ./cfg.dot -Tpng -o cfg_twopi.png')
-        #os.system('circo ./cfg.dot -Tpng -o cfg_circo.png')    
+        #os.system('circo ./cfg.dot -Tpng -o cfg_circo.png')
     else:
         print('skipping %s (already exists)' % png_name)
+
+#------------------------------------------------------------------------------
+# networkx helpers
+#------------------------------------------------------------------------------
+
+# convert a Binary Ninja CFG to a NetworkX directed graph
+def nx_graph_from_binja(func):
+    G = nx.DiGraph()
+
+    for src in func.basic_blocks:
+        G.add_node(bbid(src))
+
+        for dst in [edge.target for edge in src.outgoing_edges]:
+            G.add_node(bbid(dst))
+            G.add_edge(bbid(src), bbid(dst))
+
+    return G
+
+# return the dominators (non-strict) of target
+def nx_dominators(G, node_target):
+    # get dominator tree, parent is immediate dominator
+    lookup = nx.immediate_dominators(G, 'b0')
+    assert node_target in lookup
+
+    # walk up the tree
+    result = []
+    current = node_target
+    while True:
+        result.append(current)
+        if current == 'b0':
+            break
+        current = lookup[current]
+
+    return result
+
