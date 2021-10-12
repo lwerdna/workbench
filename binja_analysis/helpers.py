@@ -5,7 +5,7 @@ from binaryninja import BinaryViewType
 
 from colorama import Fore, Back, Style
 
-import os, sys, re
+import os, sys, re, time
 
 #------------------------------------------------------------------------------
 # misc
@@ -15,9 +15,10 @@ def bbid(bb):
     return 'b%d' % bb.index
 
 def bbtext(bb):
-    return '\n'.join(
-        ['%08X: %s' % (l.address, l) for l in bb.get_disassembly_text()]
-    )
+    lines = []
+    #lines.append('%s:' % bbid(bb))
+    lines.extend(['%08X: %s' % (l.address, l) for l in bb.get_disassembly_text()])
+    return '\n'.join(lines)
 
 def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
     if sys.argv[1:]:
@@ -25,14 +26,23 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
     if sys.argv[2:]:
         symbol = sys.argv[2]
 
-    bv = BinaryViewType.get_view_of_file(fpath)
+    update_analysis = True
+    callbacks = None
+    options = {'analysis.mode':'controlFlow'}
+    #bv = BinaryViewType.get_view_of_file(fpath)
+    print('opening %s in binaryninja' % fpath)
+    t0 = time.perf_counter()
+    bv = binaryninja.open_view(fpath, update_analysis, callbacks, options)
     if not bv:
         raise Exception('binary ninja didnt return analysis on -%s-' % fpath)
-    bv.update_analysis_and_wait()
-    func = bv.get_functions_by_name(symbol)[0]
-    if not func:
+    #bv.update_analysis_and_wait()
+    #func = bv.get_functions_by_name(symbol)[0]
+    t1 = time.perf_counter()
+    print('analysis complete after %fs' % (t1-t0))
+    funcs = [f for f in bv.functions if f.name==symbol]
+    if not funcs:
         raise Exception('binary ninja didnt return func on -%s-' % symbol)
-    return (bv, func)
+    return (bv, funcs[0])
 
 #------------------------------------------------------------------------------
 # attempt map between IL levels
@@ -112,10 +122,16 @@ def print_basic_block_disasm(bb):
 
     for line in lines:
         m = re.match(r'^([a-hA-H0-9]{8,16}): (.*)$', line)
-        if not m:
-            breakpoint()
-        (addr, rest) = m.group(1,2)
-        print('%s%s: %s%s' % (Style.DIM, addr, Style.RESET_ALL, rest))
+        if m:
+            (addr, rest) = m.group(1,2)
+            print('%s%s: %s%s' % (Style.DIM, addr, Style.RESET_ALL, rest))
+            continue
+
+        m = re.match(r'^b\d+:$', line)
+        if m:
+            continue
+
+        breakpoint()
 
 # print function, split into basic blocks
 def print_function_disasm(func):
