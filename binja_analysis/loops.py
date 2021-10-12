@@ -24,7 +24,7 @@ def get_loops(func):
         for edge in bb.outgoing_edges:
             if edge.target in edge.source.dominators:
                 back_edges.append(edge)
-                print('back edge %s -> %s' % (bbid(edge.source), bbid(edge.target)))
+                #print('back edge %s -> %s' % (bbid(edge.source), bbid(edge.target)))
 
     # reverse breadth-first search from footer to header, collecting all nodes
     for edge in back_edges:
@@ -37,6 +37,7 @@ def get_loops(func):
                 cur = queue.pop(0)
                 loop_blocks.add(cur)
                 new_batch = [e.source for e in cur.incoming_edges if (not e.source in loop_blocks)]
+                print('incoming blocks to %s: %s' % (bbid(cur), [bbid(x) for x in new_batch]))
                 queue.extend(new_batch)
         print(','.join([bbid(n) for n in loop_blocks]))
 
