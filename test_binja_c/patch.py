@@ -3,12 +3,15 @@
 
 import os, sys, re
 
-fpath = os.path.join(os.environ['BN_API_DIR'], 'binaryninjacore.h')
+fpath = os.path.join(os.environ['BN_API_PATH'], 'binaryninjacore.h')
 with open(fpath) as fp:
     lines = [x.rstrip() for x in fp.readlines()]
 
 i = 0
 while i < len(lines):
+    if '#include <cstdint>' in lines[i]: i+=1; continue
+    if '#include <cstddef>' in lines[i]:  i+=1; continue
+    if '#include <cstdlib>' in lines[i]:  i+=1; continue
 
     m = re.match(r'^(\s+)struct (.*);$', lines[i])
     if m:

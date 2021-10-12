@@ -18,7 +18,8 @@ endif
 all: go
 
 go: go.c
-	gcc go.c -std=c17 -o go -I$(BN_API_DIR) -L$(PATH_CORE) -lbinaryninjacore
+	gcc go.c -std=c17 -o go -I$(BN_API_PATH) -L$(PATH_CORE) -lbinaryninjacore
+	install_name_tool -change @rpath/libbinaryninjacore.1.dylib $(PATH_CORE)/libbinaryninjacore.dylib ./go
 
 clean:
 	rm -f go
