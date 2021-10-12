@@ -39,10 +39,15 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
     #func = bv.get_functions_by_name(symbol)[0]
     t1 = time.perf_counter()
     print('analysis complete after %fs' % (t1-t0))
-    funcs = [f for f in bv.functions if f.name==symbol]
-    if not funcs:
-        raise Exception('binary ninja didnt return func on -%s-' % symbol)
-    return (bv, funcs[0])
+
+    func = None
+    if symbol:
+        funcs = [f for f in bv.functions if f.name==symbol]
+        if funcs:
+            func = funcs[0]
+    #if not funcs:
+    #    raise Exception('binary ninja didnt return func on -%s-' % symbol)
+    return (bv, func)
 
 #------------------------------------------------------------------------------
 # attempt map between IL levels

@@ -15,10 +15,14 @@ def get_loops(func):
 
     # find back edges (B -> A when A dominates B)
     # A is called "header", B is called "footer"
+    #
+    # WARNING:
+    #   Basic_block.back_edge is a less strict "edge to ancestor" definition of back edge.
+    #   We need the stricter "edge to dominator" definition for loop detection.
     back_edges = []
     for bb in func.basic_blocks:
         for edge in bb.outgoing_edges:
-            if edge.back_edge:
+            if edge.target in edge.source.dominators:
                 back_edges.append(edge)
                 print('back edge %s -> %s' % (bbid(edge.source), bbid(edge.target)))
 

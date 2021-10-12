@@ -5,6 +5,7 @@
 import sys
 from binaryninja import BinaryViewType
 import networkx as nx
+import helpers
 from loops import get_loops
 
 # return a string identifier for a given basic block node
@@ -26,13 +27,14 @@ def binja_func_to_networkx_graph(func):
 
 if __name__ == '__main__':
     fpath = './tests' if not sys.argv[1:] else sys.argv[1]
+    func = None if not sys.argv[2:] else sys.argv[2]
 
-    bv = BinaryViewType.get_view_of_file(fpath)
+    (bv, func) = helpers.quick_get_func(fpath, None)
     if not bv:
         raise Exception('binary ninja didnt return analysis on -%s-' % fpath)
-    bv.update_analysis_and_wait()
 
-    for func in bv.functions:
+    functions = [func] if func else bv.functions
+    for func in functions:
         print('-------- analyzing function %s --------' % func.name)
 
         # get binja's answer
@@ -47,6 +49,7 @@ if __name__ == '__main__':
         G = binja_func_to_networkx_graph(func)
         answer_nx = set()
         for cycle in nx.simple_cycles(G):
+            print('nx cycle at:', cycle)
             answer_nx.update(cycle)
         print('networkx says:', answer_nx)
 
