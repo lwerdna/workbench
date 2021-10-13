@@ -6,6 +6,7 @@ from binaryninja import BinaryViewType
 from colorama import Fore, Back, Style
 
 import networkx as nx
+from miasm.core.graph import DiGraph
 
 import os, sys, re, time
 
@@ -247,3 +248,16 @@ def nx_draw(path_png, G):
     print('writing '+path_png)
     os.system('dot %s -Tpng -o %s' % (path_dot, path_png))
 
+#------------------------------------------------------------------------------
+# miasm helpers
+#------------------------------------------------------------------------------
+
+# convert a Binary Ninja CFG to a miasm directed graph
+def miasm_graph_from_binja(func):
+    G = DiGraph()
+
+    for src in func.basic_blocks:
+        for dst in [edge.target for edge in src.outgoing_edges]:
+            G.add_edge(bbid(src), bbid(dst))
+
+    return G

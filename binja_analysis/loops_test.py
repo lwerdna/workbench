@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-# test loop detection by comparison against NetworkX (graph theory library)
+# test loop detection by comparison against miasm
 
 import sys
 from binaryninja import BinaryViewType
-import networkx as nx
 from helpers import *
 from loops import get_loops
+
+from miasm.core.graph import DiGraph
 
 # given a dominator tree of graph, test if a->b
 def test_dominate(dominator_tree, a, b):
@@ -36,42 +37,26 @@ if __name__ == '__main__':
             answer_binja.update([bbid(bb) for bb in loop])
         print('binja says:', answer_binja)
 
-        # get networkx's answer
+        # get miasm's answer
         #
-        # We could just compare to the same algorithm implemented in networkx here, but then there is risk
-        # of getting it wrong twice, of verifying wrong vs. wrong.
-        # Instead, inefficiently detect all cycles then filter when head dominates tail so that it comes at
-        # the problem from a different angle.
-        G = nx_graph_from_binja(func)
-        dominator_tree = nx.immediate_dominators(G, 'b0') # cache dominator tree for fast lookup
-        answer_nx = set()
-        for cycle in nx.simple_cycles(G):
-            print('nx cycle at:', cycle)
-            if len(cycle) == 1:
-                answer_nx.update(cycle)
-            else:
-                # [A,B,C] is returned for cycles:
-                # {A->B->C->A, B->C->A->B, C->A->B->C}
-                n = len(cycle)
-                for rotation in range(n):
-                    (head, tail) = (cycle[0+rotation], cycle[(n-1+rotation)%n])
-                    #print('testing if head %s is in dominators %s = %s' % (head, tail, nx_dominators(G, tail)))
-                    if test_dominate(dominator_tree, head, tail):
-                        #print('PASS!')
-                        answer_nx.update(cycle)
-        print('networkx says:', answer_nx)
+        answer_miasm = set()
+        G = miasm_graph_from_binja(func)
+        for (header_footer, loop_body) in G.compute_natural_loops('b0'):
+            print('header=%s footer=%s body=%s' % (header_footer[0], header_footer[1], loop_body))
+            answer_miasm.update(loop_body)
+        print('miasm says:', answer_miasm)
 
         # compare answers
         #
-        if answer_binja == answer_nx:
+        if answer_binja == answer_miasm:
             print('PASS!')
         else:
             print('binja says:', answer_binja)
-            print('networkx has, but binja does doesnt:', (answer_nx - answer_binja))
-            print('binja has, but networkx does doesnt:', (answer_binja - answer_nx))
+            print('miasm has, but binja does doesnt:', (answer_miasm - answer_binja))
+            print('binja has, but miasm does doesnt:', (answer_binja - answer_miasm))
 
-            reds = [bb for bb in func.basic_blocks if bbid(bb) in (answer_binja - answer_nx)]
-            blues = [bb for bb in func.basic_blocks if bbid(bb) in (answer_nx - answer_binja)]
+            reds = [bb for bb in func.basic_blocks if bbid(bb) in (answer_binja - answer_miasm)]
+            blues = [bb for bb in func.basic_blocks if bbid(bb) in (answer_miasm - answer_binja)]
             graph_func('error_%s' % func.name, func, reds, blues)
 
             raise Exception('FAIL!')
