@@ -53,6 +53,27 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
     return (bv, func)
 
 #------------------------------------------------------------------------------
+# graph calculations
+#------------------------------------------------------------------------------
+
+# calculate the depths from the entry block
+def calculate_depths(func):
+    result = {'b0':0}
+
+    basic_blocks = list(func.basic_blocks)
+    queue = [basic_blocks[0]]
+    while queue:
+        block = queue.pop(0)
+        label = bbid(block)
+        depth = result[label]
+        for edge in block.outgoing_edges:
+            if not bbid(edge.target) in result:
+                result[bbid(edge.target)] = depth+1
+                queue.append(edge.target)
+     
+    return result
+
+#------------------------------------------------------------------------------
 # attempt map between IL levels
 #------------------------------------------------------------------------------
 
