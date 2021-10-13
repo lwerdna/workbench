@@ -4,10 +4,6 @@ linear disassembly:
 
 ![](./assets/linear_disassembly.png)
 
-control flow graphs:
-
-![](./assets/cfg.png)
-
 red block is dominated by green blocks:
 
 ![](./assets/dominators.png)
@@ -15,3 +11,7 @@ red block is dominated by green blocks:
 red blocks are detected as loops:
 
 ![](./assets/loops.png)
+
+attempt to map from disassembly to HLIL:
+
+![](./assets/il_mapping_640x.png)
