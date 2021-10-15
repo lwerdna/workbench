@@ -57,6 +57,6 @@ if __name__ == '__main__':
 
             reds = [bb for bb in func.basic_blocks if bbid(bb) in (answer_binja - answer_miasm)]
             blues = [bb for bb in func.basic_blocks if bbid(bb) in (answer_miasm - answer_binja)]
-            graph_func('error_%s' % func.name, func, reds, blues)
+            graphviz_func('error_%s' % func.name, func, reds, blues)
 
             raise Exception('FAIL!')

@@ -15,3 +15,8 @@ red blocks are detected as loops:
 attempt to map from disassembly to HLIL:
 
 ![](./assets/il_mapping_640x.png)
+
+loops and nested loops mapped to graphviz clusters:
+
+![](./assets/loop_clusters.png)
+

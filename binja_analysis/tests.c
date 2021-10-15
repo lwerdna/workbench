@@ -44,7 +44,7 @@ int collatz_message(char *message, int n)
 
 void some_loops(void)
 {
-	int i = 0;
+	int i=0, j=0, k=0;
 
 	while(i<10) {
 		printf("i: %d\n", i++);
@@ -63,14 +63,16 @@ void some_loops(void)
 
 	printf("\nnot a loop: %d\n", i);
 
-	printf("\nperfect squares:\n");
+	printf("\nnested loops:\n");
 	for(i=0; i<16; i++)
-		printf("%d ", i*i);
+		for(j=0; j<17; j++)
+			for(k=0; k<18; k++)
+				printf("%d %d %d\n", i, j, k);
 
 	printf("\nnot a loop: %d\n", i);
 
 	while(1)
-		printf("forever loop!\n");
+		printf("single node forever loop!\n");
 
 	printf("\nnot a loop: %d\n", i);
 }
