@@ -4,7 +4,11 @@
 # see: https://en.wikipedia.org/wiki/Nested_set
 
 class SNode():
-    def __init__(self, set_=set(), children=[]):
+    def __init__(self, set_=None, children=None):
+        if set_ == None:
+            set_ = set()
+        if children == None:
+            children = []
         self.set_ = set_
         self.children = children
 
