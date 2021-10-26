@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import binaryninja
 from binaryninja import core
 from binaryninja import binaryview
@@ -15,6 +17,8 @@ import os, sys, re, time
 #------------------------------------------------------------------------------
 
 def bbid(bb):
+    if type(bb) != binaryninja.basicblock.BasicBlock:
+        breakpoint()
     return 'b%d' % bb.index
 
 # "b3@0x10003ea6"
@@ -27,6 +31,7 @@ def bbtext(bb):
     lines.extend(['%08X: %s' % (l.address, l) for l in bb.get_disassembly_text()])
     return '\n'.join(lines)
 
+# returns (binaryview, function)
 def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
     if sys.argv[1:]:
         fpath = sys.argv[1]
@@ -35,8 +40,15 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
 
     update_analysis = True
     callbacks = None
-    options = {'analysis.mode':'controlFlow'}
+    options = {'analysis.mode':'controlFlow'} # minimal analysis for speed
     #bv = BinaryViewType.get_view_of_file(fpath)
+
+    # prefer the .bndb, if it exists
+    if os.path.exists(fpath + '.bndb'):
+       fpath = fpath + '.bndb'
+    if not os.path.exists(fpath):
+        raise Exception('%s doesnt exist' % fpath)
+
     print('opening %s in binaryninja' % fpath)
     t0 = time.perf_counter()
     bv = binaryninja.open_view(fpath, update_analysis, callbacks, options)
@@ -49,7 +61,7 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
 
     func = None
     if symbol:
-        funcs = [f for f in bv.functions if f.name==symbol]
+        funcs = [f for f in bv.functions if f.name.lower() == symbol.lower()]
         if funcs:
             func = funcs[0]
     #if not funcs:
@@ -74,7 +86,7 @@ def calculate_depths(func):
             if not bbid(edge.target) in result:
                 result[bbid(edge.target)] = depth+1
                 queue.append(edge.target)
-     
+
     return result
 
 # return list for each loops
@@ -252,7 +264,8 @@ def graphviz_func(fname, func, reds=[], greens=[], blues=[]):
     dot.append('}')
 
     dot_name = '%s.dot' % fname
-    if not os.path.exists(dot_name):
+    #if not os.path.exists(dot_name):
+    if True:
         print('writing %s' % dot_name)
         with open(dot_name, 'w') as fp:
             fp.write('\n'.join(dot))
@@ -260,7 +273,8 @@ def graphviz_func(fname, func, reds=[], greens=[], blues=[]):
         print('skipping %s (already exists)' % dot_name)
 
     png_name = '%s.png' % fname
-    if not os.path.exists(png_name):
+    #if not os.path.exists(png_name):
+    if True:
         print('writing %s' % png_name)
         os.system('dot %s -Tpng -o %s' % (dot_name, png_name))
         #os.system('neato ./cfg.dot -Tpng -o cfg_neato.png')
@@ -308,7 +322,7 @@ def nx_dominators(G, node_target, node_start='b0'):
 def nx_draw(path_png, G):
     path_dot = '/tmp/tmp.dot'
     print('writing '+path_dot)
-    nx.drawing.nx_pydot.write_dot(G, path_dot) 
+    nx.drawing.nx_pydot.write_dot(G, path_dot)
 
     print('writing '+path_png)
     os.system('dot %s -Tpng -o %s' % (path_dot, path_png))
@@ -326,3 +340,22 @@ def miasm_graph_from_binja(func):
             G.add_edge(bbid(src), bbid(dst))
 
     return G
+
+#------------------------------------------------------------------------------
+# main() / test
+#------------------------------------------------------------------------------
+if __name__ == '__main__':
+    (bv, func) = quick_get_func('./tests', '_some_loops')
+
+    _some_loops = [f for f in bv.functions if f.name == '_some_loops'][0]
+    _fizzbuzz = [f for f in bv.functions if f.name == '_fizzbuzz'][0]
+
+    while(True):
+        print('----_some_loops----')
+        for (i,loop) in enumerate(calculate_natural_loops(_some_loops)):
+            print('loop%d:'%i + ','.join([bbid(x) for x in loop]))
+
+        print('----_fizzbuzz----')
+        for (i,loop) in enumerate(calculate_natural_loops(_fizzbuzz)):
+            print('loop%d:'%i + ','.join([bbid(x) for x in loop]))
+

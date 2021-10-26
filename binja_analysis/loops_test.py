@@ -9,15 +9,6 @@ from loops import get_loops
 
 from miasm.core.graph import DiGraph
 
-# given a dominator tree of graph, test if a->b
-def test_dominate(dominator_tree, a, b):
-    assert b in dominator_tree
-    while True:
-        if a==b: return True
-        if b=='b0': break # did we reach top of tree?
-        b = dominator_tree[b] # move up the dominator tree
-    return False
-
 if __name__ == '__main__':
     fpath = './tests' if not sys.argv[1:] else sys.argv[1]
     func = None if not sys.argv[2:] else sys.argv[2]

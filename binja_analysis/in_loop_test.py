@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-# test binja's basic block .in_loop field by comparison against miasm
+# test binja's basic block .in_loop field by comparison against miasm import sys
 
 import sys
-
 import binaryninja
 from miasm.core.graph import DiGraph
 
@@ -46,11 +45,6 @@ for func in bv.functions:
     if answer_binja == answer_miasm:
         print('PASS!')
     else:
-        print('binja says:', answer_binja)
         print('miasm has, but binja does doesnt:', (answer_miasm - answer_binja))
         print('binja has, but miasm does doesnt:', (answer_binja - answer_miasm))
-
-        reds = [bb for bb in func.basic_blocks if bbid(bb) in (answer_binja - answer_miasm)]
-        blues = [bb for bb in func.basic_blocks if bbid(bb) in (answer_miasm - answer_binja)]
-
         raise Exception('FAIL!')
