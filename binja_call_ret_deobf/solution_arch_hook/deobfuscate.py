@@ -1,3 +1,8 @@
+# deobfuscate "push <uint32_t>; ret;"
+#
+# this is intended to be loaded as a plugin
+# https://docs.binary.ninja/guide/plugins.html
+
 from binaryninja.architecture import Architecture, ArchitectureHook
 from binaryninja.function import InstructionTextToken, InstructionInfo
 from binaryninja.enums import InstructionTextTokenType, BranchType
@@ -5,7 +10,7 @@ from binaryninja.enums import InstructionTextTokenType, BranchType
 class X86DeobfuscateHook(ArchitectureHook):
     # test whether the data qualifies for the push/ret deobfuscation
     # return (destination, length) if it qualifies
-    # return None if it doesn't
+    # return None otherwise
     def qualifies(self, data, addr):
         arch = super(X86DeobfuscateHook, self)
         toks_a, len_a = arch.get_instruction_text(data, addr)
@@ -48,5 +53,4 @@ class X86DeobfuscateHook(ArchitectureHook):
         result.add_branch(BranchType.UnconditionalBranch, push_addr)
         return result
 
-# Install the hook by constructing it with the desired architecture to hook, then registering it
 X86DeobfuscateHook(Architecture['x86']).register()
