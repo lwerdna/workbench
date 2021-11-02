@@ -4,8 +4,6 @@ exit:
 	syscall
 
 output:
-	push rdi
-
 	mov edx, 1 ; size
 	mov rdi, buffer
 	stosb
@@ -13,8 +11,6 @@ output:
 	mov rdi, 1 ; output stream: stdout
 	mov rax, 0x2000004 ; write
 	syscall
-
-	pop rdi
 	retn
 
 section .data
