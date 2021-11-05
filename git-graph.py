@@ -66,6 +66,7 @@ def getCommitDiffHash(hash):
     return sha.hexdigest()
 
 print("digraph G {")
+print('\trankdir="RL"')
 
 # create mapping messages:
 # {
@@ -128,13 +129,15 @@ for line in lines:
             nodeColor=COLOR_NODE
 
         if parentHash1:
-            link = " \"" + parentHash1 + "\"->\"" + commitHash + "\";"
+            #link = " \"" + parentHash1 + "\"->\"" + commitHash + "\";"
+            link = " \"" + commitHash + "\"->\"" + parentHash1 + "\";"
         else:
             #initial commit
             nodeColor = COLOR_NODE_FIRST
 
         if parentHash2:
-            link2 = " \"" + parentHash2 + "\"->\"" + commitHash + "\";"
+            #link2 = " \"" + parentHash2 + "\"->\"" + commitHash + "\";"
+            link2 = " \"" + commitHash + "\"->\"" + parentHash2 + "\";"
 
         if parentHash1 and parentHash2:
             nodeColor = COLOR_NODE_MERGE
@@ -155,7 +158,8 @@ for line in lines:
                 log("2 [" + diffHashActual + "]")
                 if diffHashOld == diffHashActual:
                     log("equal")
-                    print('    "' + str(existingHash) + '"->"' + commitHash + '"[label="Cherry\\nPick",style=dotted,fontcolor="red",color="red"]')
+                    #print('    "' + str(existingHash) + '"->"' + commitHash + '"[label="Cherry\\nPick",style=dotted,fontcolor="red",color="red"]')
+                    print('    "' + commitHash + '"->"' + str(existingHash) + '"[label="Cherry\\nPick",style=dotted,fontcolor="red",color="red"]')
                     nodeColor = COLOR_NODE_CHERRY_PICK
                     #labelExt = "\\nCherry Pick"
                 log("")
@@ -169,7 +173,8 @@ for line in lines:
                 originalMessage = match.group(1)
                 log("Revert match [" + originalMessage + "]")
                 origRevertHash = messages[originalMessage]
-                print('    "' + commitHash + '"->"' + str(origRevertHash) + '"[label="Revert",style=dotted,fontcolor="azure4",color="azure4"]')
+                #print('    "' + commitHash + '"->"' + str(origRevertHash) + '"[label="Revert",style=dotted,fontcolor="azure4",color="azure4"]')
+                print('    "' + str(origRevertHash) + '"->"' + commitHash + '"[label="Revert",style=dotted,fontcolor="azure4",color="azure4"]')
             nodeColor = COLOR_NODE_REVERT
 
         nodeInfo = ""
