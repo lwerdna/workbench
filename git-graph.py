@@ -66,7 +66,21 @@ def getCommitDiffHash(hash):
     return sha.hexdigest()
 
 print("digraph G {")
-#first extract messages
+
+# create mapping messages:
+# {
+#   'more junk': 'c236dd6'
+#   'little more assembler work': '14b37bc'
+#   'start assembler': '6a5e72a'
+#   ... }
+#
+# create mapping dates
+# {
+#   'a340377': '1440645583'
+#   'a512254': '1440645521'
+#   '978ed20': '1440644920'
+#   ... }
+#
 for line in lines:
     match = re.match(pattern, line)
     if match:
@@ -82,6 +96,9 @@ for line in lines:
         else:
             messages[message] = commitHash
         dates[commitHash] = date
+    else:
+        #breakpoint()
+        raise Exception("malformed line: %s" % line)
 
 for line in lines:
     #print(line)
@@ -95,6 +112,9 @@ for line in lines:
         parentHash1 = match.group(6)
         parentHash2 = match.group(7)
 
+        if not message in messages:
+            breakpoint()
+
         link = ""
         link2 = ""
         labelExt = ""
@@ -104,22 +124,30 @@ for line in lines:
         if commitHash in predefinedNodeColor:
             labelExt = "\\nSTASH INDEX"
             nodeColor = predefinedNodeColor[commitHash]
-
         else:
             nodeColor=COLOR_NODE
+
         if parentHash1:
             link = " \"" + parentHash1 + "\"->\"" + commitHash + "\";"
         else:
             #initial commit
             nodeColor = COLOR_NODE_FIRST
+
         if parentHash2:
             link2 = " \"" + parentHash2 + "\"->\"" + commitHash + "\";"
+
         if parentHash1 and parentHash2:
             nodeColor = COLOR_NODE_MERGE
-        if message in messages:
+
+        # disagree here, message is very often repeated, eg:
+        #  "Merge branch 'master' of github.com:user/branch"
+        # and does not indicate a cherry pick
+        if False and message in messages:
             # message exists in history - possible cherry-pick -> compare diff hashes
             existingHash = messages[message]
             if commitHash is not existingHash and date > dates[existingHash]:
+                log('commitHash:%s != existingHash:%s' % (commitHash, existingHash))
+                breakpoint()
                 diffHashOld = getCommitDiffHash(existingHash)
                 diffHashActual = getCommitDiffHash(commitHash)
                 log("M [" + message + "]")
@@ -132,6 +160,7 @@ for line in lines:
                     #labelExt = "\\nCherry Pick"
                 log("")
         log("Message: [" + message + "]")
+
         if message.startswith("Revert"):
             # check for revert
             log("Revert commit")
