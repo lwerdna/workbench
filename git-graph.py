@@ -28,25 +28,48 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-x", "--debug", dest="debug", action="store_true", help="Show debug messages on stderr")
 parser.add_argument("-m", "--messages", dest="messages", action="store_true", help="Show commit messages in node" )
 parser.add_argument("-r", "--range", help="git commit range" )
-
+parser.add_argument("-b", "--back", nargs='?', type=int, dest="back", action="store", help="how many commits back from each ref")
 args = parser.parse_args()
 debug = args.debug
+back = args.back
 
 def log(message):
     if debug:
         print(message, file=sys.stderr)
 
+lines = set()
 
-revRange = ""
-if args.range:
-    revRange = " " + args.range
-    log("Range: " + revRange)
+if back:
+    HEAD = None
+    branches = []
+    #pipe = subprocess.Popen('git branch --all --list', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+    pipe = subprocess.Popen('git branch --list', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+    (out, err) = pipe.communicate()
+    for line in out.split('\n'):
+        line = line.strip()
+        if line.startswith('* '):
+            branches.append('HEAD')
+            line = line[2:]
+        if not line: continue
+        branches.append(line)
+    #print('found HEAD:', HEAD)
+    #print('found branches:\n' + '\n'.join(branches))
+    #sys.exit(-1)
+    for branch in branches:
+        log('collecting commits from %s' % branch)
+        cmd = 'git log --pretty=format:"[%%ct||%%cn||%%s||%%d] %%h %%p" -n %d %s' % (back, branch)
+        log(cmd)
+        pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+        (out, err) = pipe.communicate()
+        lines.update(out.split("\n"))
+else:
+    gitLogCommand = 'git log --pretty=format:"[%ct||%cn||%s||%d] %h %p" --all '
+    log('Git log command: ' + gitLogCommand)
+    pipe = subprocess.Popen(gitLogCommand, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+    (out, err) = pipe.communicate()
+    lines = set(out.split("\n"))
 
-gitLogCommand = 'git log --pretty=format:"[%ct||%cn||%s||%d] %h %p" --all ' + revRange
-log('Git log command: ' + gitLogCommand)
-output = subprocess.Popen(gitLogCommand, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
-(out, err) = output.communicate()
-lines = out.split("\n")
+lines = list(lines)
 
 dates = {}
 messages = {}
@@ -83,6 +106,8 @@ print('\trankdir="RL"')
 #   ... }
 #
 for line in lines:
+    log('processing line -%s-' % line)
+    if not line or line.isspace(): continue
     match = re.match(pattern, line)
     if match:
         date = match.group(1)
@@ -202,7 +227,7 @@ for line in lines:
                     #if "origin" in refEntry:
                     #    continue
                 nodeInfo += '    "' + refEntry + '"[style=filled,' + style + ']; "' + refEntry + '" -> "' + commitHash + '"\n'
-        print("    \"" + commitHash + "\"[label=\"" + commitHash + nodeMessage + labelExt + "\\n(" + user + ")\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
+        print("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\\n(" + user + ")\\n" + message[0:24] + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
         if nodeInfo:
             print(nodeInfo)
 print("}")
