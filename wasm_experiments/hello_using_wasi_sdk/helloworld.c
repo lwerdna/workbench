@@ -1,3 +1,8 @@
+// build:
+// $ /path/to/wasi-sdk-12.0/bin/clang --sysroot=/path/to/wasi-sdk-12.0/share/wasi-sysroot helloworld.c -o helloworld.wasm
+// run:
+// $ wasmtime ./helloworld.wasm
+
 #include <stdio.h>
 
 int main(int argc, char **argv)
