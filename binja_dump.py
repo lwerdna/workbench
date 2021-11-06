@@ -48,6 +48,12 @@ with binaryninja.open_view(fpath) as bv:
     print('core_version(): ' + binaryninja.core_version())
     print('core_build_id(): %d (0x%X)' % (binaryninja.core_build_id(), binaryninja.core_build_id()))
 
+    print_divider('architecture')
+    print('registers:')
+    for (name, reginfo) in bv.arch.regs.items():
+        print('name:%s index:%d offset:%d size:%d full_width_reg:%s' % \
+            (name, reginfo.index, reginfo.offset, reginfo.size, reginfo.full_width_reg))
+
     print_divider('disassembly')
     obj = lineardisassembly.LinearViewObject.disassembly(bv, settings)
     cursor = lineardisassembly.LinearViewCursor(obj)
