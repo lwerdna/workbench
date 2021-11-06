@@ -15,7 +15,7 @@ COLOR_NODE_MERGE = "cornsilk2"
 COLOR_NODE_FIRST = "cornflowerblue"
 COLOR_NODE_CHERRY_PICK = "burlywood1"
 COLOR_NODE_REVERT = "azure4"
-COLOR_HEAD = "darkgreen"
+COLOR_HEAD = "green"
 COLOR_TAG = "yellow2"
 COLOR_BRANCH = "orange"
 COLOR_STASH = "red"
@@ -48,8 +48,11 @@ if back:
     for line in out.split('\n'):
         line = line.strip()
         if line.startswith('* '):
-            branches.append('HEAD')
             line = line[2:]
+            HEAD = line
+        if line.startswith('(HEAD detached at'):
+            m = re.match(r'^\(HEAD detached at (.*)\)', line)
+            line = m.group(1)
         if not line: continue
         branches.append(line)
     #print('found HEAD:', HEAD)
@@ -62,6 +65,7 @@ if back:
         pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
         (out, err) = pipe.communicate()
         lines.update(out.split("\n"))
+    assert HEAD
 else:
     gitLogCommand = 'git log --pretty=format:"[%ct||%cn||%s||%d] %h %p" --all '
     log('Git log command: ' + gitLogCommand)
@@ -192,9 +196,9 @@ for line in lines:
 
         if message.startswith("Revert"):
             # check for revert
-            log("Revert commit")
+            log("Revert commit: %s: %s" % (commitHash, message))
             match = re.match(revertMessagePattern, message)
-            if match:
+            if match and match.group(1) in messages:
                 originalMessage = match.group(1)
                 log("Revert match [" + originalMessage + "]")
                 origRevertHash = messages[originalMessage]
@@ -204,11 +208,20 @@ for line in lines:
 
         nodeInfo = ""
         if ref:
-            refEntries = ref.replace("(", "").replace(")", "").split(",")
-            for refEntry in refEntries:
+            queue = ref.replace("(", "").replace(")", "").split(",")
+            while queue:
+                refEntry = queue.pop(0)
                 style = "shape=oval,fillcolor=" + COLOR_BRANCH
-                if "HEAD" in refEntry:
-                    style = "shape=diamond,fillcolor=" + COLOR_HEAD
+                if 'HEAD' in refEntry:
+                    if refEntry == 'HEAD':
+                        style = "shape=box,fillcolor=" + COLOR_HEAD
+                    elif refEntry.startswith("HEAD -> "):
+                        refEntry = refEntry[8:]
+                        queue.append('HEAD')
+                    elif refEntry.endswith('/HEAD'):
+                        style = "shape=box,fillcolor=" + COLOR_HEAD
+                    else:
+                        breakpoint()
                 elif "tag" in refEntry:
                     refEntry = refEntry.replace("tag: ", "")
                     style = "shape=oval,fillcolor=" + COLOR_TAG
@@ -227,7 +240,11 @@ for line in lines:
                     #if "origin" in refEntry:
                     #    continue
                 nodeInfo += '    "' + refEntry + '"[style=filled,' + style + ']; "' + refEntry + '" -> "' + commitHash + '"\n'
-        print("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\\n(" + user + ")\\n" + message[0:24] + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
+        #print("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\\n(" + user + ")\\n" + message[0:24] + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
+
+        message_prepared = message[0:24]
+        message_prepared = message_prepared.replace('"', '\\"')
+        print("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\\n" + message_prepared + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
         if nodeInfo:
             print(nodeInfo)
 print("}")
