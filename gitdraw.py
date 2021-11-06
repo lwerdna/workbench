@@ -56,15 +56,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--disclude-message", action='store_true', dest="disclude_message", help="disclude commit message in nodes")
     parser.add_argument("--disclude-hash", action='store_true', dest="disclude_hash", help="disclude commit hash in nodes")
+    parser.add_argument("--include-author", action='store_true', dest="include_author", help="include author in nodes")
     parser.add_argument("--remote-branches", action='store_true', dest="remote_branches", help="include remote branches also")
     parser.add_argument("--message-length", dest="message_length", type=int, default=24, help="how many characters of commit message to include")
     parser.add_argument("-b", "--back", type=int, default=16, help="how many commits back from each ref")
-    args = parser.parse_args() 
+    args = parser.parse_args()
 
     log('settings:')
     log('include remote branches? %s' % args.remote_branches)
     log('disclude message from nodes? %s' % args.disclude_message)
     log('disclude hash from nodes? %s' % args.disclude_hash)
+    log('include author in nodes? %s' % args.include_author)
     log('message length in each node: %d' % args.message_length)
     log('commits from each reference: %d' % args.back)
 
@@ -74,7 +76,7 @@ if __name__ == '__main__':
 
     # collect commits
     commits = {}
-    pattern = re.compile(r'^\[(\d+)\|\|(.*)\|\|(.*)\|\|\s?(.*)\]\s([0-9a-f]*)\s?([0-9a-f]*)\s?([0-9a-f]*)$')
+    pattern = re.compile(r'^\[(\d+)\|\|(.*)\|\|(.*)\|\|\s?(.*)\]\s([0-9a-f]*)\s?(.*)$')
     for start_point in set(branches.values()):
         cmd = 'git log --pretty=format:"[%%ct||%%cn||%%s||%%d] %%h %%p" -n %d %s' % (args.back, start_point)
         for line in get_output_lines(cmd):
@@ -84,7 +86,7 @@ if __name__ == '__main__':
             hash_ = m.group(5)
             if hash_ in commits:
                 continue
-            parent_hashes = [x for x in [m.group(6), m.group(7)] if x]
+            parent_hashes = [x for x in m.group(6).split(' ') if x]
             entry = {'type':'normal', 'hash':hash_, 'date':m.group(1), 'author':m.group(2), 'message':m.group(3),
                         'ref_names':m.group(4), 'hash':hash_, 'parent_hashes':parent_hashes}
             commits[hash_] = entry
@@ -117,28 +119,40 @@ if __name__ == '__main__':
         # process commits as nodes
         if node in commits:
             commit = commits[node]
-            lines = []
-
+            label_lines = []
+            attribs = ['style=filled', 'shape=box']
             if commit['type'] == 'normal':
                 if not args.disclude_hash:
-                    lines.append(commit['hash'])
+                    label_lines.append(commit['hash'])
+                if args.include_author:
+                    label_lines.append('(%s)' % commit['author'])
                 if not args.disclude_message:
                     message_prepared = commit['message']
                     if len(message_prepared) > args.message_length:
                         message_prepared = message_prepared[0:args.message_length] + '...'
                     message_prepared = message_prepared.replace('"', '\\"')
-                    lines.append(message_prepared)
-                print('\t"%s" [style=filled,fillcolor=lightyellow,shape=box,label="%s"];' % (node, '\\n'.join(lines)))
+                    label_lines.append(message_prepared)
+
+                if commit['parent_hashes']:
+                    attribs.append('fillcolor=cornsilk')
+                else:
+                    attribs.append('fillcolor=cornflowerblue')
+
             elif commit['type'] == 'absent_parent':
-                print('\t"%s" [style=filled,fillcolor=lightyellow,shape=box,label="..."];' % (node))
+                attribs.append('fillcolor=cornsilk')
+                label_lines.append('...')
+
+            attribs.append('label="' + '\\n'.join(label_lines) + '"')
+            print('\t"%s" [%s];' % (node, ','.join(attribs)))
+
     for branch_name in branches:
         color = 'green' if 'HEAD' in branch_name else 'orange'
         print('\t"%s" [style=filled,fillcolor=%s];' % (branch_name, color))
-        
+
     print('\t// edges')
     for edge in DG.edges():
         print('\t"%s" -> "%s";' % (edge[0], edge[1]))
     for (branch_name, hash_) in branches.items():
         print('\t"%s" -> "%s";' % (branch_name, hash_))
     print('}')
-        
+
