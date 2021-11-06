@@ -90,6 +90,7 @@ class SNode():
             # print the subgraph
             result_lines.append('%s// cluster' % (indent))
             result_lines.append(indent + 'subgraph cluster_%s {' % cluster_id)
+            result_lines.append(indent2 + 'margin=32;')
             result_lines.append(indent2 + 'pencolor=black;')
             result_lines.append(indent2 + 'bgcolor="#' + ('%02x'%(0xe0-0x10*depth))*3 +'";')
             for (src, dst) in subgraph_edges:
@@ -169,6 +170,7 @@ if __name__ == '__main__':
 
         dot = []
         dot.append('digraph G {')
+        dot.append('\tgraph [splines=ortho]')
         dot.extend(edges)
         dot.extend(subgraphs)
         dot.extend(attrs)
@@ -179,7 +181,14 @@ if __name__ == '__main__':
         with open('/tmp/tmp.dot', 'w') as fp:
             fp.write('\n'.join(dot))
 
-        output_png = '%s.png' % func.name
-        print('writing /tmp/%s' % output_png)
-        os.system('dot /tmp/tmp.dot -Tpng -o /tmp/%s' % output_png)
-        #os.system('open /tmp/%s' % output_png)
+        if False:
+            output_png = '%s.png' % func.name
+            print('writing /tmp/%s' % output_png)
+            os.system('dot /tmp/tmp.dot -Tpng -o /tmp/%s' % output_png)
+            #os.system('open /tmp/%s' % output_png)
+        else:
+            output_svg = '%s.svg' % func.name
+            print('writing /tmp/%s' % output_svg)
+            os.system('dot /tmp/tmp.dot -Tsvg -o /tmp/%s' % output_svg)
+            #os.system('open /tmp/%s' % output_svg)
+
