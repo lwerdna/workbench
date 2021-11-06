@@ -2,7 +2,7 @@
 
 The recursion theorem shows that Turing machines (TM) are capable of accessing own description. This capability lets you prove other results about TM's. For example it leads to another contradiction when assuming a machine decides the halting language.
 
-Prior to investing the idea of UTM's, TM's are not software, and aren't thought of as having "code". They're rigid state machines with access to tape memory. So "description" is being used here to mean one possibility in how to describe and store the states and transitions of TM's. This is an easy detail to overlook when programmers frequently access and modify the source code (description) of the machines they make in HLL's like C, python, or java.
+Prior to investigating the idea of UTM's, TM's are not software, and aren't thought of as having "code". They're rigid state machines with access to tape memory. So "description" is being used here to mean one possibility in how to describe and store the states and transitions of TM's. This is an easy detail to overlook when programmers frequently access and modify the source code (description) of the machines they make in HLL's like C, python, or java.
 
 ## Self printing TM's
 
@@ -50,7 +50,7 @@ A program that does nothing but prints its own description is called a quine. Co
     def ExecuteProgram(program):
        return exec(program).stdout
 
-Then quines are fixed points, as ExecuteProgram(ExecuteProgram(...ExecuteProgram(quine)...)) returns quine.
+If ExecuteInEnvironment() is a function whose domain is programs and codomain is the output of those programs, then a quine is a fixed point of this function.
 
 ## In Turing Machines
 
@@ -83,5 +83,4 @@ Run `python quine.py` for output.
 Does Kleene's construction illustrate just one (of many) ways to make a quine? Or is it unique, required of all programs that access their code?
 
 TODO: analyze some quines, identify Kleene's ideas
-
 

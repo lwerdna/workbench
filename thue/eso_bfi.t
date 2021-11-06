@@ -1,5 +1,8 @@
 #::=# In the final line, enter brainfuck code after the carat eg:
 #::=# ^,>,[-<+>]<.:101_11_
+#::=#       bf code: ,>,[-<+>]<.
+#::=#   bf input #0: 101
+#::=#   bf input #1: 11
 
 #::=# BRAINFUNCT interpreter in THUE
 #::=# by Frederic van der Plancke; released to the Public Domain.
@@ -8,7 +11,7 @@
 #::=# program & data in the following order:
 #::=#    (*) your BrainFunct program, without any non-Brainfunct character
 #::=#        (no space then ! BF characters are: + - < > , . [ ])
-#::=#    (*) a MANDATORY semicolon (':')
+#::=#    (*) a MANDATORY colon (':')
 #::=#    (*) (facultative) the input for your BF program, in binary, each number
 #::=#        ending with _; a null item marks end-of-file. (Input numbers should
 #::=#        be in normal form: no leading zero unless the number itself is null.

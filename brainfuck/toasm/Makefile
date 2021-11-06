@@ -30,4 +30,11 @@ add_2_5.o: add_2_5.s
 
 add_2_5: add_2_5.o
 	#ld -macosx_version_min 10.7.0 -lSystem add_2_5.o -o add_2_5
-	ld -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem add_2_5.o -o add_2_5	
+	ld -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem add_2_5.o -o add_2_5
+
+test.o: test.s
+	nasm -f macho64 test.s -o test.o
+
+test: test.o
+	#ld -macosx_version_min 10.7.0 -lSystem test.o -o test
+	ld -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem test.o -o test

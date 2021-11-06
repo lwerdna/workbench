@@ -17,10 +17,12 @@ with binaryninja.open_view(fpath) as bv:
     obj = lineardisassembly.LinearViewObject.disassembly(bv, settings)
     cursor = lineardisassembly.LinearViewCursor(obj)
 
-    for i in range(999):
+    i = 0
+    while(True):
         lines = bv.get_next_linear_disassembly_lines(cursor)
         print('cursor position %d has %d lines:' % (i, len(lines)))
         if len(lines) == 0:
             break
         for l in lines:
             print('    ' + str(l))
+        i += 1
