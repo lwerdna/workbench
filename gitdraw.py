@@ -37,7 +37,17 @@ def get_branches(remotes_too=False):
             m = re.match('^\s*([^\s]+)\s+-> (.*)$', line)
             (branch_name, link_name) = m.group(1, 2)
             unresolved[branch_name] = link_name
+        elif ' detached at ' in line:
+            # eg:
+            # "(HEAD detached at 9a5099f) 9a5099f some commit message"
+            m = re.match('^\s*\((.*) detached at [^\)]+\)\s+([^\s]+)\s+(.*)$', line)
+            (branch_name, commit, descr) = m.group(1,2,3)
+            if branch_name == 'HEAD':
+                assert marked_head
+            branches[branch_name] = commit
         else:
+            # eg:
+            # "  branch_name                    d5f7dc1 some commit message"
             m = re.match('^\s*([^\s]+)\s+([^\s]+)\s+(.*)$', line)
             (branch_name, commit, descr) = m.group(1,2,3)
             branches[branch_name] = commit
