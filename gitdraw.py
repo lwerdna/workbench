@@ -6,12 +6,12 @@ import subprocess
 
 import networkx as nx
 
-DEBUG=False
+DEBUG=True
 
 def log(msg):
     global DEBUG
     if not DEBUG: return
-    print(msg)
+    print('//', msg)
 
 def get_output_lines(cmd):
     log('running: ' + cmd)
@@ -59,10 +59,13 @@ if __name__ == '__main__':
     parser.add_argument("--include-author", action='store_true', dest="include_author", help="include author in nodes")
     parser.add_argument("--remote-branches", action='store_true', dest="remote_branches", help="include remote branches also")
     parser.add_argument("--message-length", dest="message_length", type=int, default=24, help="how many characters of commit message to include")
+    parser.add_argument("--collapse-threshold", dest="collapse_threshold", type=int, default=10, help="length needed for linear run of commits to be collapsed")
     parser.add_argument("-b", "--back", type=int, default=16, help="how many commits back from each ref")
+    parser.add_argument("--debug", action='store_true', dest="debug", help="print debugging messages")
     args = parser.parse_args()
 
     log('settings:')
+    log('debug messages? %s' % args.debug)
     log('include remote branches? %s' % args.remote_branches)
     log('disclude message from nodes? %s' % args.disclude_message)
     log('disclude hash from nodes? %s' % args.disclude_hash)
@@ -87,72 +90,89 @@ if __name__ == '__main__':
             if hash_ in commits:
                 continue
             parent_hashes = [x for x in m.group(6).split(' ') if x]
-            entry = {'type':'normal', 'hash':hash_, 'date':m.group(1), 'author':m.group(2), 'message':m.group(3),
+            entry = {'hash':hash_, 'date':m.group(1), 'author':m.group(2), 'message':m.group(3),
                         'ref_names':m.group(4), 'hash':hash_, 'parent_hashes':parent_hashes}
             commits[hash_] = entry
 
     # add placeholder commits for missing parents
-    new_commits = {}
-    for commit in commits.values():
-        for h in commit['parent_hashes']:
-            if h in commits:
-                continue
-            new_commits[h] = {'type':'absent_parent', 'hash':h}
-    commits.update(new_commits)
+    parent_hashes = sum([entry['parent_hashes'] for entry in commits.values()], [])
+    absent_parents = set([ph for ph in parent_hashes if not ph in commits])
 
-    # convert commits to a networkx graph
+    # convert to a networkx graph
     DG = nx.DiGraph()
-    for commit in commits.values():
-        DG.add_node(commit['hash'])
-    for commit in commits.values():
-        if commit['type'] == 'normal':
-            for h in commit['parent_hashes']:
-                DG.add_edge(commit['hash'], h)
+    # nodes
+    for c in commits:
+        DG.add_node('commit:' + c) # commits identified by hash
+    for ap in absent_parents:
+        DG.add_node('absent:' + ap) # dummy "absent parent" commit identified by hash of parent it replaces
+    for branch_name in branches:
+        DG.add_node('branch:' + branch_name)
+    # edges
+    for (h, cinfo) in commits.items():
+        for parent in cinfo['parent_hashes']:
+            src = 'commit:'+h
+            dst = ('commit:' if parent in commits else 'absent:')+parent
+            DG.add_edge(src, dst)
+    for branch_name in branches:
+        src = 'branch:'+branch_name
+        dst = 'commit:'+branches[branch_name]
+        DG.add_edge(src, dst)
 
-    # process graph
+
 
     # draw graph
     print('digraph DG {')
     print('\trankdir="RL"')
+    # nodes
     print('\t// nodes')
     for node in DG.nodes:
-        # process commits as nodes
-        if node in commits:
-            commit = commits[node]
-            label_lines = []
-            attribs = ['style=filled', 'shape=box']
-            if commit['type'] == 'normal':
-                if not args.disclude_hash:
-                    label_lines.append(commit['hash'])
-                if args.include_author:
-                    label_lines.append('(%s)' % commit['author'])
-                if not args.disclude_message:
-                    message_prepared = commit['message']
-                    if len(message_prepared) > args.message_length:
-                        message_prepared = message_prepared[0:args.message_length] + '...'
-                    message_prepared = message_prepared.replace('"', '\\"')
-                    label_lines.append(message_prepared)
+        label_lines = []
+        attribs = ['style=filled']
 
-                if commit['parent_hashes']:
-                    attribs.append('fillcolor=cornsilk')
-                else:
-                    attribs.append('fillcolor=cornflowerblue')
+        if node.startswith('commit:'):
+            attribs.append('shape=box')
 
-            elif commit['type'] == 'absent_parent':
+            info = commits[node[7:]]
+
+            if not args.disclude_hash:
+                label_lines.append(info['hash'])
+            if args.include_author:
+                label_lines.append('(%s)' % info['author'])
+            if not args.disclude_message:
+                message_prepared = info['message']
+                if len(message_prepared) > args.message_length:
+                    message_prepared = message_prepared[0:args.message_length] + '...'
+                message_prepared = message_prepared.replace('"', '\\"')
+                label_lines.append(message_prepared)
+
+            if info['parent_hashes']:
                 attribs.append('fillcolor=cornsilk')
-                label_lines.append('...')
+            else:
+                attribs.append('fillcolor=cornflowerblue')
 
-            attribs.append('label="' + '\\n'.join(label_lines) + '"')
-            print('\t"%s" [%s];' % (node, ','.join(attribs)))
+        elif node.startswith('absent:'):
+            attribs.append('shape=box')
+            attribs.append('fillcolor=cornsilk')
+            label_lines.append('...')
 
-    for branch_name in branches:
-        color = 'green' if 'HEAD' in branch_name else 'orange'
-        print('\t"%s" [style=filled,fillcolor=%s];' % (branch_name, color))
+        elif node.startswith('collapsed:'):
+            attribs.append('shape=box')
+            attribs.append('fillcolor=cornsilk')
+            label_lines.append('...')
 
+        elif node.startswith('branch:'):
+            branch_name = node[7:]
+            color = 'green' if 'HEAD' in branch_name else 'orange'
+            attribs.append('shape=oval')
+            attribs.append('fillcolor='+color)
+            label_lines.append(branch_name)
+
+        attribs.append('label="' + '\\n'.join(label_lines) + '"')
+        print('\t"%s" [%s];' % (node, ','.join(attribs)))
+    # edges
     print('\t// edges')
     for edge in DG.edges():
         print('\t"%s" -> "%s";' % (edge[0], edge[1]))
-    for (branch_name, hash_) in branches.items():
-        print('\t"%s" -> "%s";' % (branch_name, hash_))
+    # done
     print('}')
 
