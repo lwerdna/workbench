@@ -6,7 +6,7 @@ import subprocess
 
 import networkx as nx
 
-DEBUG=True
+DEBUG=False
 
 def log(msg):
     global DEBUG
@@ -59,7 +59,8 @@ if __name__ == '__main__':
     parser.add_argument("--include-author", action='store_true', dest="include_author", help="include author in nodes")
     parser.add_argument("--remote-branches", action='store_true', dest="remote_branches", help="include remote branches also")
     parser.add_argument("--message-length", dest="message_length", type=int, default=24, help="how many characters of commit message to include")
-    parser.add_argument("--collapse-threshold", dest="collapse_threshold", type=int, default=10, help="length needed for linear run of commits to be collapsed")
+    parser.add_argument("--collapse-threshold", dest="collapse_threshold", type=int, default=8, help="length needed for linear run of commits to be collapsed")
+    parser.add_argument("--direction", default='horizontal', choices=['horizontal', 'vertical'], help="layout direction")
     parser.add_argument("-b", "--back", type=int, default=16, help="how many commits back from each ref")
     parser.add_argument("--debug", action='store_true', dest="debug", help="print debugging messages")
     args = parser.parse_args()
@@ -72,6 +73,9 @@ if __name__ == '__main__':
     log('include author in nodes? %s' % args.include_author)
     log('message length in each node: %d' % args.message_length)
     log('commits from each reference: %d' % args.back)
+    log('layout direction: %s' % args.direction)
+
+    DEBUG=args.debug
 
     branches = get_branches(args.remote_branches)
     for (branch_name, commit) in branches.items():
@@ -118,18 +122,63 @@ if __name__ == '__main__':
         dst = 'commit:'+branches[branch_name]
         DG.add_edge(src, dst)
 
+    # process graph
+    seen = set()
+    runs = []
+    queue = ['branch:%s'%name for name in branches]
+    while queue:
+        cur = queue.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        run = []
+        while(cur):
+            run.append(cur)
+            parents = list(DG.successors(cur))
+            children = list(DG.predecessors(cur))
+            if len(parents) == 1 and len(children) <= 1:
+                cur = parents[0]
+                continue
+            queue.extend(parents)
+            break
+        runs.append(run)
+    log('detected %d runs' % len(runs))
+    for run in runs:
+        log('\trun starting at %s is %d long' % (run[0], len(run)))
 
+    #for run in sorted(runs, key=lambda x: len(x), reverse=True):
+    for run in runs:
+        if len(run) < args.collapse_threshold:
+            log('run starting at %s was too short' % run[0])
+            continue
+
+        log('\t' + ','.join(run))
+
+        # run[0]->run[1]->run[2]-> ... ->run[-3]->run[-2]->run[-1]
+        for i in range(3, len(run)-3):
+            log('\tremoving %s' % run[i])
+            DG.remove_node(run[i])
+
+        node = 'collapsed:%s ... %s' % (run[3], run[-4])
+
+        DG.add_node(node)
+        DG.add_edge(run[2], node)
+        DG.add_edge(node, run[-3])
 
     # draw graph
     print('digraph DG {')
-    print('\trankdir="RL"')
+    if args.direction == 'horizontal':
+        print('\trankdir="RL"')
+    elif args.direction == 'vertical':
+        print('\trankdir="TB"')
     # nodes
     print('\t// nodes')
     for node in DG.nodes:
         label_lines = []
-        attribs = ['style=filled']
+        attribs = []
 
         if node.startswith('commit:'):
+            attribs.append('style=filled')
             attribs.append('shape=box')
 
             info = commits[node[7:]]
@@ -151,11 +200,11 @@ if __name__ == '__main__':
                 attribs.append('fillcolor=cornflowerblue')
 
         elif node.startswith('absent:'):
-            attribs.append('shape=box')
-            attribs.append('fillcolor=cornsilk')
+            attribs.append('shape=plaintext')
             label_lines.append('...')
 
         elif node.startswith('collapsed:'):
+            attribs.append('style=filled')
             attribs.append('shape=box')
             attribs.append('fillcolor=cornsilk')
             label_lines.append('...')
@@ -163,6 +212,7 @@ if __name__ == '__main__':
         elif node.startswith('branch:'):
             branch_name = node[7:]
             color = 'green' if 'HEAD' in branch_name else 'orange'
+            attribs.append('style=filled')
             attribs.append('shape=oval')
             attribs.append('fillcolor='+color)
             label_lines.append(branch_name)
