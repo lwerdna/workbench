@@ -6,11 +6,11 @@ import platform
 identifier = platform.system() + '-' + platform.machine()
 
 lookup = {
-    'Windows-x86': 'foo-win-x86.dll',
-    'Windows-x86_64': 'foo-win-x64.dll',
-    'Darwin-x86_64': 'foo-macos-x64.dylib',
-    'Linux-x86': 'foo-linux-x86.so',
-    'Linux-x86_64': 'foo-linux-x64.so'
+    'Windows-x86': './foo-win-x86.dll',
+    'Windows-x86_64': './foo-win-x64.dll',
+    'Darwin-x86_64': './foo-macos-x64.dylib',
+    'Linux-x86': './foo-linux-x86.so',
+    'Linux-x86_64': './foo-linux-x64.so'
 }
 
 fname = lookup[identifier]

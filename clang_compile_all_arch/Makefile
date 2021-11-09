@@ -26,6 +26,7 @@ foo-win-x86.o: foo.c
 	$(CLANG) -target i686-pc-win32 -c foo.c -o foo-win-x86.o
 
 foo-linux-x64.so: foo-linux-x64.o
+	#$(LD_LLD) -o foo-linux-x64.so --dynamic-linker=/lib64/ld-linux-x86-64.so.2 foo-linux-x64.o
 	$(LD_LLD) --shared foo-linux-x64.o -o foo-linux-x64.so
 
 foo-linux-x64.o: foo.c
