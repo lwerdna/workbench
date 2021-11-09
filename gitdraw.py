@@ -64,26 +64,35 @@ def get_branches(remotes_too=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--disclude-message", action='store_true', dest="disclude_message", help="disclude commit message in nodes")
-    parser.add_argument("--disclude-hash", action='store_true', dest="disclude_hash", help="disclude commit hash in nodes")
-    parser.add_argument("--include-author", action='store_true', dest="include_author", help="include author in nodes")
-    parser.add_argument("--remote-branches", action='store_true', dest="remote_branches", help="include remote branches also")
+    parser.add_argument("--message", dest="include_message", action='store_true', help="include commit message")
+    parser.add_argument("--no-message", dest="include_message", action='store_false', help="don't include commit message")
+    parser.set_defaults(include_message=True)
+    parser.add_argument("--hash", dest="include_hash", action='store_false', help="include commit hash")
+    parser.add_argument("--no-hash", dest="include_hash", action='store_false', help="don't include commit hash")
+    parser.set_defaults(include_hash=True)
+    parser.add_argument("--author", dest="include_author", action='store_true', help="include author in nodes")
+    parser.add_argument("--no-author", dest="include_author", action='store_true', help="don't include author in nodes")
+    parser.set_defaults(include_author=False)
+    parser.add_argument("--remote-branches", dest="remote_branches", action='store_true', help="include remote branches")
+    parser.add_argument("--no-remote-branches", dest="remote_branches", action='store_true', help="don't include remote branches")
+    parser.set_defaults(remote_branches=False)
     parser.add_argument("--message-length", dest="message_length", type=int, default=24, help="how many characters of commit message to include")
-    parser.add_argument("--collapse-threshold", dest="collapse_threshold", type=int, default=8, help="length needed for linear run of commits to be collapsed")
-    parser.add_argument("--direction", default='horizontal', choices=['horizontal', 'vertical'], help="layout direction")
-    parser.add_argument("-b", "--back", type=int, default=16, help="how many commits back from each ref")
-    parser.add_argument("--debug", action='store_true', dest="debug", help="print debugging messages")
+    parser.add_argument("--collapse-threshold", dest="collapse_threshold", type=int, default=8, help="length needed for linear run of commits to be collapsed (0 for no collapse)")
+    parser.add_argument("--direction", default='vertical', choices=['horizontal', 'vertical'], help="layout direction")
+    parser.add_argument("-b", "--back", type=int, default=16, help="how many commits back from each ref (0 for no limit)")
+    parser.add_argument("--debug", dest="debug", action='store_true', help="print debugging messages as DOT comments")
     args = parser.parse_args()
 
     log('settings:')
-    log('debug messages? %s' % args.debug)
-    log('include remote branches? %s' % args.remote_branches)
-    log('disclude message from nodes? %s' % args.disclude_message)
-    log('disclude hash from nodes? %s' % args.disclude_hash)
+    log('include message from nodes? %s' % args.include_message)
+    log('include hash from nodes? %s' % args.include_hash)
     log('include author in nodes? %s' % args.include_author)
+    log('include remote branches? %s' % args.remote_branches)
     log('message length in each node: %d' % args.message_length)
-    log('commits from each reference: %d' % args.back)
+    log('collapse threshold: %d' % args.collapse_threshold)
     log('layout direction: %s' % args.direction)
+    log('commits from each reference: %d' % args.back)
+    log('debug messages? %s' % args.debug)
 
     DEBUG=args.debug
 
@@ -95,7 +104,8 @@ if __name__ == '__main__':
     commits = {}
     pattern = re.compile(r'^\[(\d+)\|\|(.*)\|\|(.*)\|\|\s?(.*)\]\s([0-9a-f]*)\s?(.*)$')
     for start_point in set(branches.values()):
-        cmd = 'git log --pretty=format:"[%%ct||%%cn||%%s||%%d] %%h %%p" -n %d %s' % (args.back, start_point)
+        limiter = '' if args.back==0 else ' -n %d'%args.back
+        cmd = 'git log --pretty=format:"[%%ct||%%cn||%%s||%%d] %%h %%p"%s %s' % (limiter, start_point)
         for line in get_output_lines(cmd):
             m = re.match(pattern, line)
             if not m:
@@ -132,48 +142,49 @@ if __name__ == '__main__':
         dst = 'commit:'+branches[branch_name]
         DG.add_edge(src, dst)
 
-    # process graph
-    seen = set()
-    runs = []
-    queue = ['branch:%s'%name for name in branches]
-    while queue:
-        cur = queue.pop()
-        if cur in seen:
-            continue
-        seen.add(cur)
-        run = []
-        while(cur):
-            run.append(cur)
-            parents = list(DG.successors(cur))
-            children = list(DG.predecessors(cur))
-            if len(parents) == 1 and len(children) <= 1:
-                cur = parents[0]
+    # remove linear runs of commits
+    if args.collapse_threshold != 0:
+        seen = set()
+        runs = []
+        queue = ['branch:%s'%name for name in branches]
+        while queue:
+            cur = queue.pop()
+            if cur in seen:
                 continue
-            queue.extend(parents)
-            break
-        runs.append(run)
-    log('detected %d runs' % len(runs))
-    for run in runs:
-        log('\trun starting at %s is %d long' % (run[0], len(run)))
+            seen.add(cur)
+            run = []
+            while(cur):
+                run.append(cur)
+                parents = list(DG.successors(cur))
+                children = list(DG.predecessors(cur))
+                if len(parents) == 1 and len(children) <= 1:
+                    cur = parents[0]
+                    continue
+                queue.extend(parents)
+                break
+            runs.append(run)
+        log('detected %d runs' % len(runs))
+        for run in runs:
+            log('\trun starting at %s is %d long' % (run[0], len(run)))
 
-    #for run in sorted(runs, key=lambda x: len(x), reverse=True):
-    for run in runs:
-        if len(run) < args.collapse_threshold:
-            log('run starting at %s was too short' % run[0])
-            continue
+        #for run in sorted(runs, key=lambda x: len(x), reverse=True):
+        for run in runs:
+            if len(run) < args.collapse_threshold:
+                log('run starting at %s was too short' % run[0])
+                continue
 
-        log('\t' + ','.join(run))
+            log('\t' + ','.join(run))
 
-        # run[0]->run[1]->run[2]-> ... ->run[-3]->run[-2]->run[-1]
-        for i in range(3, len(run)-3):
-            log('\tremoving %s' % run[i])
-            DG.remove_node(run[i])
+            # run[0]->run[1]->run[2]-> ... ->run[-3]->run[-2]->run[-1]
+            for i in range(3, len(run)-3):
+                log('\tremoving %s' % run[i])
+                DG.remove_node(run[i])
 
-        node = 'collapsed:%s ... %s' % (run[3], run[-4])
+            node = 'collapsed:%s ... %s' % (run[3], run[-4])
 
-        DG.add_node(node)
-        DG.add_edge(run[2], node)
-        DG.add_edge(node, run[-3])
+            DG.add_node(node)
+            DG.add_edge(run[2], node)
+            DG.add_edge(node, run[-3])
 
     # draw graph
     print('digraph DG {')
@@ -193,11 +204,11 @@ if __name__ == '__main__':
 
             info = commits[node[7:]]
 
-            if not args.disclude_hash:
+            if args.include_hash:
                 label_lines.append(info['hash'])
             if args.include_author:
                 label_lines.append('(%s)' % info['author'])
-            if not args.disclude_message:
+            if args.include_message:
                 message_prepared = info['message']
                 if len(message_prepared) > args.message_length:
                     message_prepared = message_prepared[0:args.message_length] + '...'
