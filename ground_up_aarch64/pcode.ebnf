@@ -1,0 +1,152 @@
+program = {statement}+ $;
+
+statement =
+	"UNDEFINED" ';' |
+	"NOP" ';' |
+	"SEE" '"' ident '"' ';' |
+	"NOT_PERMITTED" ';' |
+	"UNPREDICTABLE" ';' |
+	'if' expr0 'then' statement 'elsif' expr0 'then' statement |
+	'if' expr0 'then' statement 'else' statement |
+	'if' expr0 'then' statement |
+	'case' expr2 'of' '{' {'when' (bpattern|number) statement}+ {'otherwise' statement} '}' |
+	definition ';' |
+	declaration ';' |
+	func_call ';' |
+	assignment ';' |
+	'{' {statement}+ '}';
+
+assignment =
+	tuple '=' expr0 |
+	ident '=' 'if' expr0 'then' expr0 'else' expr0 |
+	ident '=' expr0;
+
+ternary_condition = 'if' expr0 'then' expr0 'else' expr0;
+ternary_condition_elsif = 'if' expr0 'then' expr0 'else' 'if' expr0 'then' expr0 'else' expr0;
+
+type =
+	'AccType' |
+	'BranchType' |
+	'CompareOp' |
+	'CountOp' |
+	'ExtendType' |
+	'FPConvOp' |
+	'FPMaxMinOp' |
+	'FPRounding' |
+	'FPUnaryOp' |
+	'ImmediateOp' |
+	'LogicalOp' |
+	'MemAtomicOp' |
+	'MemOp' |
+	'MoveWideOp' |
+	'PSTATEField' |
+	'ReduceOp' |
+	'SVECmp' |
+	'ShiftType' |
+	'SystemHintOp' |
+	'VBitOp' |
+	'bit' |
+	'bits(' number ')' |
+	'bits(' ident ')' |
+	'boolean' |
+	'integer';
+
+declaration = type ident;
+definition = type ident '=' ternary_condition_elsif |
+			type ident '=' ternary_condition |
+			type ident '=' expr0;
+
+tuple = '(' ('-'|expr0) { ',' ('-'|expr0) }+ ')';
+
+expression_only = expr0 $;
+
+# could use kleen star here instead of alternative rule, but I don't
+# want to get back empty closures
+expr0 =	expr1 {('&&' | '||' | '<=' | '>=') expr1}+ |
+	    expr1;
+
+expr1 = expr2 {('*' | '/' | '<<' | '>>' | 'XOR') expr2}+ |
+		expr2 {('==' | '!=') expr2}+ |
+		expr2 {('>' | '<') expr2}+ |
+	    expr2;
+
+# expr2 = func_call ':' (func_call|ident|number|bits) |
+expr2 = expr3 {('EOR' | '+' | '-') expr3}+ |
+	    expr3;
+
+expr3 = builtin_value |
+	    (func_call|ident|number|bits) {':'(func_call|ident|number|bits)}* |
+		func_call |
+		bits |
+		bpattern |
+	    tuple |
+	    '(' expr0 ')' |
+	    '!' expr0;
+
+number = /0x[a-fA-F0-9]+/ |
+		/\d+/;
+
+bits = /'[01]+'/;
+
+bpattern = /'[01x ]+'/;
+
+ident = /[a-zA-Z][\.\w]*/;
+
+whatever = /.*/;
+
+builtin_value = 'TRUE' |
+	            'FALSE' |
+				'AccType_ATOMICRW' | 'AccType_ATOMIC' | 'AccType_LIMITEDORDERED' |
+				'AccType_ORDEREDATOMICRW' | 'AccType_ORDEREDATOMIC' | 'AccType_ORDERED' |
+				'BranchType_DIRCALL' | 'BranchType_DIR' | 'BranchType_INDCALL' |
+				'BranchType_INDIR' | 'BranchType_RET' |
+				'Cmp_EQ' | 'Cmp_GE' | 'Cmp_GT' |
+				'Cmp_LE' | 'Cmp_LT' | 'Cmp_NE' | 'Cmp_UN' |
+				'CompareOp_EQ' | 'CompareOp_GE' |
+				'CompareOp_GT' | 'CompareOp_LE' | 'CompareOp_LT' |
+				'CountOp_CLS' | 'CountOp_CLZ' |
+				'FPConvOp_CVT_FtoI_JS' | 'FPConvOp_CVT_FtoI' |
+				'FPConvOp_CVT_ItoF' | 'FPConvOp_MOV_FtoI' | 'FPConvOp_MOV_ItoF' |
+				'FPMaxMinOp_MAXNUM' | 'FPMaxMinOp_MAX' | 'FPMaxMinOp_MINNUM' | 'FPMaxMinOp_MIN' |
+				'FPRounding_NEGINF' | 'FPRounding_POSINF' | 'FPRounding_TIEAWAY' |
+				'FPRounding_TIEEVEN' | 'FPRounding_ZERO' |
+				'FPUnaryOp_ABS' | 'FPUnaryOp_MOV' | 'FPUnaryOp_NEG' | 'FPUnaryOp_SQRT' |
+				'MBReqDomain_FullSystem' |
+				'MBReqDomain_InnerShareable' | 'MBReqDomain_Nonshareable' |
+				'MBReqDomain_OuterShareable' | 'MBReqTypes_All' | 'MBReqTypes_Reads' |
+				'MBReqTypes_Writes' |
+				'MemAtomicOp_ADD' | 'MemAtomicOp_BIC' | 'MemAtomicOp_EOR' |
+				'MemAtomicOp_ORR' | 'MemAtomicOp_SMAX' | 'MemAtomicOp_SMIN' |
+				'MemAtomicOp_UMAX' | 'MemAtomicOp_UMIN' |
+				'MemOp_LOAD' | 'MemOp_PREFETCH' | 'MemOp_STORE' |
+				'MoveWideOp_K' | 'MoveWideOp_N' | 'MoveWideOp_Z' |
+				'PSTATEField_DAIFClr' | 'PSTATEField_DAIFSet' | 'PSTATEField_DIT' |
+				'PSTATEField_PAN' | 'PSTATEField_SP' | 'PSTATEField_SSBS' |
+				'PSTATEField_TCO' | 'PSTATEField_UAO' |
+				'Prefetch_READ' | 'Prefetch_WRITE' | 'Prefetch_READ' | 'Prefetch_WRITE' |
+				'Sys_AT' | 'Sys_DC' | 'Sys_IC' | 'Sys_TLBI' | 'Sys_SYS' |
+				'SystemHintOp_BTI' | 'SystemHintOp_CSDB' | 'SystemHintOp_YIELD' |
+				'SystemHintOp_DGH' | 'SystemHintOp_ESB' | 'SystemHintOp_NOP' |
+				'SystemHintOp_PSB' | 'SystemHintOp_SEVL' | 'SystemHintOp_SEV' |
+				'SystemHintOp_TSB' | 'SystemHintOp_WFE' | 'SystemHintOp_WFI' |
+				'VBitOp_VBIF' | 'VBitOp_VBIT' | 'VBitOp_VBSL' | 'VBitOp_VEOR' |
+				'ReduceOp_FADD' | 'ReduceOp_ADD' | 'ReduceOp_FMINNUM' |
+				'ReduceOp_FMAXNUM' | 'ReduceOp_FMIN' | 'ReduceOp_FMAX' |
+				'ExtendType_UXTB' | 'ExtendType_UXTH' | 'ExtendType_UXTW' | 'ExtendType_UXTX' |
+				'ExtendType_SXTB' | 'ExtendType_SXTH' | 'ExtendType_SXTW' | 'ExtendType_SXTX' |
+				'LogicalOp_AND' | 'LogicalOp_EOR' | 'LogicalOp_ORR' |
+				'ImmediateOp_ERROR' | 'ImmediateOp_MOVI' | 'ImmediateOp_MVNI' |
+				'ImmediateOp_ORR' | 'ImmediateOp_BIC' |
+				'LOG2_TAG_GRANULE' ;
+
+
+# function calls
+func_call =
+	ident '(' ')' |
+	ident '(' expr0 ')' |
+	ident '(' expr0 ',' expr0 ')' |
+	ident '(' expr0 ',' expr0 ',' expr0 ')' |
+	ident '(' expr0 ',' expr0 ',' expr0 ',' expr0 ')' |
+	ident '(' expr0 ',' expr0 ',' expr0 ',' expr0 ',' expr0 ')' |
+	ident '(' expr0 ',' expr0 ',' expr0 ',' expr0 ',' expr0 ',' expr0 ')' |
+	ident '(' expr0 ',' expr0 ',' expr0 ',' expr0 ',' expr0 ',' expr0 ',' expr0 ')';
