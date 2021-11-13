@@ -57,7 +57,7 @@ def standard_env():
         '>':op.gt, '<':op.lt, '>=':op.ge, '<=':op.le, '=':op.eq, 
         'abs':     abs,
         'append':  op.add,  
-        'apply':   apply,
+        'apply':   lambda proc,l: proc(*l),
         'begin':   lambda *x: x[-1],
         'car':     lambda x: x[0],
         'cdr':     lambda x: x[1:], 
@@ -86,7 +86,9 @@ class Env(dict):
         self.outer = outer
     def find(self, var):
         "Find the innermost Env where var appears."
-        return self if (var in self) else self.outer.find(var)
+        if var in self: return self
+        if self.outer: return self.outer.find(var)
+        raise Exception('cannot find variable -%s-' % var)
 
 global_env = standard_env()
 
