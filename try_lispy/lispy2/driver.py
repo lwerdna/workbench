@@ -15,14 +15,14 @@ if __name__ == '__main__':
     elif arg0 == 'test':
         tests = [
             ("()", SyntaxError),
-            ("(set! x)", SyntaxError), 
+            ("(set! x)", SyntaxError),
             ("(define 3 4)", SyntaxError),
             ("(quote 1 2)", SyntaxError),
-            ("(if 1 2 3 4)", SyntaxError), 
+            ("(if 1 2 3 4)", SyntaxError),
             ("(lambda 3 3)", SyntaxError),
             ("(lambda (x))", SyntaxError),
-            #("""(if (= 1 2) (define-macro a 'a) 
-            # (define-macro a 'b))""", SyntaxError),
+            ("""(if (= 1 2) (define-macro a 'a)
+                (define-macro a 'b))""", SyntaxError),
             ("(define (twice x) (* 2 x))", None),
             ("(twice 2)", 4),
             ("(twice 2 2)", TypeError),
@@ -35,12 +35,18 @@ if __name__ == '__main__':
             ("(a1 0)", 100),
             ("(a1 10)", 110),
             ("(a1 10)", 120),
-            ("""(define (newton guess function derivative epsilon)
-            (define guess2 (- guess (/ (function guess) (derivative guess))))
-            (if (< (abs (- guess guess2)) epsilon) guess2
-                (newton guess2 function derivative epsilon)))""", None),
-            ("""(define (square-root a)
-            (newton 1 (lambda (x) (- (* x x) a)) (lambda (x) (* 2 x)) 1e-8))""", None),
+            ("""
+            (define (newton guess function derivative epsilon)
+                (define guess2 (- guess (/ (function guess) (derivative guess))))
+                (if (< (abs (- guess guess2)) epsilon) guess2
+                    (newton guess2 function derivative epsilon)
+                )
+            )""", None),
+            ("""
+            (define (square-root a)
+                (newton 1 (lambda (x) (- (* x x) a))
+                    (lambda (x) (* 2 x)) 1e-8)
+            )""", None),
             ("(> (square-root 200.) 14.14213)", True),
             ("(< (square-root 200.) 14.14215)", True),
             ("(= (square-root 200.) (sqrt 200.))", True),
@@ -51,11 +57,11 @@ if __name__ == '__main__':
             ("(sum-squares-range 1 3000)", 9004500500), ## Tests tail recursion
             ("(call/cc (lambda (throw) (+ 5 (* 10 (throw 1))))) ;; throw", 1),
             ("(call/cc (lambda (throw) (+ 5 (* 10 1)))) ;; do not throw", 15),
-            ("""(call/cc (lambda (throw) 
+            ("""(call/cc (lambda (throw)
                  (+ 5 (* 10 (call/cc (lambda (escape) (* 100 (escape 3)))))))) ; 1 level""", 35),
-            ("""(call/cc (lambda (throw) 
+            ("""(call/cc (lambda (throw)
                  (+ 5 (* 10 (call/cc (lambda (escape) (* 100 (throw 3)))))))) ; 2 levels""", 3),
-            ("""(call/cc (lambda (throw) 
+            ("""(call/cc (lambda (throw)
                  (+ 5 (* 10 (call/cc (lambda (escape) (* 100 1))))))) ; 0 levels""", 1005),
             ("(* 1i 1i)", -1),
             ("(sqrt -1)", 1j),
@@ -68,8 +74,8 @@ if __name__ == '__main__':
             ("(define-macro unless (lambda args `(if (not ,(car args)) (begin ,@(cdr args))))) ; test `", None),
             ("(unless (= 2 (+ 1 1)) (display 2) 3 4)", None),
             (r'(unless (= 4 (+ 1 1)) (display 2) (display "\n") 3 4)', 4),
-            ("(quote x)", 'x'), 
-            ("(quote (1 2 three))", [1, 2, 'three']), 
+            ("(quote x)", 'x'),
+            ("(quote (1 2 three))", [1, 2, 'three']),
             ("'x", 'x'),
             ("'(one 2 3)", ['one', 2, 3]),
             ("(define L (list 1 2 3))", None),
@@ -84,6 +90,7 @@ if __name__ == '__main__':
 
         for (x, expected) in tests:
             result = ''
+
             try:
                 result = lispy.eval(lispy.parse(x))
                 print(x, '=>', lispy.to_string(result))
@@ -94,7 +101,7 @@ if __name__ == '__main__':
             if not ok:
                 print('expression: %s' % x)
                 print('    actual: %s' % result)
-                print('  expected: %s' % expected)                
+                print('  expected: %s' % expected)
                 break
         else:
             print('PASS')
@@ -112,7 +119,7 @@ if __name__ == '__main__':
                 if len(stack)==1:
                     exprs.append(data[stack[0]:i+1])
                 stack.pop()
-        #print('read %d expressions' % len(exprs)) 
+        #print('read %d expressions' % len(exprs))
         for (i,expr) in enumerate(exprs):
             #print('expr%d: %s' % (i, expr))
             #print('tokens: %s' % ', '.join(['"%s"'%t for t in lispy.tokenize(expr)]))
