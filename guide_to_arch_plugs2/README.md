@@ -21,7 +21,7 @@ $ cd Z80 && git checkout tutorial2_start
 Our inchoate `get_instruction_low_level_il()` in Z80Arch.py is awaiting a real definition:
 
 ```python
-    def get_instruction_low_level_il(self, data, addr, il):
+    def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
         return None
 ```
 
@@ -43,12 +43,10 @@ So BNIL acts a common tongue, and it's our job to write a translater from the ta
 
 ### LLIL: The Callback
 
-Alright, so Binja's going to be asking us for LLIL by invoking our plugin's  `get_instruction_low_level_il()`. Let's first look at what we're supplied to do the job:
+Alright, so Binja's going to be asking us for LLIL by invoking our plugin's  `get_instruction_low_level_il()`. Let's first look at what we're supplied to do the job with the type hints:
 
-```
-data: <class 'bytes'>
-addr: <class 'int'>
-  il: <class 'binaryninja.lowlevelil.LowLevelILFunction'>
+```python
+def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
 ```
 
 The `data` and corresponding `length` hold bytes from the instruction to be translated. The `il` is an initially empty container that collects LLIL for this function that we produce on a per-instruction basis with invocations of this callback.
@@ -60,7 +58,7 @@ The `il` parameter actually serves two roles. In addition to being the container
 Well, we can't lift Z80 bytes without first disassembling, so let's start with a call to the disassembler. Note that since the first tutorial, Z80 has migrated away from [skoolkit](https://pypi.org/project/skoolkit/) disassembler to [z80dis](https://pypi.org/project/z80dis/).
 
 ```python
-    def get_instruction_low_level_il(self, data, addr, il): 
+def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
         decoded = decode(data, addr)
         if decoded.status != DECODE_STATUS.OK or decoded.len == 0:
             return None
@@ -83,9 +81,9 @@ Check out those red [no](https://en.wikipedia.org/wiki/No_symbol) symbols. Binja
 
 ### LLIL: Assembly Nature
 
-Obviously to be a translator from Z80 to LLIL, we're going to need to know something about LLIL.
+Obviously to be a translator from Z80 to LLIL, we're going to need to know something about LLIL. LLIL is intended to be as close to an assembly language as possible. There is a set of about 135 instructions available and execution flows sequentially except for label-based branching.
 
-I think it mostly resembles an assembly language, because there is a finite set of available instructions (about 135 total), and execution flows "fall through" style with the exception of label-based branching.
+You don't need to understand stack allocation, or how calling conventions are applied, or even largely how flags work. You simply need to describe the semantics of the instruction and BN figures figures the rest out for you, or allows you to specify the semantics specifically when they diverge from normal.
 
 The instructions are the LLIL_XXX values from the `LowLevelIlOperation` enumeration in generated `api/python/enums.py` file:
 
@@ -103,7 +101,7 @@ class LowLevelILOperation(enum.IntEnum):
 
 Hopefully the names of these LLIL instructions already have you imagining how they might map to some machine instructions. It was designed with ease of lifting in mind.
 
-BNIL is a domain specific language (DSL), but you never write it down as text. Like we never produce the string "LLIL_LOAD" or "LLIL_STORE" and ask Binja to compile or otherwise process it. Instead, it's an [internal or embedded DSL](https://en.wikipedia.org/wiki/Domain-specific_language#External_and_Embedded_Domain_Specific_Languages), being expressed in and hosted by the language Python.
+BNIL is a domain specific language (DSL), but you never write it down as text. Like we never produce the string "LLIL_LOAD" or "LLIL_STORE" and ask Binja to compile or otherwise process it. Instead, it's an [internal or embedded DSL](https://en.wikipedia.org/wiki/Domain-specific_language#External_and_Embedded_Domain_Specific_Languages), being expressed in and hosted by the language the lifter was written, Python in this case.
 
 Here's an abridged table showing the correspondence between raw LLIL instructions and the hosting constructs in python:
 
@@ -170,14 +168,14 @@ LLIL_SET_REG
      │    └─── edx
      └─── LLIL_MUL
           ├─── LLIL_REG
-          │    └─── ecx     
+          │    └─── ecx
           └─── LLIL_CONST
-               └─── 2 
+               └─── 2
 ```
 
 #### Exercise #3: Lifting PUSH
 
-Let's try lifting PUSH, which requires _something_ to be pushed. Since Binja doesn't have separate instructions for pushing registers and pushing constants and pushing flags, we must push a general expression, in variable `subexpr` here:
+Let's try lifting PUSH. We'll map it to Binja's LLIL_PUSH. There is not a separate LLIL instruction for pushing registers or constants or flags. LLIL_PUSH works in general for whatever is supplied as an operand. Here, we implement the case where the object of the push is a register, built in the variable `subexpr`:
 
 ```python
         elif decoded.op == OP.PUSH:
@@ -352,7 +350,7 @@ This section is a lesson that LLIL won't always have an exact fit for the assemb
 
 #### Exercise #7: lifting push AF
 
-We currently lift `PUSH AF` as an `LLIL_PUSH` of `LLIL_REG` AF. And while AF is a register pair in that it can be the object of register reads and pushes and what not, access to it is special in Z80 because the low 8 bits (the "F" part) map to the flags. 
+We currently lift `PUSH AF` as an `LLIL_PUSH` of `LLIL_REG` AF. And while AF is a register pair in that it can be the object of register reads and pushes and what not, access to it is special in Z80 because the low 8 bits (the "F" part) map to the flags.
 
 Push can only target AF, BC, DE, HL, IX, IY, so let's test when AF is the object:
 
@@ -424,8 +422,8 @@ Jumps to an absolute address (`JP` in Z80) or relative address (`JR` in Z80) map
             tmp = il.get_label_for_address(Architecture['Z80'], oper_val)
             if tmp:
                 expr = il.goto(tmp)
-            else:   
-                expr = il.jump(il.const_pointer(2, oper_val)) 
+            else:
+                expr = il.jump(il.const_pointer(2, oper_val))
 ```
 
 #### Exercise #8: Lift CALL, RET, JP, JR
@@ -514,9 +512,9 @@ LLIL_SET_REG
      │    └─── edx
      └─── LLIL_MUL
           ├─── LLIL_REG
-          │    └─── ecx     
+          │    └─── ecx
           └─── LLIL_CONST
-               └─── 2 
+               └─── 2
 ```
 
 This might be stored internally as:
@@ -538,7 +536,7 @@ I hope this post has been helpful in getting you started lifting! If you're look
 
 We welcome feedback. Is there something you wish were covered in more detail? Less? Do you have a question that belongs in the Q&A?
 
-Hop on the `#api-help` channel in our community [slack](https://slack.binary.ninja/). 
+Hop on the `#api-help` channel in our community [slack](https://slack.binary.ninja/).
 
 
 
