@@ -10,7 +10,8 @@ TARGETS_ASM = hello-macos-x64.s hello-win-x64.s hello-win-x86.s hello-linux-x64.
 TARGETS_OBJ = hello-macos-x64.o hello-win-x64.o hello-win-x86.o hello-linux-x64.o hello-linux-x86.o hello-linux-arm.o
 TARGETS_EXE = hello-macos-x64 hello-win-x64.exe hello-win-x86.exe hello-linux-x64 hello-linux-x86 hello-linux-arm
 
-all: $(TARGETS_ASM) $(TARGETS_OBJ) $(TARGETS_EXE)
+#all: $(TARGETS_ASM) $(TARGETS_OBJ) $(TARGETS_EXE)
+all: $(TARGETS_ASM) $(TARGETS_OBJ)
 
 interpret:
 	lli hello.ll
