@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument("--no-remote-branches", dest="remote_branches", action='store_true', help="don't include remote branches")
     parser.set_defaults(remote_branches=False)
     parser.add_argument("--message-length", dest="message_length", type=int, default=24, help="how many characters of commit message to include")
-    parser.add_argument("--collapse-threshold", dest="collapse_threshold", type=int, default=8, help="length needed for linear run of commits to be collapsed (0 for no collapse)")
+    parser.add_argument("--collapse", dest="collapse_threshold", type=int, default=8, help="length needed for linear run of commits to be collapsed (0 for no collapse)")
     parser.add_argument("--direction", default='vertical', choices=['horizontal', 'vertical'], help="layout direction")
     parser.add_argument("-b", "--back", type=int, default=16, help="how many commits back from each ref (0 for no limit)")
     parser.add_argument("--debug", dest="debug", action='store_true', help="print debugging messages as DOT comments")
