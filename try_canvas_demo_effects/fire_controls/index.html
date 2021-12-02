@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="./style.css">
+
+</head>
+
+<body onload="main()">
+
+<div style="float:left">
+<canvas id="myCanvas" width="640" height="480">
+</div>
+
+<div class="gui-div">
+	<div class="row">
+		<div class="gui-label" id="divisorSliderText">divisor: 4.064</div>
+		<div class="col"><input id="divisorSlider" type="range" min="0" max="10000" value="4064"></div>
+	</div>
+	<div class="row">
+		<div class="gui-label">fps:</div>
+		<div id="fps" class="col">123</div>
+	</div>
+</div>
+
+<script src="logic.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,49 @@
+body {
+	background-color: black;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+.row {
+	display: flex;
+	background-color: red;
+	padding: 4px;
+}
+
+.gui-label {
+	flex-basis: 50%;
+	text-align: right;
+	background-color: green;
+	padding: 4px;
+}
+
+.gui-ctrl {
+	flex-basis: 50%;
+	background-color: blue;
+	padding: 4px;
+}
+
+.center-div
+{
+	background-color: black;
+	margin: 0 auto;
+	width: 640px;
+}
+
+input {
+	background-color: yellow;
+}
+
+.gui-div
+{
+	position: absolute;
+	top: 0;
+	right: 0;
+	display: flex; /* defines a flex container */
+	flex-direction: column;
+	border-radius: 4px;
+	background-color: gray;
+	padding: 4px;
+}

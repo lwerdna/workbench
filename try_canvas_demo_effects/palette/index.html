@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8"/>
+<link rel="stylesheet" type="text/css" href="./style.css">
+
+</head>
+
+<body onload="main()">
+
+<div>
+<span><input id="color0enable" type="checkbox"></input></span>
+<span>color0: <input id="color0" type="color" onchange="onColor0Change()" value="#FF0000"></input></span>
+<span id="color0txt"></span>
+</div>
+
+<div>
+<span><input id="color1enable" type="checkbox"></input></span>
+<span>color1: <input id="color1" type="color" onchange="oncolor0Change()" value="#00FF00"></input></span>
+<span id="color1txt"></span>
+</div>
+
+<div>
+<span><input id="color2enable" type="checkbox"></input></span>
+<span>color2: <input id="color2" type="color" onchange="oncolor0Change()" value="#0000FF"></input></span>
+<span id="color2txt"></span>
+</div>
+
+<div>
+<span><input id="color3enable" type="checkbox"></input></span>
+<span>color3: <input id="color3" type="color" onchange="oncolor0Change()"></input></span>
+<span id="color3txt"></span>
+</div>
+
+<hr>
+
+steps: <input id="steps" type=text value="8">
+<input id="btnRgbInterp" type=button value="RGB interpolate"/>
+<input id="btnHsvInterpLong" type=button value="HSV interpolate long"/>
+<input id="btnHsvInterpShort" type=button value="HSV interpolate short"/>
+
+<hr>
+
+
+<hr>
+
+<input id="inpFile" type="file" onchange="handleFile()"/><br>
+<canvas id="preview" width=320 height=128></canvas><br>
+<canvas id="hGraph"/ width=320 height=64></canvas><br>
+<canvas id="sGraph"/ width=320 height=64></canvas><br>
+<canvas id="lGraph"/ width=320 height=64></canvas><br>
+
+<span id='hovercolor'></span>
+
+<div id='code'>code will go here on load</div>
+
+
+<script src="logic.js"></script>
+</body>
+
+</html>

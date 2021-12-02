@@ -1,0 +1,10 @@
+body {
+	background-color: black;
+}
+
+.center-div
+{
+	background-color: black;
+	margin: 0 auto;
+	width: 640px;
+}
