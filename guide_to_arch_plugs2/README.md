@@ -18,7 +18,7 @@ $ git clone https://github.com/Vector35/Z80
 $ cd Z80 && git checkout tutorial2_start
 ```
 
-Our inchoate `get_instruction_low_level_il()` in Z80Arch.py is awaiting a real definition:
+Our empty `get_instruction_low_level_il()` in Z80Arch.py is awaiting a real definition:
 
 ```python
     def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
@@ -31,7 +31,7 @@ The [example binary](./assets/dacman.col) will be the homebrew Pac-Man clone cal
 
 ### What is Lifting?
 
-It's translating from a lower level language to an intermediate language considered higher. Since it starts "lower" and ascends "higher", the process earned the name "lifting". I wonder if other terms like "raising" were considered. Anyway, the lower level language is the machine instructions of the architecture we're targetting (Z80) and the intermediate language is called Binja's low level intermediate language (LLIL). Why would it be called _low_ level intermediate language if it's intended to be "higher" than the machine instructions? Because in Binja's hierarchy of IL's, collectively called BNIL, LLIL is the lowest:
+It's translating from a lower level language to an intermediate language considered higher. Since it starts "lower" and ascends "higher", the process earned the name "lifting". I wonder if other terms like "raising" were considered. Anyway, the lower level language is the machine instructions of the architecture we're targeting (Z80) and the intermediate language is called Binja's low level intermediate language (LLIL). Why would it be called _low_ level intermediate language if it's intended to be "higher" than the machine instructions? Because in Binja's hierarchy of IL's, collectively called BNIL, LLIL is the lowest:
 
 ![](./assets/bnil.png)
 
@@ -64,7 +64,7 @@ def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowL
             return None
 ```
 
-Remember the roles of the `il` parameter? Let's try them both. When an instruction disassembly succeeds, we'll use the helper `il.Unimplemented()` to construct a simple single-instruction expression that marks that the instruction isn't yet implemented by the lifter. Then, as the container, we'll `il.append()` it to function's LLIL so far:
+Do you remember the roles of the `il` parameter? Let's try them both. When an instruction disassembly succeeds, we'll use the helper `il.Unimplemented()` to construct a simple single-instruction expression that marks that the instruction isn't yet implemented by the lifter. Then, as the container, we'll `il.append()` it to function's LLIL so far:
 
 ```python
         expr = il.unimplemented()
@@ -81,7 +81,7 @@ Check out those red [no](https://en.wikipedia.org/wiki/No_symbol) symbols. Binja
 
 ### LLIL: Assembly Nature
 
-Obviously to be a translator from Z80 to LLIL, we're going to need to know something about LLIL. LLIL is intended to be as close to an assembly language as possible. There is a set of about 135 instructions available and execution flows sequentially except for label-based branching.
+Obviously to be a translator from Z80 to LLIL, we're going to need to know something about LLIL. LLIL is intended to be as close to an assembly language as possible. There is a set of about 135 instructions available and execution flows sequentially except for branching instructions like call and jump. There are no structured control flow constructs except for an "if" instruction.
 
 You don't need to understand stack allocation, or how calling conventions are applied, or even largely how flags work. You simply need to describe the semantics of the instruction and BN figures figures the rest out for you, or allows you to specify the semantics specifically when they diverge from normal.
 
@@ -149,7 +149,9 @@ This nearly cries for a tree-like mental picture. Every LowLevelILInstruction ca
 
 Trail of Bit's [Breaking Down Binary Ninja's Low Level IL](https://blog.trailofbits.com/2017/01/31/breaking-down-binary-ninjas-low-level-il/) is approaching four years old, but I doubt its exposition of this concept can be topped and I recommend it as prerequisite reading. You'll see some elements and examples in this post inspired from this seminal article. It also includes some code for printing existing lifted IL in a text outline format which reinforces the tree idea when while studying the product of preexisting lifters.
 
-If LLIL is to be thought of as a tree-like language, then learning to translate to LLIL could benefit from  cultivating an ability to think of assembly instructions in a tree-like manner. For me, an intermediate step of imagning a composition of functions is helpful. For example, the x86 instruction `mov eax, 2` might first become the composition `mov(reg("eax"), 2))` and after surveying [lowlevelil.py](https://github.com/Vector35/binaryninja-api/blob/dev/python/lowlevelil.py) I find my `mov()` maps to `LLIL_SET_REG` whose arguments tell me the 2 can't be supplied naked, but requires a wrapping in `LLIL_CONST`, resulting in:
+Another tool for studying existing LLIL is the [bnil-graph](https://github.com/withzombies/bnil-graph) plugin by [withzombies](https://github.com/withzombies). You can navigate to an instruction of interest and simply menu click to have it draw the tree structure within binja. Further, it produces code that recognizes when an input IL matches the selected IL.
+
+If LLIL is to be thought of as a tree-like language, then learning to translate to LLIL could benefit from cultivating an ability to think of assembly instructions in a tree-like manner. For me, an intermediate step of imagining a composition of functions is helpful. For example, the x86 instruction `mov eax, 2` might first become the composition `mov(reg("eax"), 2))` and after surveying [lowlevelil.py](https://github.com/Vector35/binaryninja-api/blob/dev/python/lowlevelil.py) I find my `mov()` maps to `LLIL_SET_REG` whose arguments tell me the 2 can't be supplied naked, but requires a wrapping in `LLIL_CONST`, resulting in:
 
 ```
 LLIL_SET_REG
@@ -268,7 +270,7 @@ See [checkpoint #5](https://github.com/Vector35/Z80/commit/9e140ae0c2ee18d6edae3
 
 ### Factoring out operand lifting
 
-It's common when lifting an instruction that we must generate LLIL for operands. Rather than replicate this for each instruction, we should have some common utility. Indeed this is done in almost all of Vector35's architectures:
+It's common when lifting an instruction that we must generate LLIL for operands. Rather than replicate this for each instruction, we should have some common utility. Indeed this is done in almost all Vector35's architectures:
 
 | architecture                                                 | operand lifting utilities:                  |
 | ------------------------------------------------------------ | ------------------------------------------- |
@@ -310,7 +312,7 @@ The upfront cost of implementing such a function will pay dividends as it's used
         return il.load(size_hint, tmp)
 ```
 
-**Dereferened indexed memory** operands map to `LLIL_LOAD` of an address formed by the addition `LLIL_ADD` of a register `LLIL_REG` and an offset `LLIL_CONST`:
+**Dereferenced indexed memory** operands map to `LLIL_LOAD` of an address formed by the addition `LLIL_ADD` of a register `LLIL_REG` and an offset `LLIL_CONST`:
 
 ```python
     elif oper_type in [OPER_TYPE.MEM_DISPL_IX, OPER_TYPE.MEM_DISPL_IY]:
@@ -414,7 +416,7 @@ Returns (`RET` in Z80) takes as input how much the stack is adjusted:
             expr = il.ret(il.pop(2))
 ```
 
-Jumps to an absolute address (`JP` in Z80) or relative address (`JR` in Z80) map to `LLIL_JUMP`. In the relative case, the disassembler z80dis returns to use an already calculated effective address as the operand value. When the address is close and in the same function, `LLIL_GOTO` is preferred, and we can test this by using the `il.get_label_for_address()` function:
+Jumps to an absolute address (`JP` in Z80) or relative address (`JR` in Z80) map to `LLIL_JUMP` or `LLIL_GOTO`. The former takes as input an expression that evaluates to an address, and the latter takes a label, which is a name that can be attached to IL locations. Note the disassembler z80dis uniformly returns an effective address, accounting for the displacement if the jump is relative. We can test whether a label exists for this effective address using the `il.get_label_for_address()` function. When it succeeds, we'll use `LLIL_GOTO`, otherwise `LLIL_JUMP`:
 
 ```python
     elif decoded.op in [OP.JP, OP.JR]:
@@ -502,7 +504,7 @@ None of these truly "verify" an accurate lift, they just increase the confidence
 
 **What is the difference between LLIL and BNIL?** BNIL is an umbrella term for all the levels of IL Binja uses, and Lifted LLIL is at the bottom level.
 
-**What is the difference between an expression and an actual LLIL instruction?** An expression is an internal numeric identifier for a portion of an LLIL instruction's full tree and is returned by most of the helper functions. Recall the tree for the x86 instruction `lea eax, [edx+ecx*4]`:
+**What is the difference between an expression and an actual LLIL instruction?** An expression (or expression index) is an internal numeric identifier for a portion of an LLIL instruction's full tree and is returned by most of the helper functions. Recall the tree for the x86 instruction `lea eax, [edx+ecx*4]`:
 
 ```
 LLIL_SET_REG
@@ -519,16 +521,24 @@ LLIL_SET_REG
 
 This might be stored internally as:
 
-| Expression ID | Instruction  | Operand 0 | Operand 1 |
-| ------------- | ------------ | --------- | --------- |
-| 0             | LLIL_SET_REG | eax       | 1         |
-| 1             | LLIL_ADD     | 2         | 3         |
-| 2             | LLIL_REG     | edx       |           |
-| 3             | LLIL_MUL     | 4         | 5         |
-| 4             | LLIL_REG     | ecx       |           |
-| 5             | LLIL_CONST   | 2         |           |
+| ExpressionIndex | Instruction  | Operand 0 | Operand 1 |
+| --------------- | ------------ | --------- | --------- |
+| 0               | LLIL_SET_REG | eax       | 1         |
+| 1               | LLIL_ADD     | 2         | 3         |
+| 2               | LLIL_REG     | edx       |           |
+| 3               | LLIL_MUL     | 4         | 5         |
+| 4               | LLIL_REG     | ecx       |           |
+| 5               | LLIL_CONST   | 2         |           |
 
-Since the internal storage is inconsequential when constructing LLIL, "expression" and "instruction" can be used interchangeably without harm.
+Thus there are six total expressions for this instruction and the instruction is technically itself an expression, with index 0.
+
+**What is the difference between an expression and an instruction index?**
+
+An expression (or expression index) is a per-instruction identifier for a part of an instruction's tree. See above.
+
+An instruction index is a per-function identifier for instructions.
+
+To reiterate, functions consist of instructions, indexed by instruction indices. Each instruction consists of expressions, indexed by expression indices.
 
 ### Conclusion
 
