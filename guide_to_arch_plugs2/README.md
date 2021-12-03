@@ -21,7 +21,7 @@ $ cd Z80 && git checkout tutorial2_start
 Our empty `get_instruction_low_level_il()` in Z80Arch.py is awaiting a real definition:
 
 ```python
-    def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
+    def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> Optional[int]:
         return None
 ```
 
@@ -46,7 +46,7 @@ So BNIL acts a common tongue, and it's our job to write a translater from the ta
 Alright, so Binja's going to be asking us for LLIL by invoking our plugin's  `get_instruction_low_level_il()`. Let's first look at what we're supplied to do the job with the type hints:
 
 ```python
-def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
+def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> Optional[int]:
 ```
 
 The `data` and corresponding `length` hold bytes from the instruction to be translated. The `il` is an initially empty container that collects LLIL for this function that we produce on a per-instruction basis with invocations of this callback.
@@ -58,7 +58,7 @@ The `il` parameter actually serves two roles. In addition to being the container
 Well, we can't lift Z80 bytes without first disassembling, so let's start with a call to the disassembler. Note that since the first tutorial, Z80 has migrated away from [skoolkit](https://pypi.org/project/skoolkit/) disassembler to [z80dis](https://pypi.org/project/z80dis/).
 
 ```python
-def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> int:
+def get_instruction_low_level_il(self, data:bytes, addr:int, il:'lowlevelil.LowLevelILFunction') -> Optional[int]:
         decoded = decode(data, addr)
         if decoded.status != DECODE_STATUS.OK or decoded.len == 0:
             return None
