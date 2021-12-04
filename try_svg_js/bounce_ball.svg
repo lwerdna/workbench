@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+	width="320" height="240"
+	onload="startup(evt)"
+>
+
+<script href="./bounce_ball.js">
+</script>
+
+<rect x="0" y="0" width="320" height="240" fill="white" stroke="black" />
+<circle id="C" cx="20" cy="20" r="10" stroke="black" stroke-width="2" fill="green" />
+
+</svg>
