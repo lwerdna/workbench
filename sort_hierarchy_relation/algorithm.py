@@ -30,7 +30,7 @@ class hnode():
 # relation(a,b) true iff a is a "parent" of b
 def hierarchy_worker(current, item, is_ancestor):
     # is currently inserted item the ancestor of the insertion point?
-    if is_ancestor(item, current.item):
+    if not current.dummy_root and is_ancestor(item, current.item):
         return hnode(item, [current])
 
     # is the currently inserted item ancestor of insertion point's children?
@@ -47,7 +47,7 @@ def hierarchy_worker(current, item, is_ancestor):
             return current
 
     # then the currently inserted item is the offspring of the insertion point
-    assert is_ancestor(current.item, item) or current.dummy_root
+    assert current.dummy_root or is_ancestor(current.item, item)
     current.children.append(hnode(item))
     return current
 
@@ -61,6 +61,4 @@ def hierarchy(items, is_ancestor, sort_func=None):
         root.apply_sort(sort_func)
 
     return root
-
-
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# test on the instruction class and instruction form names from the A64 specification
+
 import sys
 import random
 import algorithm
@@ -124,20 +126,5 @@ inputs = [
 ]
 
 if __name__ == '__main__':
-    # strings and substrings
-
-    # doing this input list in any order should always produce the same hierarchy
-    ancestor_relation = lambda a,b: b.startswith(a)
-    items = ['aardvark', 'ant', 'antelope', 'anteater', 'a']
-    for i in range(10):
-        random.shuffle(items)
-        print(items)
-        result = algorithm.hierarchy(items, ancestor_relation)
-        print(result)
-        assert(str(result) == 'root\n  a\n    ant\n      anteater\n      antelope\n    aardvark')
-                              'root\n  a\n    ant\n      anteater\n      antelope\n    aardvark'
-        print('--')
-
-    sys.exit(-1)
     root = algorithm.hierarchy(inputs, lambda a,b: b.startswith(a))
-    algorithm.print_tree(root)
+    print(root)
