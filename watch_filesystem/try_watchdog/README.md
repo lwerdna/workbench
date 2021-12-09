@@ -1,3 +1,5 @@
+EDIT! It does work, you just can't point it at a file like I thought. Instead, you point it at the directory containing the file, and filter the path contained in the event. See monitor_file.py.
+
 Watchdog doesn't fucking work (at least on macOS 11.4 x64).
 
 # Failure #1
@@ -35,3 +37,4 @@ Same commands now, or open in an image editor and make a change, and watchdog re
 ```
 
 What!?
+
