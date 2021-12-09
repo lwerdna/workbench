@@ -27,6 +27,23 @@ class hnode():
     def __str__(self):
         return self.__str_depth__(0)
 
+    def json(self, depth=0):
+        result = ''
+        result += '%s{\n' % ('  '*depth)
+        sanitized = str(self.item).replace('"', '\\"')
+        result += '%s"name": "%s"' % ('    '*depth, sanitized)
+
+        if self.children:
+            result += ',\n'
+            result += '%s"children": [\n' % ('    '*depth)
+            result += ',\n'.join([c.json(depth+2) for c in self.children])
+            result += '\n%s]\n' % ('    '*depth)
+        else:
+            result += '\n'
+
+        result += '%s}' % ('  '*depth)
+        return result
+
 # relation(a,b) true iff a is a "parent" of b
 def hierarchy_worker(current, item, is_ancestor):
     # is currently inserted item the ancestor of the insertion point?

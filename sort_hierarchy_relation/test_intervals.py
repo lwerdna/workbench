@@ -1025,4 +1025,4 @@ def ancestor(a, b):
 
 if __name__ == '__main__':
     result = algorithm.hierarchy(items, ancestor)
-    print(result)
+    print(result.json())
