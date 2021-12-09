@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# try to circumvent the shortcomings of watchdog, by reacting to false deletion reports
+# and starting up another monitor
+
 import sys
 import time
 import logging
@@ -39,7 +42,7 @@ def monitor_setup():
 
 class MyEventHandler(FileSystemEventHandler):
     def dispatch(self, event):
-        breakpoint()
+        #breakpoint()
 
     def on_any_event(self, event):
         print('on_any_event()')
@@ -69,4 +72,6 @@ if __name__ == "__main__":
         pass
 
     monitor_teardown()
+
+
 
