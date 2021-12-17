@@ -14,7 +14,7 @@ print('debug:', debug)
 with open(sys.argv[1]) as fp:
     code = fp.read()
     if strip:
-        code = re.sub(r'[^\+\-,\.\[\]><]', '', code)
+        code = re.sub(r'[^\+\-,\.\[\]><\*]', '', code)
 
 code = list(code)
 code = [c for c in code if not c.isspace()]
@@ -66,6 +66,8 @@ while True:
     elif c == ']':
         if data[data_ptr] != 0:
             instr_ptr = jmp[instr_ptr]
+    elif c == '*':
+        debug = True
     else:
         # ...possibly interspersed with other characters (which are ignored)
         pass

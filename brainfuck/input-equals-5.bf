@@ -4,7 +4,7 @@
 <          // goto cell0
 -----      // deduct 5 from cell0
 
-[          // if(cell0 == 0)
+[          // if(cell0 != 0)
     >-     //     clear "else flag" in cell1
     >      //     go to empty cell2
            //     print "!="
