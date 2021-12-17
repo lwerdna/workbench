@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-# use sympy when executing bf to try to track expressions per data cells, inputs, outputs
+# Use sympy when executing BF to track expressions per data cells, inputs, outputs.
+# It does NOT support branching.
 
 import os, sys, re, pprint
 from collections import defaultdict
@@ -43,7 +44,7 @@ while True:
         print('expressions:')
         for (k, v) in expressions.items():
             print('%s: %s' % (k, v))
-        #input()
+        input()
 
     c = code[instr_ptr]
 

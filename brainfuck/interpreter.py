@@ -3,9 +3,18 @@
 import os, sys, re, pprint
 from collections import defaultdict
 
-debug = sys.argv[2:] and sys.argv[2] in ['debug', '-debug', '-dbg']
+(strip, debug) = (False, False)
+for option in sys.argv[2:]:
+    strip = strip or option in ['strip', '-strip', '--strip']
+    debug = debug or option in ['debug', '-debug', '-dbg']
+
+print('strip:', strip)
+print('debug:', debug)
+
 with open(sys.argv[1]) as fp:
     code = fp.read()
+    if strip:
+        code = re.sub(r'[^\+\-,\.\[\]><]', '', code)
 
 code = list(code)
 code = [c for c in code if not c.isspace()]
