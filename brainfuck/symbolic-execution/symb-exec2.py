@@ -17,13 +17,9 @@ class State(object):
         self.expressions = defaultdict(lambda: sympy.core.numbers.Integer(0))
         self.constraints = []
         self.children = []
-        self.trace = []
 
         self.output_idx = 0
         self.input_idx = 0
-
-    def trace_mark(self):
-        self.trace.append(self.ip)
 
     def gen_input_sym_name(self):
         result = 'input%d' % self.input_idx
@@ -40,12 +36,6 @@ class State(object):
         assert expr.is_integer, 'cannot evaluate "%s" to int' % name
         return int(expr.evalf())
 
-    def constraint_violation(self, name, value):
-        for c in self.constraints:
-            if c.subs(name, value) == False:
-                return True
-        return False
-
     def clone(self, children_too=False):
         s = copy.deepcopy(self)
         if not children_too:
@@ -57,12 +47,24 @@ class State(object):
         self.children.append(baby)
         return baby
 
+    def all_nodes(self):
+        result = [self]
+        for c in self.children:
+            result.extend(c.all_nodes())
+        return result
+
+    def all_edges(self):
+        result = []
+        for c in self.children:
+            result.append((self, c))
+        for c in self.children:
+            result.extend(c.all_edges())
+        return result
+
     def str_recursive_lines(self, depth=0):
         lines = []
         indent = '  '*depth
 
-        lines.append(indent + '----------------')
-        lines.append(indent + 'trace: ' + '-'.join(map(str, self.trace)))
         for (k, v) in self.expressions.items():
             extra = ''
             if k.startswith('output') and v.is_integer:
@@ -84,6 +86,24 @@ class State(object):
     def __str__(self):
         return self.str_recursive(-1)
 
+def convert_dot(root):
+    result = []
+    result.append('digraph g {')
+
+    result.append('\t// define vertices')
+    for s in root.all_nodes():
+        label = s.str_recursive(-1).replace('\n', '\\l')
+        result.append('\t%d [shape="Mrecord" fontname="Courier New" label="%s"];' % (id(s), label))
+
+    result.append('')
+
+    result.append('\t// define edges')
+    for (a,b) in root.all_edges():
+        result.append('\t%d -> %d' % (id(a), id(b)))
+
+    result.append('}')
+    return '\n'.join(result)
+
 if __name__ == '__main__':
     with open(sys.argv[1]) as fp:
         code = fp.read()
@@ -104,7 +124,6 @@ if __name__ == '__main__':
 
     # setup
     root = State(0)
-    root.trace_mark()
 
     #root.expressions['input0'] = sympy.Integer(2)
     #root.expressions['input1'] = sympy.Integer(4)
@@ -143,8 +162,6 @@ if __name__ == '__main__':
                 lhs = state.gen_output_sym_name()
                 if debug > 0:
                     print(GREEN+'generated output expression named: %s'%lhs+NORMAL)
-                if lhs == 'output5':
-                    breakpoint()
                 state.expressions[lhs] = state.expressions[rhs]
             elif c == ',':
                 lhs = 'd%d' % state.expression_as_int('dp')
@@ -172,18 +189,16 @@ if __name__ == '__main__':
                     eq_zero = sympy.core.relational.Eq(state.expressions[name], 0)
                     ne_zero = sympy.core.relational.Ne(state.expressions[name], 0)
 
-                    if not eq_zero in state.constraints:
+                    if not (eq_zero in state.constraints or ne_zero in state.constraints):
                         baby = state.birth()
                         baby.constraints.append(ne_zero)
-                        baby.ip = bracket_match[state.ip]+1 if c=='[' else state.ip+1
-                        baby.trace_mark()
+                        baby.ip = state.ip+1 if c=='[' else bracket_match[state.ip]+1
                         leaves.append(baby)
 
-                    if not ne_zero in state.constraints:
+                    if not (eq_zero in state.constraints or ne_zero in state.constraints):
                         baby = state.birth()
                         baby.constraints.append(eq_zero)
-                        baby.ip = bracket_match[state.ip]+1 if c==']' else state.ip+1
-                        baby.trace_mark()
+                        baby.ip = bracket_match[state.ip]+1 if c=='[' else state.ip+1
                         leaves.append(baby)
 
                     # stop executing the current state
@@ -200,6 +215,7 @@ if __name__ == '__main__':
 
         #print('--------------------------------------')
         #print(root.str_recursive())
-        
-    print('--------------------------------------')
-    print(root.str_recursive())
+
+    #print(root.str_recursive())
+    with open('/tmp/tmp.dot', 'w') as fp:
+        fp.write(convert_dot(root))
