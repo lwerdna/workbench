@@ -33,18 +33,34 @@ for (i,c) in enumerate(code):
 data = defaultdict(int)
 instr_ptr = 0
 data_ptr = 0
+breakpoints = set()
 while True: 
-    if debug:
-        print("memory:")
-        for k in sorted(data):
-            ptr = ' <--' if k==data_ptr else ''
-            print('%02d: %d%s' % (k, data[k], ptr))
-        print('code:')
-        a = 'code[%d] = %s' % (instr_ptr, ''.join(code[max(instr_ptr-8, 0):instr_ptr]))
-        b = '%c%s' % (code[instr_ptr], ''.join(code[instr_ptr+1:instr_ptr+1+8]))
-        print(a+b)
-        print(' '*len(a) + '^')
-        input()
+    #if instr_ptr == 1189:
+    #    debug = 1
+    #print('ip:%d dp:%d' % (instr_ptr, data_ptr))
+    if debug or instr_ptr in breakpoints:
+        debug = 1
+        while 1:
+            print("memory (data_ptr: %d)" % data_ptr)
+            for k in sorted(data):
+                ptr = ' <--' if k==data_ptr else ''
+                print('%02d: %d%s' % (k, data[k], ptr))
+            print('code:')
+            a = 'code[%d] = %s' % (instr_ptr, ''.join(code[max(instr_ptr-8, 0):instr_ptr]))
+            b = '%c%s' % (code[instr_ptr], ''.join(code[instr_ptr+1:instr_ptr+1+8]))
+            print(a+b)
+            print(' '*len(a) + '^')
+            print('breakpoints: ' + ', '.join(map(str, breakpoints)))
+            cmd = input('DEBUG>')
+            if cmd in ['c', 'continue', 'g', 'go']:
+                debug = False
+                break
+            elif cmd.startswith('bp '):
+                breakpoints.add(int(cmd[3:]))
+            elif cmd.startswith('bc '):
+                breakpoints.remove(int(cmd[3:]))
+            else:
+                break
 
     c = code[instr_ptr]
 

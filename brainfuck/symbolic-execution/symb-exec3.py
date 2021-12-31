@@ -22,6 +22,8 @@ class State(object):
         self.output_idx = 0
         self.input_idx = 0
 
+        self.last_constraints = ''
+
     def expression_set(self, name, value):
         assert name == 'dp' or re.match(r'^cell\d+$', name) or name.startswith('output'), 'error: '+name
 
@@ -37,8 +39,6 @@ class State(object):
         if not name in self.expressions:
             if name.startswith('input'):
                 self.expressions[name] = z3.BitVec(name, 8)
-                if debug > 0:
-                    print(GREEN + 'created symbolic variable: %s'%name + NORMAL)
             else:
                 self.expressions[name] = z3.BitVecVal(0, 8)
 
@@ -55,21 +55,46 @@ class State(object):
     def constrain(self, expr):
         self.constraints = z3.simplify(z3.And(self.constraints, expr))
 
-    def consistent(self):
-        s = z3.Solver()
-        s.add(self.constraints)
-        return s.check() == z3.sat
+    def consistent(self, code_len=None):
+        if self.ip < 0:
+            print(RED + 'state failed consistency test self.ip (%d) < 0' % self.ip + NORMAL)
+            #breakpoint()
+            return False
+
+        if code_len != None and self.ip >= code_len:
+            print(RED + 'state failed consistency test self.ip (%d) >= %d' % (self.ip, code_len) + NORMAL)
+            #breakpoint()
+            return False
+
+        dp = self.expression_evaluate('dp')
+        if dp < 0:
+            print(RED + 'state failed consistency test dp (%d) < 0' % dp + NORMAL)
+            #breakpoint()
+            return False
+
+        # avoid solving the same constraints repeatedly
+        if str(self.constraints) != self.last_constraints:
+            s = z3.Solver()
+            s.add(self.constraints)
+            if s.check() != z3.sat:
+                return False
+            self.last_constraints = str(self.constraints)
+
+        return True
 
     def current_cell(self):
-        return 'cell%02d' % state.expression_evaluate('dp')
+        return 'cell%02d' % self.expression_evaluate('dp')
 
-    def gen_input_sym_name(self):
-        result = 'input%d' % self.input_idx
+    def gen_input_symbol(self):
+        name = 'input%d' % self.input_idx
         self.input_idx += 1
-        return result
+        var = z3.BitVec(name, 8)
+        if debug > 0:
+            print(GREEN + 'created symbolic variable: %s' % var + NORMAL)
+        return var
 
     def gen_output_sym_name(self):
-        result = 'output%d' % self.output_idx
+        result = 'output%02d' % self.output_idx
         self.output_idx += 1
         return result
 
@@ -142,13 +167,47 @@ def convert_dot(root):
     result.append('}')
     return '\n'.join(result)
 
-if __name__ == '__main__':
+# given a state and the code, decide whether to continue this path
+def continue_path(state, code):
+    if not state.consistent():
+        return False
+
+    #if code[state.ip:].startswith('[[-]>[-]<+++++++++[->+'):
+    #    breakpoint()
+
+#    if state.expression_evaluate('output11') != ord('C'):
+#        print(RED + 'badboy path detected' + NORMAL)
+#        return False
+#
+#    if state.ip == 1283:
+#        print(RED + 'badboy path detected' + NORMAL)
+#        return False
+#
+#    if \
+#        state.expression_evaluate('output59') == ord('S'): # and \
+#        #state.expression_evaluate('output60') == ord('o') and \
+#        #state.expression_evaluate('output61') == ord('r') and \
+#        #state.expression_evaluate('output62') == ord('r') and \
+#        #state.expression_evaluate('output63') == ord('y'):
+#        print(RED + 'badboy path detected' + NORMAL)
+#        return False
+
+    if state.input_idx > 8:
+        print(RED + 'guessing the password is too long' + NORMAL)
+        return False
+
+    return True
+
+
+
+def main():
+    global debug
+
     with open(sys.argv[1]) as fp:
         code = fp.read()
-        code = re.sub(r'[^\+\-,\.\[\]><]', '', code)
+        code = re.sub(r'[^\+\-,\.\[\]><\*]', '', code)
 
-    code = list(code)
-    code = [c for c in code if not c.isspace()]
+    code = ''.join([c for c in list(code) if not c.isspace()])
 
     # validate matching []'s
     bracket_match = {}
@@ -163,23 +222,30 @@ if __name__ == '__main__':
     # setup
     root = State(0)
 
-    #root.expressions['input0'] = BitVec('input0', 8)
-    #root.expressions['input1'] = BitVec('input1', 8)
-    #root.expressions['input2'] = BitVec('input2', 8)
+    #root.expressions['input0'] = z3.BitVecVal(65, 8)
+    #root.expressions['input1'] = z3.BitVecVal(66, 8)
+    #root.expressions['input2'] = z3.BitVecVal(10, 8)
     root.expressions['dp'] = z3.IntVal(0)
     leaves = [root]
 
     # execute
     while(leaves):
-        #print('writing dot')
-        #with open('/tmp/tmp.dot', 'w') as fp:
-        #    fp.write(convert_dot(root))
+        print('writing dot')
+        with open('/tmp/tmp.dot', 'w') as fp:
+            fp.write(convert_dot(root))
 
         state = leaves.pop(0)
 
         while True:
+            #if state.ip == 1189:
+            #    breakpoint()
+            if debug > 0:
+                before = code[state.ip-8:state.ip]
+                after = code[state.ip+1:state.ip+9]
+                #print('ip:%d    ...%s %c %s...' % (state.ip, before, code[state.ip], after))
+                #print('dp:%d' % (state.expression_evaluate('dp')))
+                print('ip:%d dp:%d' % (state.ip, state.expression_evaluate('dp')))
             if debug > 1:
-                print('code[%d]: %c' % (state.ip, code[state.ip]))
                 print(state)
                 input()
 
@@ -204,13 +270,13 @@ if __name__ == '__main__':
                 state.expression_set(lhs, state.expression_get(rhs))
             elif c == ',':
                 lhs = state.current_cell()
-                rhs = z3.BitVec(state.gen_input_sym_name(), 8)
+                rhs = state.gen_input_symbol()
                 state.expression_set(lhs, rhs)
             elif c == ']':
                 state.ip = bracket_match[state.ip]-1
             elif c == '[':
                 name = state.current_cell()
-                cond = state.expressions[name]
+                cond = state.expression_get(name)
 
                 if z3.is_bv_value(cond):
                     value = cond.as_long()
@@ -240,7 +306,7 @@ if __name__ == '__main__':
                 pass
 
             state.ip += 1
-            if state.ip >= len(code):
+            if not continue_path(state, code):
                 break
 
         #print('--------------------------------------')
@@ -249,3 +315,10 @@ if __name__ == '__main__':
     #print(root.str_recursive())
     with open('/tmp/tmp.dot', 'w') as fp:
         fp.write(convert_dot(root))
+
+if __name__ == '__main__':
+    if 0:
+        import cProfile
+        cProfile.run('main()')
+    else:
+        main()
