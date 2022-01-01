@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-# replace sympy with z3
+# add interactive console/debugger
 
-import os, sys, re, copy
+import os, sys, re, copy, readline
 from collections import defaultdict
 
 # pip install z3-solver
@@ -10,7 +10,16 @@ import z3
 
 (RED, GREEN, NORMAL) = ('\x1B[31m', '\x1B[32m', '\x1B[0m')
 
-debug = 1
+debug_settings = \
+{
+    'foreground': True,
+    'auto_graph': True,
+    'breakpoints': set(),
+    'countdown': 0,
+    'last_command': '',
+    'show_state': True,
+    'quit': False
+}
 
 class State(object):
     def __init__(self, ip):
@@ -29,7 +38,7 @@ class State(object):
 
         expr = z3.simplify(value)
 
-        if name.startswith('output') and debug > 0:
+        if name.startswith('output'):
             extra = ' (char: \'%c\')' % expr.as_long() if self.expression_evaluable(name) else ''
             print(GREEN + 'set output expression %s = %s%s' % (name, expr, extra) + NORMAL)
 
@@ -89,8 +98,7 @@ class State(object):
         name = 'input%d' % self.input_idx
         self.input_idx += 1
         var = z3.BitVec(name, 8)
-        if debug > 0:
-            print(GREEN + 'created symbolic variable: %s' % var + NORMAL)
+        print(GREEN + 'created symbolic variable: %s' % var + NORMAL)
         return var
 
     def gen_output_sym_name(self):
@@ -149,14 +157,15 @@ class State(object):
     def __str__(self):
         return self.str_recursive(-1)
 
-def convert_dot(root):
+def graph(root, current, fpath='/tmp/tmp.dot'):
     result = []
     result.append('digraph g {')
 
     result.append('\t// define vertices')
     for s in root.all_nodes():
+        extra = ' color="red"' if current and id(current) == id(s) else ''
         label = s.str_recursive(-1).replace('\n', '\\l')
-        result.append('\t%d [shape="Mrecord" fontname="Courier New" label="%s"];' % (id(s), label))
+        result.append('\t%d [shape="Mrecord" fontname="Courier New" label="%s"%s];' % (id(s), label, extra))
 
     result.append('')
 
@@ -165,14 +174,21 @@ def convert_dot(root):
         result.append('\t%d -> %d' % (id(a), id(b)))
 
     result.append('}')
-    return '\n'.join(result)
+
+    print(GREEN + 'writing %s' % fpath + NORMAL)
+    with open(fpath, 'w') as fp:
+        fp.write('\n'.join(result))
+
+    fpath2 = os.path.splitext(fpath)[0] + '.png'
+    print(GREEN + 'writing %s' % fpath2 + NORMAL)
+    os.system('dot %s -Tpng -o %s' % (fpath, fpath2))
 
 # given a state and the code, decide whether to continue this path
 def continue_path(state, code):
-    if not state.consistent():
+    if state.ip < 0 or state.ip >= len(code):
         return False
 
-    if state.ip < 0 or state.ip >= len(code):
+    if not state.consistent():
         return False
 
     if state.input_idx > 8:
@@ -182,7 +198,7 @@ def continue_path(state, code):
     return True
 
 def main():
-    global debug
+    global debug_settings
 
     with open(sys.argv[1]) as fp:
         code = fp.read()
@@ -211,27 +227,106 @@ def main():
 
     # execute
     while(leaves):
-        print('writing dot')
-        with open('/tmp/tmp.dot', 'w') as fp:
-            fp.write(convert_dot(root))
-
-        state = leaves.pop(0)
+        state = leaves.pop()
 
         while True:
-            #if state.ip == 1189:
-            #    breakpoint()
-            if debug > 0:
-                before = code[state.ip-8:state.ip]
-                after = code[state.ip+1:state.ip+9]
-                #print('ip:%d    ...%s %c %s...' % (state.ip, before, code[state.ip], after))
-                #print('dp:%d' % (state.expression_evaluate('dp')))
-                print('ip:%d dp:%d' % (state.ip, state.expression_evaluate('dp')))
-            if debug > 1:
-                print(state)
-                input()
+            # next activation should show debugger state
+            debug_settings['show_state'] = True
 
-            if state.ip >= len(code):
-                break
+            # debugger activates when a countdown finishes
+            if debug_settings['countdown']:
+                debug_settings['countdown'] -= 1
+
+                if debug_settings['countdown'] == 0:
+                    debug_settings['foreground'] = True
+                    print(f'{GREEN}debug event: countdown finished{NORMAL}')
+
+            # debugger activates when [
+            if code[state.ip] == '[' and debug_settings['stop_on_open_bracket']:
+                debug_settings['foreground'] = True
+                print(f'{GREEN}debug event: \'[\' encountered{NORMAL}')
+
+            # debugger activates when execution engine is about to split states
+            if code[state.ip] == '[':
+                if not z3.is_bv_value(state.expression_get(state.current_cell())):
+                    if debug_settings['stop_on_branch']:
+                        debug_settings['foreground'] = True
+                        print(f'{GREEN}debug event: imminent state split{NORMAL}')
+
+            # debugger activates when a breakpoint is hit
+            if state.ip in debug_settings['breakpoints']:
+                debug_settings['foreground'] = True
+                print(f'{GREEN}debug event: breakpoint hit at {state.ip}{NORMAL}')
+
+            # activate debugger?
+            if debug_settings['foreground']:
+                # activating debugger cancels previous conditions
+                debug_settings['countdown'] = 0
+                debug_settings['stop_on_open_bracket'] = False
+                debug_settings['stop_on_branch'] = False
+
+                while 1:
+                    if debug_settings['show_state']:
+                        before = code[max(0, state.ip-8):state.ip]
+                        after = code[state.ip+1:min(len(code)-1, state.ip+9)]
+                        print(f'ip:{state.ip}    ...{before}{RED}[{NORMAL}{code[state.ip]}{RED}]{NORMAL}{after}...')
+                        print(f'dp:{state.expression_evaluate("dp")}')
+
+                        if debug_settings['auto_graph']:
+                            graph(root, state)
+
+                        debug_settings['show_state'] = False
+
+                    cmd = input('CMD> ')
+                    if cmd == '':
+                        cmd = debug_settings['last_command']
+                    debug_settings['last_command'] = cmd
+
+                    if cmd in ['s', 'n']:
+                        break
+                    # go <number_of_steps>
+                    elif re.match(r'^g \d+$', cmd):
+                        debug_settings['countdown'] = int(cmd[2:])
+                        debug_settings['foreground'] = False
+                        print(f'{GREEN}going for {debug_settings["countdown"]} steps{NORMAL}')
+                        break
+                    # go until open bracket
+                    elif cmd in ['[']:
+                        debug_settings['foreground'] = False
+                        debug_settings['stop_on_open_bracket'] = True
+                        break
+                    # go until branch or split
+                    elif cmd in ['gb', 'gs']:
+                        debug_settings['foreground'] = False
+                        debug_settings['stop_on_branch'] = True
+                        break
+                    # go unconditionally
+                    elif cmd in ['g', 'go', 'c', 'continue']:
+                        debug_settings['foreground'] = False
+                        break
+                    elif re.match(r'^bp \d+$', cmd):
+                        debug_settings['breakpoints'].add(int(cmd[3:]))
+                    elif re.match(r'^bc \d+$', cmd):
+                        debug_settings['breakpoints'].remove(int(cmd[3:]))
+                    elif cmd == 'bl':
+                        print('breakpoints:')
+                        for addr in sorted(debug_settings['breakpoints']):
+                            print(addr)
+                    elif cmd == 'graph':
+                        graph(root, state)
+                    elif cmd in ['graph_auto', 'auto_graph']:
+                        debug_settings['auto_graph'] = not debug_settings['auto_graph']
+                        print(f'{GREEN}set auto_graph to: {debug_settings["auto_graph"]}{NORMAL}')
+                    elif cmd == 'q':
+                        debug_settings['quit'] = True
+                        break
+                    else:
+                        print(f'unrecognized command: {cmd}')
+
+                if debug_settings['quit']:
+                    state = None
+                    leaves = []
+                    break
 
             c = code[state.ip]
 
@@ -264,13 +359,6 @@ def main():
                     if value == 0:
                         state.ip = bracket_match[state.ip]
                 else:
-                    # into body
-                    child = state.clone()
-                    child.constrain(cond != 0)
-                    child.ip = state.ip + 1
-                    if child.consistent():
-                        state.children.append(child)
-                        leaves.append(child)
                     # over body
                     child = state.clone()
                     child.constrain(cond == 0)
@@ -278,10 +366,15 @@ def main():
                     if child.consistent():
                         state.children.append(child)
                         leaves.append(child)
+                    # into body
+                    child = state.clone()
+                    child.constrain(cond != 0)
+                    child.ip = state.ip + 1
+                    if child.consistent():
+                        state.children.append(child)
+                        leaves.append(child)
 
                     break
-            elif c == '*':
-                debug = 100
             else:
                 # ...possibly interspersed with other characters (which are ignored)
                 pass
@@ -292,10 +385,6 @@ def main():
 
         #print('--------------------------------------')
         #print(root.str_recursive())
-
-    #print(root.str_recursive())
-    with open('/tmp/tmp.dot', 'w') as fp:
-        fp.write(convert_dot(root))
 
 if __name__ == '__main__':
     if 0:
