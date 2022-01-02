@@ -5,11 +5,12 @@
 -----      // deduct 5 from cell0
 
 [          // if(cell0 != 0)
+    [-]    //     clear "then flag" in cell0
     >-     //     clear "else flag" in cell1
     >      //     go to empty cell2
            //     print "!="
     ++++[->++++++++<]>+.--[->++<]>-.
-    <<<    //     return to c0:"then flag"
+    <<<<   //     return to c0:"then flag"
 
 ]>         // to c1:"else flag"
 [          // else

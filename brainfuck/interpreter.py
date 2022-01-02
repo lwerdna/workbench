@@ -1,23 +1,25 @@
 #!/usr/bin/env python
 
-import os, sys, re, pprint
+import os, sys, re, readline
 from collections import defaultdict
 
-(strip, debug) = (False, False)
+(RED, GREEN, NORMAL) = ('\x1B[31m', '\x1B[32m', '\x1B[0m')
+
+instruction_chars = ['+', '-', '>', '<', '.', ',', '[', ']', '*']
+
+(strip, debug_foreground) = (False, False)
 for option in sys.argv[2:]:
     strip = strip or option in ['strip', '-strip', '--strip']
-    debug = debug or option in ['debug', '-debug', '-dbg']
+    debug_foreground = debug_foreground or option in ['debug', '-debug', '-dbg']
 
 print('strip:', strip)
-print('debug:', debug)
+print('debug:', debug_foreground)
 
 with open(sys.argv[1]) as fp:
     code = fp.read()
     if strip:
         code = re.sub(r'[^\+\-,\.\[\]><\*]', '', code)
-
-code = list(code)
-code = [c for c in code if not c.isspace()]
+code = re.sub(r'\s', ' ', code)
 
 # validate matching []'s
 jmp = {}
@@ -34,63 +36,77 @@ data = defaultdict(int)
 instr_ptr = 0
 data_ptr = 0
 breakpoints = set()
-while True: 
-    #if instr_ptr == 1189:
-    #    debug = 1
-    #print('ip:%d dp:%d' % (instr_ptr, data_ptr))
-    if debug or instr_ptr in breakpoints:
-        debug = 1
+while instr_ptr < len(code):
+    if debug_foreground or instr_ptr in breakpoints:
+        if instr_ptr in breakpoints:
+            breakpoints.remove(instr_ptr)
+        debug_foreground = 1
         while 1:
-            print("memory (data_ptr: %d)" % data_ptr)
+            print("memory @%d:" % data_ptr)
             for k in sorted(data):
                 ptr = ' <--' if k==data_ptr else ''
                 print('%02d: %d%s' % (k, data[k], ptr))
-            print('code:')
-            a = 'code[%d] = %s' % (instr_ptr, ''.join(code[max(instr_ptr-8, 0):instr_ptr]))
-            b = '%c%s' % (code[instr_ptr], ''.join(code[instr_ptr+1:instr_ptr+1+8]))
-            print(a+b)
-            print(' '*len(a) + '^')
+            print('code @%d:' % instr_ptr)
+            before = code[max(instr_ptr-16, 0): min(len(code)-1, instr_ptr)]
+            after = code[min(instr_ptr+1, len(code)-1): min(len(code)-1, instr_ptr+16)]
+            print(f'{before}{code[instr_ptr]}{after}')
+            print(' '*len(before) + '^')
             print('breakpoints: ' + ', '.join(map(str, breakpoints)))
-            cmd = input('DEBUG>')
+            cmd = input('DEBUG> ')
             if cmd in ['c', 'continue', 'g', 'go']:
-                debug = False
+                debug_foreground = False
                 break
+            elif cmd in ['pydbg', 'pydebug']:
+                breakpoint()
             elif cmd.startswith('bp '):
                 breakpoints.add(int(cmd[3:]))
             elif cmd.startswith('bc '):
                 breakpoints.remove(int(cmd[3:]))
+            elif cmd == 'l':
+                i = 0
+                while True:
+                    chunk = code[i:i+10]
+                    print('%04d: %s' % (i, ' '.join(list(chunk))))
+                    if len(chunk) < 10:
+                        break
+                    i += 10
+            elif cmd == 'q':
+                sys.exit(-1)
             else:
                 break
 
     c = code[instr_ptr]
 
+    auto_increment = True
     if c == '>':
         data_ptr += 1
+        data[data_ptr]
     elif c == '<':
         data_ptr -= 1
+        data[data_ptr]
     elif c == '+':
         data[data_ptr] = (data[data_ptr] + 1) % 256
     elif c == '-':
         data[data_ptr] = (data[data_ptr] - 1) % 256
     elif c == '.':
-        print(chr(data[data_ptr]), end='')
+        print(GREEN+chr(data[data_ptr])+NORMAL, end='')
     elif c == ',':
-        data[data_ptr] = int(input())
+        d = input()
+        data[data_ptr] = int(d) if d else 10
     elif c == '[':
         if data[data_ptr] == 0:
             instr_ptr = jmp[instr_ptr]
     elif c == ']':
-        if data[data_ptr] != 0:
-            instr_ptr = jmp[instr_ptr]
+        instr_ptr = jmp[instr_ptr]
+        auto_increment = False
     elif c == '*':
-        debug = True
+        debug_foreground = True
     else:
         # ...possibly interspersed with other characters (which are ignored)
         pass
 
-    instr_ptr += 1
-    if instr_ptr >= len(code):
-        break
+    if auto_increment:
+        instr_ptr += 1
 
-
-
+    while instr_ptr < len(code) and not code[instr_ptr] in instruction_chars:
+        instr_ptr += 1
