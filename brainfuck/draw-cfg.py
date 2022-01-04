@@ -61,12 +61,24 @@ edges = set()
 
 for i in range(len(blocks)):
     (src, body) = blocks[i]
+
     for dst in departures[src + len(body) - 1]:
-        edges.add((src, dst))
+        # determine edge type
+        assert body[-1] in ['[', ']']
+
+        if body[-1] == '[':
+            if src + len(body) == dst:
+                edge_type = 'while_enter'
+            else:
+                edge_type = 'while_exit'
+        else:
+            edge_type = 'continue'
+
+        edges.add((src, dst, edge_type))
 
     # fall-thru execution
-    if body[-1] != ']' and i < len(blocks)-1:
-        edges.add((src, blocks[i+1][0]))
+    if body[-1] != ']' and body[-1] != '[' and i < len(blocks)-1:
+        edges.add((src, blocks[i+1][0], 'sequential'))
 
 if debug:
     print('edges: ', edges)
@@ -75,21 +87,49 @@ if debug:
     sys.exit(-1)
 
 print('digraph g {')
+#print('    graph [splines=ortho, nodesep=1];')
 print('    node [fontname="Courier New" fontsize="8"];')
 print('    // define vertices')
 for (start, body) in blocks:
     color = 'white'
     if '.' in body:
-        color = 'aqua'
+        color = 'darkgrey'
+        #color = 'aqua'
+        #color = 'grey50'
+        pass
     if ',' in body:
-        color = 'red'
-    if '.' in body and ',' in body:
-        color = 'fuchsia'
-    extra = '' if color == 'white' else ' fillcolor="%s" style="filled"' % color
+        #color = 'red'
+        #color = 'grey40'
+        pass
+    if '.' in body or ',' in body:
+        color = 'darkgrey'
+        pass
+
+    if start + len(body) >= len(code):
+        color = 'crimson'
+
+    #shape = 'box'
+    shape = 'Mrecord'
+    if code[start] == '[':
+        #shape = 'diamond'
+        pass
+    if '.' in body or ',' in body:
+        #shape = 'box3d'
+        shape = 'box'
+
+    extra = '';
+    extra += '' if color == 'white' else ' fillcolor="%s" style="filled"' % color
+    extra += '' if not shape else ' shape="%s"' % shape
     label = '\\l'.join([body[i:i+16] for i in range(0, len(body), 16)])
     print('    %d [shape="Mrecord" label="%d:\\l%s"%s];' % (start, start, html.escape(label), extra))
 print('    // define edges')
-for (src, dst) in edges:
-    print('    %d -> %d;' % (src, dst))
+for (src, dst, etype) in edges:
+    extra = ''
+    if etype == 'sequential':
+        extra = ' [arrowhead=none]'
+    if etype == 'continue':
+        extra = ' [style=dashed, color=grey]'
+
+    print('    %d -> %d%s;' % (src, dst, extra))
 print('}')
 
