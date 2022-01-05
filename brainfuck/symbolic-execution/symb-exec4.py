@@ -2,7 +2,7 @@
 
 # add interactive console/debugger
 
-import os, sys, re, copy, readline
+import os, sys, re, copy, readline, signal
 from collections import defaultdict
 
 # pip install z3-solver
@@ -112,6 +112,16 @@ class State(object):
             s.children = []
         return s
 
+    def get_id(self, ident):
+        if str(id(self)).endswith(str(ident)):
+            return self
+        if id(self) % 100000 == ident:
+            return self
+        for c in self.children:
+            result = c.get_id(ident)
+            if result:
+                return result
+
     def all_nodes(self):
         result = [self]
         for c in self.children:
@@ -130,6 +140,7 @@ class State(object):
         lines = []
         indent = '  '*depth
 
+        lines.append('state id: %d' % id(self))
         lines.append('%sip = %d' % (indent, self.ip))
 
         for name in sorted(self.expressions):
@@ -138,7 +149,8 @@ class State(object):
 
             if name.startswith('output'):
                 if self.expression_evaluable(name):
-                    extra = ' \'%c\'' % expr.as_long()
+                    value = expr.as_long()
+                    extra = ' \'%c\'' % value if value >= 32 and value <= 126 else ''
             lines.append('%s%s = %s%s' % (indent, name, str(expr), extra))
 
         #for c in self.constraints:
@@ -164,7 +176,7 @@ def graph(root, current, fpath='/tmp/tmp.dot'):
     result.append('\t// define vertices')
     for s in root.all_nodes():
         extra = ' color="red"' if current and id(current) == id(s) else ''
-        label = s.str_recursive(-1).replace('\n', '\\l')
+        label = s.str_recursive(-1).replace('\n', '\\l').replace('"', '&quote;')
         result.append('\t%d [shape="Mrecord" fontname="Courier New" label="%s"%s];' % (id(s), label, extra))
 
     result.append('')
@@ -197,6 +209,10 @@ def continue_path(state, code):
 
     return True
 
+def signal_handler(sig, foo):
+    global debug_settings
+    debug_settings['foreground'] = True
+
 def main():
     global debug_settings
 
@@ -223,15 +239,24 @@ def main():
     #root.expressions['input1'] = z3.BitVecVal(66, 8)
     #root.expressions['input2'] = z3.BitVecVal(10, 8)
     root.expressions['dp'] = z3.IntVal(0)
-    leaves = [root]
+    queue = [root]
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     # execute
-    while(leaves):
-        state = leaves.pop()
+    while True:
+        state = None
+        if queue:
+            state = queue.pop()
 
         while True:
             # next activation should show debugger state
             debug_settings['show_state'] = True
+
+            # debugger activates when queue is empty
+            if not state:
+                print(f'{GREEN}debug event: empty queue{NORMAL}')
+                debug_settings['foreground'] = True
 
             # debugger activates when a countdown finishes
             if debug_settings['countdown']:
@@ -241,20 +266,20 @@ def main():
                     debug_settings['foreground'] = True
                     print(f'{GREEN}debug event: countdown finished{NORMAL}')
 
-            # debugger activates when [
-            if code[state.ip] == '[' and debug_settings['stop_on_open_bracket']:
+            # debugger maybe activates when [
+            if state and code[state.ip] == '[' and debug_settings['stop_on_open_bracket']:
                 debug_settings['foreground'] = True
                 print(f'{GREEN}debug event: \'[\' encountered{NORMAL}')
 
             # debugger activates when execution engine is about to split states
-            if code[state.ip] == '[':
+            if state and code[state.ip] == '[':
                 if not z3.is_bv_value(state.expression_get(state.current_cell())):
                     if debug_settings['stop_on_branch']:
                         debug_settings['foreground'] = True
                         print(f'{GREEN}debug event: imminent state split{NORMAL}')
 
             # debugger activates when a breakpoint is hit
-            if state.ip in debug_settings['breakpoints']:
+            if state and state.ip in debug_settings['breakpoints']:
                 debug_settings['foreground'] = True
                 print(f'{GREEN}debug event: breakpoint hit at {state.ip}{NORMAL}')
 
@@ -267,10 +292,14 @@ def main():
 
                 while 1:
                     if debug_settings['show_state']:
-                        before = code[max(0, state.ip-8):state.ip]
-                        after = code[state.ip+1:min(len(code)-1, state.ip+9)]
-                        print(f'ip:{state.ip}    ...{before}{RED}[{NORMAL}{code[state.ip]}{RED}]{NORMAL}{after}...')
-                        print(f'dp:{state.expression_evaluate("dp")}')
+                        if state:
+                            before = code[max(0, state.ip-8):state.ip]
+                            after = code[state.ip+1:min(len(code)-1, state.ip+9)]
+                            print(f'ip:{state.ip}    ...{before}{RED}[{NORMAL}{code[state.ip]}{RED}]{NORMAL}{after}...')
+                            print(f'dp:{state.expression_evaluate("dp")}')
+                            print(f'{len(queue)} states in queue')
+                        else:
+                            print(f'{RED}no state{NORMAL}')
 
                         if debug_settings['auto_graph']:
                             graph(root, state)
@@ -282,6 +311,7 @@ def main():
                         cmd = debug_settings['last_command']
                     debug_settings['last_command'] = cmd
 
+                    # step
                     if cmd in ['s', 'n']:
                         break
                     # go <number_of_steps>
@@ -304,6 +334,7 @@ def main():
                     elif cmd in ['g', 'go', 'c', 'continue']:
                         debug_settings['foreground'] = False
                         break
+                    # breakpoints
                     elif re.match(r'^bp \d+$', cmd):
                         debug_settings['breakpoints'].add(int(cmd[3:]))
                     elif re.match(r'^bc \d+$', cmd):
@@ -312,11 +343,24 @@ def main():
                         print('breakpoints:')
                         for addr in sorted(debug_settings['breakpoints']):
                             print(addr)
+                    # set state
+                    elif cmd.startswith('set '):
+                        ident = int(cmd[4:])
+                        tmp = root.get_id(ident)
+                        if tmp:
+                            queue = []
+                            state = tmp
+                            debug_settings['show_state'] = True
+                            print(f'{GREEN}set state to id {id(state)}{NORMAL}')
+                        else:
+                            print(f'{RED}couldn\'t find state with id {ident}{NORMAL}')
+                    # graph
                     elif cmd == 'graph':
                         graph(root, state)
                     elif cmd in ['graph_auto', 'auto_graph']:
                         debug_settings['auto_graph'] = not debug_settings['auto_graph']
                         print(f'{GREEN}set auto_graph to: {debug_settings["auto_graph"]}{NORMAL}')
+                    # quit
                     elif cmd == 'q':
                         debug_settings['quit'] = True
                         break
@@ -325,7 +369,7 @@ def main():
 
                 if debug_settings['quit']:
                     state = None
-                    leaves = []
+                    queue = []
                     break
 
             c = code[state.ip]
@@ -365,14 +409,14 @@ def main():
                     child.ip = bracket_match[state.ip] + 1
                     if child.consistent():
                         state.children.append(child)
-                        leaves.append(child)
+                        queue.append(child)
                     # into body
                     child = state.clone()
                     child.constrain(cond != 0)
                     child.ip = state.ip + 1
                     if child.consistent():
                         state.children.append(child)
-                        leaves.append(child)
+                        queue = [child] + queue
 
                     break
             else:
