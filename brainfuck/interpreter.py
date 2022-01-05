@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-import os, sys, re, readline
+import os, sys, re, readline, signal
 from collections import defaultdict
 
 (RED, GREEN, NORMAL) = ('\x1B[31m', '\x1B[32m', '\x1B[0m')
 
-instruction_chars = ['+', '-', '>', '<', '.', ',', '[', ']', '*']
+instruction_chars = set(['+', '-', '>', '<', '.', ',', '[', ']', '*'])
 
 (strip, debug_foreground) = (False, False)
 for option in sys.argv[2:]:
@@ -30,6 +30,12 @@ for (i,c) in enumerate(code):
     elif c == ']':
         jmp[stack[-1]] = i
         jmp[i] = stack.pop()
+
+def signal_handler(sig, foo):
+    global debug_foreground
+    debug_foreground = True
+
+signal.signal(signal.SIGINT, signal_handler)
 
 #
 data = defaultdict(int)
@@ -62,14 +68,8 @@ while instr_ptr < len(code):
                 breakpoints.add(int(cmd[3:]))
             elif cmd.startswith('bc '):
                 breakpoints.remove(int(cmd[3:]))
-            elif cmd == 'l':
-                i = 0
-                while True:
-                    chunk = code[i:i+10]
-                    print('%04d: %s' % (i, ' '.join(list(chunk))))
-                    if len(chunk) < 10:
-                        break
-                    i += 10
+            elif cmd.startswith('ip='):
+                instr_ptr = int(cmd[3:])
             elif cmd == 'q':
                 sys.exit(-1)
             else:
