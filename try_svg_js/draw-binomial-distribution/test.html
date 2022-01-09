@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="test.js"></script>
+  </head>
+  <body onload="body_loaded()">
+    <!-- page content -->
+	<!-- inline svg "<svg ...>" is styled by CSS from this page -->
+	<!-- external svg is not --> 
+	<object data="tree.svg" type="image/svg+xml" id="svg-object" onload="svg_loaded()"></object>
+
+    <p>Hey!</p>
+    <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+  </body>
+</html>
