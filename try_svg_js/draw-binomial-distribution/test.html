@@ -8,11 +8,14 @@
   </head>
   <body onload="body_loaded()">
     <!-- page content -->
+    <input type="range" min="0" max="1" step=".01" value=".5" class="slider" id="p">
+    <label id="p_output">p:</label>
+
+    <br>
+
 	<!-- inline svg "<svg ...>" is styled by CSS from this page -->
 	<!-- external svg is not --> 
 	<object data="tree.svg" type="image/svg+xml" id="svg-object" onload="svg_loaded()"></object>
 
-    <p>Hey!</p>
-    <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
   </body>
 </html>

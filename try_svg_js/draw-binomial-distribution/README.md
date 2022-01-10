@@ -1,10 +1,6 @@
-GOAL: draw in inkscape, have containing html document use javascript o redraw stuff in the svg
+![](./screenshot.png)
 
-FAILED: setting .textContent fucking disappears the text:
-
-```javascript
-xml_doc.getElementById("text_001").textContent = "test";
-```
+GOAL: draw in inkscape, have containing html document use javascript to redraw stuff in the svg
 
 good notes at:
 https://www.petercollingridge.co.uk/tutorials/svg/interactive/javascript/
