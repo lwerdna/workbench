@@ -28,11 +28,11 @@
      id="namedview75"
      showgrid="true"
      inkscape:pagecheckerboard="false"
-     inkscape:zoom="1.7702292"
-     inkscape:cx="217.49292"
+     inkscape:zoom="1.5732765"
+     inkscape:cx="197.5124"
      inkscape:cy="149.49984"
-     inkscape:window-x="225"
-     inkscape:window-y="67"
+     inkscape:window-x="150"
+     inkscape:window-y="138"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg8"
      inkscape:document-rotation="0">
@@ -93,6 +93,42 @@
        width="33.072918"
        height="17.197918"
        id="rect944" />
+    <rect
+       x="21.166668"
+       y="70.114586"
+       width="33.072918"
+       height="17.197918"
+       id="rect76" />
+    <rect
+       x="21.166668"
+       y="70.114586"
+       width="33.072918"
+       height="17.197918"
+       id="rect84" />
+    <rect
+       x="21.166668"
+       y="70.114586"
+       width="33.072918"
+       height="17.197918"
+       id="rect92" />
+    <rect
+       x="21.166668"
+       y="70.114586"
+       width="33.072918"
+       height="17.197918"
+       id="rect100" />
+    <rect
+       x="21.166668"
+       y="70.114586"
+       width="33.072918"
+       height="17.197918"
+       id="rect108" />
+    <rect
+       x="21.166668"
+       y="70.114586"
+       width="33.072918"
+       height="17.197918"
+       id="rect116" />
   </defs>
   <metadata
      id="metadata5">
@@ -102,7 +138,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -261,4 +297,52 @@
      d="M 36.000001,12 68.000002,4.0000001 100,12"
      id="path173"
      sodipodi:nodetypes="ccc" />
+  <text
+     xml:space="preserve"
+     id="text_00"
+     style="font-style:normal;font-weight:normal;font-size:2.82222000000000017px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect76);fill:#000000;fill-opacity:1;stroke:none;"
+     transform="translate(-1.4346408,-57.101665)"><tspan
+       x="21.166016"
+       y="72.690031"><tspan
+         style="font-size:2.82222px">.125</tspan></tspan></text>
+  <text
+     xml:space="preserve"
+     id="text_01"
+     style="font-style:normal;font-weight:normal;font-size:2.82222000000000017px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect84);fill:#000000;fill-opacity:1;stroke:none;"
+     transform="translate(24.632243,-56.93349)"><tspan
+       x="21.166016"
+       y="72.690031"><tspan
+         style="font-size:2.82222px">.125</tspan></tspan></text>
+  <text
+     xml:space="preserve"
+     id="text_10"
+     style="font-style:normal;font-weight:normal;font-size:2.82222000000000017px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect92);fill:#000000;fill-opacity:1;stroke:none;"
+     transform="translate(61.462228,-57.101665)"><tspan
+       x="21.166016"
+       y="72.690031"><tspan
+         style="font-size:2.82222px">.125</tspan></tspan></text>
+  <text
+     xml:space="preserve"
+     id="text_11"
+     style="font-style:normal;font-weight:normal;font-size:2.82222000000000017px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect100);fill:#000000;fill-opacity:1;stroke:none;"
+     transform="translate(89.37902,-57.101665)"><tspan
+       x="21.166016"
+       y="72.690031"><tspan
+         style="font-size:2.82222px">.125</tspan></tspan></text>
+  <text
+     xml:space="preserve"
+     id="text_0"
+     style="font-style:normal;font-weight:normal;font-size:2.82222000000000017px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect108);fill:#000000;fill-opacity:1;stroke:none;"
+     transform="translate(22.614162,-64.870992)"><tspan
+       x="21.166016"
+       y="72.690031"><tspan
+         style="font-size:2.82222px">.125</tspan></tspan></text>
+  <text
+     xml:space="preserve"
+     id="text_1"
+     style="font-style:normal;font-weight:normal;font-size:2.82222000000000017px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect116);fill:#000000;fill-opacity:1;stroke:none;"
+     transform="translate(66.507431,-65.039165)"><tspan
+       x="21.166016"
+       y="72.690031"><tspan
+         style="font-size:2.82222px">.125</tspan></tspan></text>
 </svg>
