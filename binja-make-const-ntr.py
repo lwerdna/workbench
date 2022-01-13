@@ -24,7 +24,6 @@ from binaryninja.enums import NamedTypeReferenceClass
 
 # -----------------------------------------------------------------------------
 # attempt #1: use the static named_type_reference() function in Type,
-#             set const afterwards
 # -----------------------------------------------------------------------------
 
 foo = Type.named_type_reference(
@@ -32,7 +31,9 @@ foo = Type.named_type_reference(
         'pthread_attr_t', # name
         'libc.so.6:["pthread_attr_t"]', # type_id
         1, # alignment
-        56 # width
+        56, # width
+        True, # const
+        False # volatile
     )
 print(repr(foo))
 
