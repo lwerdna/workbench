@@ -49,7 +49,7 @@ class JNode(DNode):
                     'name': self.name,
                     'width': self.byte_size,
                     'alignment': 1,
-                    'type_id': ''
+                    'type_id': '???'
                 }
             else:
                 result = 'TODO: %s NOT NTR' % (self.tag)
