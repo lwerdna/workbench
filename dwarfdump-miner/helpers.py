@@ -81,7 +81,8 @@ class DNode():
     def encoding(self):
         return self.attributes.get('DW_AT_encoding', None)
 
-def get_reachable(root):
+# return node and all nodes reachable from this node
+def reachable(root):
     result = set()
 
     queue = [root]
@@ -145,10 +146,10 @@ def dwarfdump(args, NodeClass):
     return nodes
 
 # return a requested function (subprogram) DIE
-def dwarfdump_function(fpath, function_name, NodeClass):
+def dwarfdump_function(fpath, func_name, NodeClass):
     nodes = dwarfdump([fpath], NodeClass)
 
-    matches = [n for n in nodes if n.tag == 'DW_TAG_subprogram' and n.name == function_name]
+    matches = [n for n in nodes if n.tag == 'DW_TAG_subprogram' and n.name == func_name]
     assert matches
 
     # if multiple matches found, return the one with the most arguments
@@ -164,7 +165,7 @@ def dwarfdump_function(fpath, function_name, NodeClass):
     return result
 
 # return a requested structure DIE
-def dwarfdump_structure(args, structure_name, NodeClass):
+def dwarfdump_structure(fpath, struct_name, NodeClass):
     nodes = dwarfdump([fpath], NodeClass)
     matches = [n for n in nodes if n.tag == 'DW_TAG_structure_type' and n.name == struct_name]
     assert matches
