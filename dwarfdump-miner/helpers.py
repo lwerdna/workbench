@@ -23,6 +23,7 @@ class DNode():
         m = re.match(r'^(0x[0-9A-Fa-f]+): ( *)(DW_TAG_.*)$', lines[0])
         assert m
 
+        #self.lines = lines
         self.offset = int(m.group(1), 16)
         self.depth = len(m.group(2)) // 2
         self.tag = m.group(3)
@@ -75,7 +76,8 @@ class DNode():
             return sz
 
         # if we're a typedef or a restrict or a const we must look deeper...
-        return self.attributes.get('DW_AT_byte_size', None)
+        assert self.type
+        return self.type.byte_size
 
     @property
     def encoding(self):
@@ -168,6 +170,12 @@ def dwarfdump_function(fpath, func_name, NodeClass):
 def dwarfdump_structure(fpath, struct_name, NodeClass):
     nodes = dwarfdump([fpath], NodeClass)
     matches = [n for n in nodes if n.tag == 'DW_TAG_structure_type' and n.name == struct_name]
+
+    # if multiple matches found, return the one with the most children
+    # note that empty (no defining) declarations have no children
+    if len(matches) > 0:
+        matches = sorted(matches, key=lambda x: len(x.children), reverse=True)
+
     assert matches
     return matches[0]
 

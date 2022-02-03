@@ -4,12 +4,13 @@ import json
 
 from helpers import *
 
-g_structs_to_ntr = True
+g_structs_full = False # otherwise emit NTR
+g_structs_full_once = False # emit full struct for top level, NTR's for remaining
 
 # superclass DNode to add json-related features
 class JNode(DNode):
     def json(self):
-        global g_structs_to_ntr;
+        global g_structs_full, g_structs_full_once
 
         result = None
 
@@ -42,7 +43,22 @@ class JNode(DNode):
                 'type_id': '???'
             }
         elif self.tag == 'DW_TAG_structure_type':
-            if g_structs_to_ntr:
+            if self.name == 'gconv_fcts':
+                breakpoint()
+            if g_structs_full:
+                if g_structs_full_once:
+                    g_structs_full = False
+
+                last_member = self.children[-1]
+
+                result = {
+                    'class': 'Structure',
+                    'packed': False,
+                    'variant': 'StructStructureType',
+                    'members': [m.json() for m in self.children],
+                    'width': last_member.attributes['DW_AT_data_member_location'] + last_member.byte_size
+                }
+            else:
                 result = {
                     'class': 'NamedTypeReference',
                     'named_type_class': 'StructNamedTypeClass',
@@ -51,8 +67,12 @@ class JNode(DNode):
                     'alignment': 1,
                     'type_id': '???'
                 }
-            else:
-                result = 'TODO: %s NOT NTR' % (self.tag)
+        elif self.tag == 'DW_TAG_member':
+            return {
+                'name': self.name,
+                'offset': self.attributes['DW_AT_data_member_location'],
+                'type': self.type.json()
+            }
         elif self.tag == 'DW_TAG_const_type':
             result = self.type.json()
             result['const'] = [True, 255]
@@ -87,6 +107,8 @@ if __name__ == '__main__':
 
     start = None
     if m := re.match(r'^--structure=(.*)$', task):
+        g_structs_full = True
+        g_structs_full_once = True
         struct_name = m.group(1)
         start = dwarfdump_structure(fpath, struct_name, JNode)
     if m := re.match(r'^--function=(.*)$', task):
