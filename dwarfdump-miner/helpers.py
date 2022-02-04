@@ -38,7 +38,7 @@ class DNode():
             right = m.group(2)
 
             # replace (0x000001c7 "__u64") with 0x1c7
-            if m := re.match(r'^\((0x[0-9A-Fa-f]+)\s+"[\w\s\[\]\*]+"\)$', right):
+            if m := re.match(r'^\((0x[0-9A-Fa-f]+)\s+"[^"]+"\)$', right):
                 right = int(m.group(1), 16)
             # replace (0x04) with 0x04
             elif m := re.match(r'^\((0x[0-9A-Fa-f]+)\)$', right):
@@ -50,11 +50,8 @@ class DNode():
             self.attributes[left] = right
 
         self.children = []
-        self.offset_to_node = {}
-
-    def deref_attributes(self, lookup):
-        if type(self.type) == int:
-            self.attributes['DW_AT_type'] = lookup[self.type]
+        self.cache = None
+        self.fpath = None
 
     def __str__(self):
         return '0x%X: %s' % (self.offset, self.tag)
@@ -68,7 +65,21 @@ class DNode():
 
     @property
     def type(self):
-        return self.attributes.get('DW_AT_type', None)
+        t = self.attributes.get('DW_AT_type', None)
+        if type(t) == int:
+            # is it in our cache? no
+            if not (t in self.cache):
+                # update the cache
+                batch = dwarfdump([self.fpath, '--debug-info=0x%X' % t, '--show-children'], self.__class__)
+                self.cache.update({n.offset:n for n in batch})
+
+                # inform new nodes of the cache
+                for n in batch:
+                    n.cache = self.cache
+
+            t = self.cache[t]
+
+        return t
 
     @property
     def byte_size(self):
@@ -104,6 +115,7 @@ def reachable(root):
     return result
 
 def parse(output, NodeClass):
+    output += '\n' # mark ending bound of lines comprising the last DIE
     lines = output.splitlines()
 
     nodes = []
@@ -138,12 +150,18 @@ def parse(output, NodeClass):
 
 # call dwarfdump, return graph of DIEs
 def dwarfdump(args, NodeClass):
-    (stdout, stderr) = shellout(['dwarfdump'] + args)
+    args = ['dwarfdump'] + args
+    fpath = args[1]
+    print('// ' + ' '.join(args))
+
+    (stdout, stderr) = shellout(args)
     nodes = parse(stdout, NodeClass)
 
-    offset_to_node = {n.offset:n for n in nodes}
+    # set each node from this batch to the same lookup
+    lookup = {n.offset:n for n in nodes}
     for node in nodes:
-        node.deref_attributes(offset_to_node)
+        node.cache = lookup
+        node.fpath = fpath
 
     return nodes
 
@@ -168,14 +186,18 @@ def dwarfdump_function(fpath, func_name, NodeClass):
 
 # return a requested structure DIE
 def dwarfdump_structure(fpath, struct_name, NodeClass):
-    nodes = dwarfdump([fpath], NodeClass)
+    nodes = dwarfdump([fpath, '--name=%s' % struct_name], NodeClass)
     matches = [n for n in nodes if n.tag == 'DW_TAG_structure_type' and n.name == struct_name]
 
-    # if multiple matches found, return the one with the most children
-    # note that empty (no defining) declarations have no children
+    # if multiple matches found, return the one with the most attributes
+    # note that empty (no defining) declarations have two attributes:
+    #   DW_AT_name        ("gconv_fcts")
+    #   DW_AT_declaration (true)
     if len(matches) > 0:
-        matches = sorted(matches, key=lambda x: len(x.children), reverse=True)
+        matches = sorted(matches, key=lambda x: len(x.attributes), reverse=True)
 
-    assert matches
-    return matches[0]
+    node_struct = matches[0]
+    nodes = dwarfdump([fpath, '--debug-info=0x%X' % node_struct.offset, '--show-children'], NodeClass)
+    assert nodes
+    return nodes[0]
 

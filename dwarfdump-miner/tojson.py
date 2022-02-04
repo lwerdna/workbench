@@ -43,8 +43,6 @@ class JNode(DNode):
                 'type_id': '???'
             }
         elif self.tag == 'DW_TAG_structure_type':
-            if self.name == 'gconv_fcts':
-                breakpoint()
             if g_structs_full:
                 if g_structs_full_once:
                     g_structs_full = False
