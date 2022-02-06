@@ -1,0 +1,5 @@
+(declare-fun Shirt () Bool)
+(declare-fun Tie () Bool)
+(assert (or Tie Shirt))
+(assert (or (not Tie) Shirt))
+(assert (or (not Tie) (not Shirt)))
