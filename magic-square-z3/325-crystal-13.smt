@@ -1,4 +1,6 @@
 ; 325. A Crystal from The Moscow Puzzles
+;
+; additionally, all variables <= 13
 
 (set-logic QF_LIA)
 
@@ -29,48 +31,21 @@
 (assert (= (+ d (+ g j)) 20))
 (assert (= (+ i (+ g e)) 20))
 
-(assert (and (>= a 1) (<= a 15)))
-(assert (and (>= b 1) (<= b 15)))
-(assert (and (>= c 1) (<= c 15)))
-(assert (and (>= d 1) (<= d 15)))
-(assert (and (>= e 1) (<= e 15)))
-(assert (and (>= f 1) (<= f 15)))
-(assert (and (>= g 1) (<= g 15)))
-(assert (and (>= h 1) (<= h 15)))
-(assert (and (>= i 1) (<= i 15)))
-(assert (and (>= j 1) (<= j 15)))
-(assert (and (>= k 1) (<= k 15)))
-(assert (and (>= l 1) (<= l 15)))
-(assert (and (>= m 1) (<= m 15)))
+(assert (and (>= a 1) (<= a 13)))
+(assert (and (>= b 1) (<= b 13)))
+(assert (and (>= c 1) (<= c 13)))
+(assert (and (>= d 1) (<= d 13)))
+(assert (and (>= e 1) (<= e 13)))
+(assert (and (>= f 1) (<= f 13)))
+(assert (and (>= g 1) (<= g 13)))
+(assert (and (>= h 1) (<= h 13)))
+(assert (and (>= i 1) (<= i 13)))
+(assert (and (>= j 1) (<= j 13)))
+(assert (and (>= k 1) (<= k 13)))
+(assert (and (>= l 1) (<= l 13)))
+(assert (and (>= m 1) (<= m 13)))
 
-(assert (or (= a 15)
-			(or (= b 15) 
-				(or (= c 15) 
-					(or (= d 15) 
-						(or (= e 15) 
-							(or (= f 15) 
-								(or (= g 15) 
-									(or (= h 15) 
-										(or (= i 15) 
-											(or (= j 15) 
-												(or (= k 15) 
-													(or (= l 15) 
-														(or (= m 15))
-)))))))))))))
-
-; there is no solution where all entries are distinct
 ; (assert (distinct a b c d e f g h i j k l m))
-
-; generated with:
-; variables = 'abcdefghijklm'
-; for i in range(len(variables)-1):
-;     for j in range(i+1, len(variables)):
-;         x = variables[i]
-;         y = variables[j]
-;         print('\t\t(and (= %c %c) (distinct %s))' % (
-;             x, y,
-;             ' '.join(sorted(set(variables) - {x, y}))
-;         ))
 
 (assert
 	(or

@@ -1,4 +1,6 @@
 ; 325. A Crystal from The Moscow Puzzles
+;
+; additionally, constrain A,B,...,M to be distinct
 
 (set-logic QF_LIA)
 
@@ -58,19 +60,7 @@
 														(or (= m 15))
 )))))))))))))
 
-; there is no solution where all entries are distinct
-; (assert (distinct a b c d e f g h i j k l m))
-
-; generated with:
-; variables = 'abcdefghijklm'
-; for i in range(len(variables)-1):
-;     for j in range(i+1, len(variables)):
-;         x = variables[i]
-;         y = variables[j]
-;         print('\t\t(and (= %c %c) (distinct %s))' % (
-;             x, y,
-;             ' '.join(sorted(set(variables) - {x, y}))
-;         ))
+(assert (distinct a b c d e f g h i j k l m))
 
 (assert
 	(or
