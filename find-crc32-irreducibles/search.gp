@@ -59,8 +59,13 @@ search(start, end) =
 {
 	local(i, poly, n_yes=0, n_no=0);
 
+	/* start at odd value (so x^0 coefficient is 1) */
+	if(start % 2 == 0,
+		start = start + 1;
+	);
+
 	/* for(i=0, 4294967295, */
-	for(i=start, end,
+	forstep(i=start, end, 2,
 		poly = Pol(binary(i)) + x^32;
 
 		if(irreducible(poly),
@@ -70,11 +75,11 @@ search(start, end) =
 			n_no += 1;
 		);
 
-		/*
-		if(i % 1000000 == 0,
-			print("i: ", i);
+		n_no += 1;
+
+		if(i % 100000 == 0,
+			printf("range [0x%08X, 0x%08X] at 0x%08X (%.02f%%)\n", start, end, i, 100.0*(i-start)/(end-start));
 		);
-		*/
 	);
 
 	print("range [0x", dec2hex(start), ", 0x", dec2hex(end) "] has ", n_yes, " yes, " n_no, " no, ratio: ", 1.0*n_yes / (n_yes + n_no));
