@@ -13,32 +13,8 @@ hex2dec(s) =
     return(h);
 }
 
-bits2hex(V)=
-{
-    local(W, nibl, result, lookup);
-
-    lookup=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
-
-    result = "";
-
-    W = V;
-    if(#W % 4,
-        W = concat(vector(4 - (#W % 4)),W);
-    );
-
-    forstep(i=1,#W,4,
-        nibl = 8*W[i] + 4*W[i+1] + 2*W[i+2] + W[i+3];
-        result = concat(result, lookup[nibl+1]);
-    );
-
-    result;
-}
-
-dec2hex(n) =
-{
-    bits2hex(binary(n));
-}
-
+/* OBSOLETE! use built-in function polisirreducible()
+	https://pari.math.u-bordeaux.fr/dochtml/html/Polynomials_and_power_series.html */
 irreducible(p) =
 {
 	local(factors, rows, cols, first_degree=1);
@@ -57,36 +33,32 @@ irreducible(p) =
 
 search(start, end) =
 {
-	local(i, poly, n_yes=0, n_no=0);
+	local(i, start_=start, poly, n_yes=0, n_total=end-start+1);
 
 	/* start at odd value (so x^0 coefficient is 1) */
-	if(start % 2 == 0,
-		start = start + 1;
+	if(start_ % 2 == 0,
+		start_ += 1;
 	);
 
 	/* for(i=0, 4294967295, */
-	forstep(i=start, end, 2,
-		poly = Pol(binary(i)) + x^32;
+	forstep(i=start_, end, 2,
+		poly = (Pol(binary(i)) + x^32) * Mod(1,2);
 
-		if(irreducible(poly),
+		if(polisirreducible(poly),
 			/* print(poly); */
 			n_yes += 1;
-		,
-			n_no += 1;
 		);
 
-		n_no += 1;
-
-		if(i % 100000 == 0,
+		if((i-1) % 100000 == 0,
 			printf("range [0x%08X, 0x%08X] at 0x%08X (%.02f%%)\n", start, end, i, 100.0*(i-start)/(end-start));
 		);
 	);
 
-	print("range [0x", dec2hex(start), ", 0x", dec2hex(end) "] has ", n_yes, " yes, " n_no, " no, ratio: ", 1.0*n_yes / (n_yes + n_no));
+	printf("range [0x%08X, 0x%08X] finished, result: %d/%d == %.02f%%\n", start, end, n_yes, n_total, 100.0*n_yes / n_total);
 }
 
 start = hex2dec(getenv("CRC_START"));
 end = hex2dec(getenv("CRC_END"));
-print("searching [0x", dec2hex(start), ", 0x", dec2hex(end) "] == [", start, ", ", end "]");
+printf("searching [0x%08X, 0x%08X]\n", start, end);
 search(start, end);
 quit;
