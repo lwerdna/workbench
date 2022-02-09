@@ -28,6 +28,38 @@ Which outputs a value for each variable:
 4 - 3 - 8
 ````
 
+## 324. A Star
+
+```
+;        A
+;       / \
+;  B - C - D - E
+;   \ /     \ /
+;    F       G
+;   / \     / \
+;  H - I - J - K
+;       \ /
+;        L
+```
+
+See [./324-a-star.smt2](./324-a-star.smt2).
+
+This was very hard for me to solve by hand. A breakthrough came by first solving for odds (O) and evens (E) with each line's required even parity in mind:
+
+```
+;        E
+;       / \
+;  O - E - O - E
+;   \ /     \ /
+;    O       O
+;   / \     / \
+;  O - E - O - E
+;       \ /
+;        E
+```
+
+With this sketch available as a reference, you can disqualify number very quickly.
+
 ## 325. A Crystal
 
 From The Moscow Puzzles, here are the variables:
@@ -92,7 +124,7 @@ There is a solution without using 15 or 14! [./325-crystal-13.smt2](./325-crysta
 12 ---  2  ---  6 
 ```
 
-### Notes on hand solving
+Though process during hand solve:
 
 * choosing the four corners determines every other variable
 * wherever 15 is placed, only (1,4) and (2,3) are possible inline with it, try A=15
