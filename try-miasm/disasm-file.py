@@ -46,5 +46,6 @@ if __name__ == '__main__':
     disasm = disassembler.dis_multiblock(offset=sym_offs)
     print(disasm)
 
-    open('/tmp/tmp.dot', 'w').write(disasm.dot())
-    os.system('dot /tmp/tmp.dot -Tpng -o /tmp/tmp.png')
+    fpath = '/tmp/tmp.dot'
+    print(f'writing: {fpath}')
+    open(fpath, 'w').write(disasm.dot())
