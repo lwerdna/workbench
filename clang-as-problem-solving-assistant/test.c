@@ -1,4 +1,4 @@
-#include <stdio.h>
+//#include <stdio.h>
 
 __attribute__((noinline))
 void print_yes()
