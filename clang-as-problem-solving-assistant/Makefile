@@ -1,6 +1,9 @@
 LIBCLANG = $(HOME)/libclang/12.0.0/bin
 
-all: test-O0.ll test-O3.ll test-O0-opt-pass.ll test-O3-opt-pass.ll
+all: test test-O0.ll test-O3.ll test-O0-opt-pass.ll test-O3-opt-pass.ll
+
+test: test.c
+	clang -DINCLUDE_STDIO=1 -O3 test.c -o test
 
 # -S to clang means "Only run preprocess and compilation steps"
 test-O0.ll: test.c
