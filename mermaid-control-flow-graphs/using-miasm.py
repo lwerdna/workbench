@@ -18,7 +18,7 @@ def block_label(block):
 
 # cfg: miasm.core.asmblock.AsmCFG
 def cfg_to_mermaid(cfg):
-    result = ['graph']
+    result = ['graph TD']
 
     # block identifiers and labels
     for block in list(cfg.blocks):

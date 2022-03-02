@@ -8,10 +8,15 @@ def block_id(bb):
     return 'b%d' % bb.index
 
 def block_label(bb):
-    return '<br>'.join(['%08X: %s' % (l.address, l) for l in bb.get_disassembly_text()])
+    lines = []
+    addr = bb.start
+    for (toks, length) in bb:
+        lines.append('%08X: %s' % (addr, ''.join([t.text for t in toks])))
+        addr += length
+    return '<br>'.join(lines)
 
 def func_to_mermaid(func):
-    result = ['graph']
+    result = ['graph TD']
 
     # block identifiers and labels
     for block in func.basic_blocks:
