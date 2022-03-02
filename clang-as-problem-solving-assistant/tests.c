@@ -13,12 +13,6 @@ SUCCEEDS means clang/llvm did eliminate the print_impossible() call
 #endif
 
 __attribute__((noinline))
-void print_no()
-{
-	printf("NO\n");
-}
-
-__attribute__((noinline))
 void print_impossible()
 {
 	printf("IMPOSSIBLE\n");
@@ -64,68 +58,72 @@ void simple_inequality1(int n)
 // FAILS
 void simple_divisibility0(unsigned int a)
 {
-    if(!DIVISIBLE_BY(a, 4))
-       	return;
+	if(!DIVISIBLE_BY(a, 4))
+	   	return;
 
    	if(DIVISIBLE_BY(a, 2))
-        print_hello(); // could execute
+		print_hello(); // could execute
    	else
-        print_impossible(); // should never execute
+		print_impossible(); // should never execute
 }
 
 // FAILS
 void simple_divisibility1(unsigned int a)
 {
-    if(DIVISIBLE_BY(a, 4))
+	if(DIVISIBLE_BY(a, 4))
 	{
 	   	if(DIVISIBLE_BY(a, 2))
-	        print_hello(); // could execute
+			print_hello(); // could execute
 	   	else
-	        print_impossible(); // should never execute
+			print_impossible(); // should never execute
 	}
 }
 
 // FAILS
 void simple_divisibility2(unsigned int a)
 {
-    if(DIVISIBLE_BY(a, 4))
+	if(DIVISIBLE_BY(a, 4))
 	{
 	   	if(DIVISIBLE_BY(a, 2))
-	        while(0); // could execute
+			while(0); // could execute
 	   	else
-	        print_impossible(); // should never execute
+			print_impossible(); // should never execute
 	}
 }
 
 // FAILS
 void simple_divisibility3(unsigned int a)
 {
-    if(DIVISIBLE_BY(a, 4))
+	if(DIVISIBLE_BY(a, 4))
 	{
 	   	if(DIVISIBLE_BY(a, 2))
-	        print_hello(); // could execute
+			print_hello(); // could execute
 
 	   	if(!DIVISIBLE_BY(a, 2))
-	        print_impossible(); // should never execute
+			print_impossible(); // should never execute
 	}
 }
 
 // SUCCEEDS
 void simple_divisibility4(unsigned int a)
 {
-    if(DIVISIBLE_BY(a, 4))
+	if(DIVISIBLE_BY(a, 4))
 	{
 	   	if(!DIVISIBLE_BY(a, 2))
-	        print_impossible(); // should never execute
+	   	{
+			print_impossible(); // should never execute
+		}
 	}
 }
 
 void simple_divisibility5(unsigned int a)
 {
-    if(DIVISIBLE_BY(a, 4))
+	if(DIVISIBLE_BY(a, 4))
 	{
 	   	if(DIVISIBLE_BY(a, 2))
-	        print_hello(); // could execute
+	   	{
+			print_hello(); // could execute
+		}
 	}
 }
 
