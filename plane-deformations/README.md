@@ -1,5 +1,3 @@
-Make cool graphical effects with relatively simple plane mappings.
-
 I learned you can get many impressive looking 3d effects just by cleverly mapping pixels from a source image ("texture") to a new image. If you vary the mapping over time, you can even have it animate, like the classic tunnel effect.
 
 This texture was generated ([./gen_chess_256.py](./gen_chess_256.py)) to help see where the texture pixels end up:

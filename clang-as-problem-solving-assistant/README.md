@@ -13,4 +13,4 @@ But it raises an interesting question. **Could we glean insights to problems by 
 
 If the complexity of the compiled checker reduces, the partial solution is correct. Iterate this process to converge on a solution.
 
-See `./tests.c` for the tests and results.
+See [./tests.c](./tests.c) for the tests and results.
