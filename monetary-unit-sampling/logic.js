@@ -18,7 +18,7 @@ function debug(msg) {
  *****************************************************************************/
 function dataFromElem(elem)
 {
-	var strings = elem.innerHTML.split("\n")
+	var strings = elem.innerHTML.split(", ")
 	return strings.map(parseFloat)
 }
 
@@ -30,7 +30,7 @@ function dataToElem(data, elem)
 		dataStr += data[i];
 
 		if(i != data.length-1) {
-			dataStr += '\n';
+			dataStr += ', ';
 		}
 	}
 
