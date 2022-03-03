@@ -34,8 +34,8 @@
 (echo "-- prove p or not p by solving for a counterexample")
 (reset)
 (declare-const p Bool)
-(define-fun conjecture () Bool (or p (not p)))
-(assert (not conjecture))
+(define-fun proposition () Bool (or p (not p)))
+(assert (not proposition))
 (check-sat)
 
 (echo "-- prove transitivity of implication by solving for a counterexample")
@@ -43,7 +43,7 @@
 (declare-const p Bool)
 (declare-const q Bool)
 (declare-const r Bool)
-(define-fun conjecture () Bool
+(define-fun proposition () Bool
 	(=>
 		(and			; p->q and q->r
 			(=> p q)
@@ -52,11 +52,12 @@
 		(=> p r)		; p->r
 	)
 )
-(assert (not conjecture))
+(assert (not proposition))
 (check-sat)
 
 (echo "-- synthesize NOT")
-; you can solve for functions
+; you can solve for unknown functions ("uninterpreted functions")
+; see https://en.wikipedia.org/wiki/Uninterpreted_function
 (reset)
 (declare-fun blackbox (Bool) Bool)
 (assert (blackbox false))
@@ -140,4 +141,21 @@
 (assert (forall ((a Bool) (b Bool) (c Bool)) (= (simplified a b c) (complicated a b c))))
 (check-sat)
 (get-model)
+
+(echo "-- uninterpreted function from wikipedia")
+(reset)
+(declare-fun f (Int) Int)
+(assert (= (f 10) 1))
+(check-sat)
+(get-model) ; returns f(x) { return 1; }
+
+; will it see that I'm dividing by 10?
+(assert (= (f 20) 2))
+(check-sat)
+(get-model) ; returns f(x) { (x == 20) ? 2 : 1; }
+
+; nope :)
+(assert (= (f 30) 3))
+(check-sat)
+(get-value (f)) ; returns a lookup table
 
