@@ -1,4 +1,6 @@
-ArmV8.7A 2020-09 to 2020-12
+---
+TITLE: ArmV8.7A 2020-09 to 2020-12
+---
 
 The new spec adds 32 encodings:
 

@@ -1,6 +1,4 @@
-# Playing With Miasm
-
-Miasm is a reverse engineering framework in Python: https://github.com/cea-sec/miasm
+Miasm is a reverse engineering framework in Python: [https://github.com/cea-sec/miasm](https://github.com/cea-sec/miasm).
 
 ## Setup
 
@@ -30,7 +28,7 @@ to:
 
 ## Use
 
-`./disasm_file.py <file> <function>`
+[./disasm-file.py](./disasm-file.py) &lt;file&gt; &lt;function&gt;
 
 Will make a graph of the function's CFG in /tmp/tmp.dot, like:
 
@@ -41,5 +39,7 @@ Adjust to taste.
 ## Useful Links:
 
 https://www.randhome.io/blog/2020/04/04/analyzing-shellcodes-with-miasm-for-fun-and-profit/
+
 https://sudhackar.github.io/blog/learning-symbolic-execution-with-miasm
+
 https://miasm.re/blog/2017/10/05/playing_with_dynamic_symbolic_execution.html

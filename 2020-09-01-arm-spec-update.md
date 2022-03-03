@@ -1,3 +1,7 @@
+---
+TITLE: ArmV8.6A 2020-03 to ARMv8.7A 2020-09
+---
+
 The following changes were observed upgrading the disassembler from `ArmV8.6A 2020-03` to `ArmV8.7A 2020-09`:
 
 The new version removes the old encodings:
