@@ -126,17 +126,21 @@ if __name__ == '__main__':
     #del s
 
     t0 = time.time()
-    s = get_n_rooks_solver_B()
+
+    #s2 = get_n_rooks_solver_B()
+    s2 = Solver()
+    s2.add(z3.And(s.assertions()))
+
     with open('/tmp/b.assertions', 'w') as fp:
-        for c in s.assertions():
+        for c in s2.assertions():
             fp.write(str(c) + '\n')
     print('get_n_rooks_solver_B(): took %fs' % (time.time() - t0))
-    dump_smt_lib(s, '/tmp/b.smt2')
+    dump_smt_lib(s2, '/tmp/b.smt2')
     t0 = time.time()
-    cProfile.run('s.check()')
+    cProfile.run('s2.check()')
     print("elapsed: %fs" % (time.time() - t0))
-    #assert s.check() == z3.sat
+    #assert s2.check() == z3.sat
     with open('/tmp/b.stats', 'w') as fp:
-        fp.write(str(s.statistics()))    
+        fp.write(str(s2.statistics()))    
     print('solution via one big conjunction took %fs' % (time.time() - t0))
-    print_solution(s.model())
+    print_solution(s2.model())
