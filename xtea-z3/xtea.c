@@ -1,3 +1,8 @@
+/* xtea and variations for the xtea-z3 experiment
+ *
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -7,13 +12,13 @@
 
 /* implementation from https://en.wikipedia.org/wiki/XTEA
  * MODS:
- *   - rounds hardcoded to 32
+ *   - cycles hardcoded to 32 (64 Feistel rounds)
  *   - add "out" parameter instead of encrypting in place
  */
-void xtea_encipher(uint32_t plaintext[2], uint32_t const key[4], uint32_t ciphertext[2])
+void xtea_encipher(uint32_t ptext[2], uint32_t const key[4], uint32_t ctext[2])
 {
     unsigned int i;
-    uint32_t v0 = plaintext[0], v1 = plaintext[1], sum = 0, delta = 0x9E3779B9;
+    uint32_t v0 = ptext[0], v1 = ptext[1], sum = 0, delta = 0x9E3779B9;
     for (i=0; i < 32; i++)
     {
         //printf("\t// round %d\n", i);
@@ -27,17 +32,17 @@ void xtea_encipher(uint32_t plaintext[2], uint32_t const key[4], uint32_t cipher
         //printf("\tuint32_t b%d = b%d + ((((a%d << 4) ^ (a%d >> 5)) + a%d) ^ 0x%08X);\n", i+1, i, i+1, i+1, i+1, sum + key[(sum>>11) & 3]);
         v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key[(sum>>11) & 3]);
     }
-    ciphertext[0] = v0;
-    ciphertext[1] = v1;
+    ctext[0] = v0;
+    ctext[1] = v1;
 }
 
 /* MODS:
  *   - loops unrolled
  *   - delta,sum (key schedule) precomputed
  */
-void xtea_encipher_expanded(uint32_t plaintext[2], uint32_t const key[4], uint32_t ciphertext[2])
+void xtea_encipher_expanded(uint32_t ptext[2], uint32_t const key[4], uint32_t ctext[2])
 {
-    uint32_t v0 = plaintext[0], v1 = plaintext[1];
+    uint32_t v0 = ptext[0], v1 = ptext[1];
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x00000000 + key[0]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x9E3779B9 + key[3]);
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x9E3779B9 + key[1]);
@@ -102,16 +107,16 @@ void xtea_encipher_expanded(uint32_t plaintext[2], uint32_t const key[4], uint32
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x28B7BD67 + key[3]);
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x28B7BD67 + key[3]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0xC6EF3720 + key[2]);
-    ciphertext[0] = v0;
-    ciphertext[1] = v1;
+    ctext[0] = v0;
+    ctext[1] = v1;
 }
 
 /* MODS:
  *   - hardcoded key: 0x00010203,0x04050607,0x08090A0B,0x0C0D0E0F
  */
-void xtea_encipher_fixed_key(uint32_t plaintext[2], uint32_t ciphertext[2])
+void xtea_encipher_fixed_key(uint32_t ptext[2], uint32_t ctext[2])
 {
-    uint32_t v0 = plaintext[0], v1 = plaintext[1];
+    uint32_t v0 = ptext[0], v1 = ptext[1];
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ 0x00010203;
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ 0xAA4487C8;
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ 0xA23C7FC0;
@@ -176,18 +181,18 @@ void xtea_encipher_fixed_key(uint32_t plaintext[2], uint32_t ciphertext[2])
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ 0x34C4CB76;
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ 0x34C4CB76;
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ 0xCEF8412B;
-    ciphertext[0] = v0;
-    ciphertext[1] = v1;
+    ctext[0] = v0;
+    ctext[1] = v1;
 }
 
 /* MODS:
  *   - hardcoded key: 0x00010203,0x04050607,0x08090A0B,0x0C0D0E0F
  *   - ssa
  */
-void xtea_encipher_fixed_key_ssa(uint32_t plaintext[2], uint32_t ciphertext[2])
+void xtea_encipher_fixed_key_ssa(uint32_t ptext[2], uint32_t ctext[2])
 {
-	uint32_t a0 = plaintext[0];
-	uint32_t b0 = plaintext[1];
+	uint32_t a0 = ptext[0];
+	uint32_t b0 = ptext[1];
 	uint32_t a1 = a0 + ((((b0 << 4) ^ (b0 >> 5)) + b0) ^ 0x00010203);
 	uint32_t b1 = b0 + ((((a1 << 4) ^ (a1 >> 5)) + a1) ^ 0xAA4487C8);
 	uint32_t a2 = a1 + ((((b1 << 4) ^ (b1 >> 5)) + b1) ^ 0xA23C7FC0);
@@ -252,8 +257,8 @@ void xtea_encipher_fixed_key_ssa(uint32_t plaintext[2], uint32_t ciphertext[2])
 	uint32_t b31 = b30 + ((((a31 << 4) ^ (a31 >> 5)) + a31) ^ 0x34C4CB76);
 	uint32_t a32 = a31 + ((((b31 << 4) ^ (b31 >> 5)) + b31) ^ 0x34C4CB76);
 	uint32_t b32 = b31 + ((((a32 << 4) ^ (a32 >> 5)) + a32) ^ 0xCEF8412B);
-	ciphertext[0] = a32;
-    ciphertext[1] = b32;
+	ctext[0] = a32;
+    ctext[1] = b32;
 }
 
 void assert(char *label, bool condition)
@@ -275,13 +280,17 @@ int main(int ac, char **av)
 	//xtea_encipher(ptext, key, ctext);
 	//exit(-1);
 
-	xtea_encipher_fixed_key(ptext, ctext);
+	xtea_encipher(ptext, key, ctext);
 	assert("1", ctext[0] == 0xd9a4f870);
 	assert("2", ctext[1] == 0xba1f45d6);
 
-	xtea_encipher_fixed_key_ssa(ptext, ctext);
+	xtea_encipher_fixed_key(ptext, ctext);
 	assert("3", ctext[0] == 0xd9a4f870);
 	assert("4", ctext[1] == 0xba1f45d6);
+
+	xtea_encipher_fixed_key_ssa(ptext, ctext);
+	assert("5", ctext[0] == 0xd9a4f870);
+	assert("6", ctext[1] == 0xba1f45d6);
 
 	/* test base implementation */
 	test_suite(xtea_encipher);
