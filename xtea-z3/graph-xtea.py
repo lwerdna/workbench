@@ -46,7 +46,7 @@ print('p1 -> b0;')
 
 a, b = '', ''
 
-for i in range(32):
+for i in range(1):
     # incoming nodes already created
     a = f'a{i}'
     b = f'b{i}'

@@ -261,6 +261,29 @@ void xtea_encipher_fixed_key_ssa(uint32_t ptext[2], uint32_t ctext[2])
     ctext[1] = b32;
 }
 
+/* MODS:
+ * 1 cycle (2 feistel rounds)
+ */
+void xtea_encipher_fixed_key_ssa_1cycle(uint32_t ptext[2], uint32_t ctext[2])
+{
+	uint32_t a0 = ptext[0];
+	uint32_t b0 = ptext[1];
+	uint32_t a1 = a0 + ((((b0 << 4) ^ (b0 >> 5)) + b0) ^ 0x00010203);
+	uint32_t b1 = b0 + ((((a1 << 4) ^ (a1 >> 5)) + a1) ^ 0xAA4487C8);
+	ctext[0] = a1;
+    ctext[1] = b1;
+}
+
+void xtea_encipher_fixed_key_ssa_1cycle_cool(uint32_t ptext[2], uint32_t ctext[2])
+{
+	uint32_t a0 = ptext[0];
+	uint32_t b0 = ptext[1];
+	uint32_t a1 = a0 + ((((b0 << 4) ^ (b0 >> 5)) + b0) ^ 0x00010203);
+	uint32_t b1 = b0 + ((((a1 << 4) ^ (a1 >> 5)) + a1) ^ 0x224487C8);
+	ctext[0] = a1;
+    ctext[1] = b1;
+}
+
 void assert(char *label, bool condition)
 {
 	if(!condition)
@@ -291,6 +314,14 @@ int main(int ac, char **av)
 	xtea_encipher_fixed_key_ssa(ptext, ctext);
 	assert("5", ctext[0] == 0xd9a4f870);
 	assert("6", ctext[1] == 0xba1f45d6);
+
+	xtea_encipher_fixed_key_ssa_1cycle(ptext, ctext);
+	printf("ctext[0]: 0x%08X\n", ctext[0]);
+	printf("ctext[1]: 0x%08X\n", ctext[1]);
+
+	xtea_encipher_fixed_key_ssa_1cycle_cool(ptext, ctext);
+	printf("ctext[0]: 0x%08X\n", ctext[0]);
+	printf("ctext[1]: 0x%08X\n", ctext[1]);
 
 	/* test base implementation */
 	test_suite(xtea_encipher);
