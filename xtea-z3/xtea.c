@@ -45,12 +45,16 @@ void xtea_encipher_expanded(uint32_t ptext[2], uint32_t const key[4], uint32_t c
     uint32_t v0 = ptext[0], v1 = ptext[1];
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x00000000 + key[0]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x9E3779B9 + key[3]);
+
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x9E3779B9 + key[1]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x3C6EF372 + key[2]);
+
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x3C6EF372 + key[2]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0xDAA66D2B + key[1]);
+
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0xDAA66D2B + key[3]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x78DDE6E4 + key[0]);
+
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x78DDE6E4 + key[0]);
 	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x1715609D + key[0]);
 	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x1715609D + key[1]);
@@ -261,27 +265,17 @@ void xtea_encipher_fixed_key_ssa(uint32_t ptext[2], uint32_t ctext[2])
     ctext[1] = b32;
 }
 
-/* MODS:
- * 1 cycle (2 feistel rounds)
- */
-void xtea_encipher_fixed_key_ssa_1cycle(uint32_t ptext[2], uint32_t ctext[2])
+void xtea_encipher_n(int cycles, uint32_t ptext[2], uint32_t const key[4], uint32_t ctext[2])
 {
-	uint32_t a0 = ptext[0];
-	uint32_t b0 = ptext[1];
-	uint32_t a1 = a0 + ((((b0 << 4) ^ (b0 >> 5)) + b0) ^ 0x00010203);
-	uint32_t b1 = b0 + ((((a1 << 4) ^ (a1 >> 5)) + a1) ^ 0xAA4487C8);
-	ctext[0] = a1;
-    ctext[1] = b1;
-}
-
-void xtea_encipher_fixed_key_ssa_1cycle_cool(uint32_t ptext[2], uint32_t ctext[2])
-{
-	uint32_t a0 = ptext[0];
-	uint32_t b0 = ptext[1];
-	uint32_t a1 = a0 + ((((b0 << 4) ^ (b0 >> 5)) + b0) ^ 0x00010203);
-	uint32_t b1 = b0 + ((((a1 << 4) ^ (a1 >> 5)) + a1) ^ 0x224487C8);
-	ctext[0] = a1;
-    ctext[1] = b1;
+    unsigned int i;
+    uint32_t v0 = ptext[0], v1 = ptext[1], sum = 0, delta = 0x9E3779B9;
+    for (i=0; i < cycles; i++) {
+        v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key[sum & 3]);
+        sum += delta;
+        v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key[(sum>>11) & 3]);
+    }
+    ctext[0] = v0;
+    ctext[1] = v1;
 }
 
 void assert(char *label, bool condition)
@@ -315,13 +309,44 @@ int main(int ac, char **av)
 	assert("5", ctext[0] == 0xd9a4f870);
 	assert("6", ctext[1] == 0xba1f45d6);
 
-	xtea_encipher_fixed_key_ssa_1cycle(ptext, ctext);
-	printf("ctext[0]: 0x%08X\n", ctext[0]);
-	printf("ctext[1]: 0x%08X\n", ctext[1]);
+	xtea_encipher_n(1, ptext, key, ctext);
+	printf("1cycle ctext[0]: 0x%08X\n", ctext[0]);
+	printf("1cycle ctext[1]: 0x%08X\n", ctext[1]);
 
-	xtea_encipher_fixed_key_ssa_1cycle_cool(ptext, ctext);
-	printf("ctext[0]: 0x%08X\n", ctext[0]);
-	printf("ctext[1]: 0x%08X\n", ctext[1]);
+	/* wow in 2-cycle you can have multiple keys encrypt to same value */
+	xtea_encipher_n(2, ptext, key, ctext);
+	printf("2cycle ctext[0]: 0x%08X\n", ctext[0]);
+	printf("2cycle ctext[1]: 0x%08X\n", ctext[1]);
+
+	uint32_t key_alt[4] = {0xF01CC7A1, 0x11CFB83B, 0x43C28C0D, 0x7400D76C};
+	xtea_encipher_n(2, ptext, key_alt, ctext);
+	printf("2cycle' ctext[0]: 0x%08X\n", ctext[0]);
+	printf("2cycle' ctext[1]: 0x%08X\n", ctext[1]);
+
+	uint32_t key_alt2[4] = {0x7020C171, 0x279403E2, 0x95EBF595, 0x2F3BD80F};
+	xtea_encipher_n(2, ptext, key_alt2, ctext);
+	printf("2cycle' ctext[0]: 0x%08X\n", ctext[0]);
+	printf("2cycle' ctext[1]: 0x%08X\n", ctext[1]);
+
+	/* 3 cycle */
+	xtea_encipher_n(3, ptext, key, ctext);
+	printf("3cycle ctext[0]: 0x%08X\n", ctext[0]);
+	printf("3cycle ctext[1]: 0x%08X\n", ctext[1]);
+
+	uint32_t key_alt3[4] = {0xF7A383FE, 0xB40BB5C8, 0x52DD7DFB, 0x39404C24};
+	xtea_encipher_n(3, ptext, key_alt3, ctext);
+	printf("3cycle' ctext[0]: 0x%08X\n", ctext[0]);
+	printf("3cycle' ctext[1]: 0x%08X\n", ctext[1]);
+
+	/* 4 cycle */
+	xtea_encipher_n(4, ptext, key, ctext);
+	printf("4cycle ctext[0]: 0x%08X\n", ctext[0]);
+	printf("4cycle ctext[1]: 0x%08X\n", ctext[1]);
+
+	uint32_t key_alt4[4] = {0xFF7CC4CB, 0xD612605C, 0xD8AA0FAF, 0xA98F8410};
+	xtea_encipher_n(4, ptext, key_alt4, ctext);
+	printf("4cycle' ctext[0]: 0x%08X\n", ctext[0]);
+	printf("4cycle' ctext[1]: 0x%08X\n", ctext[1]);
 
 	/* test base implementation */
 	test_suite(xtea_encipher);
