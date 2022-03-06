@@ -20,8 +20,6 @@ key1 = BitVec('key1', 32)
 key2 = BitVec('key2', 32)
 key3 = BitVec('key3', 32)
 
-tmp = BitVec('tmp', 32)
-
 # input vectors are equal to plaintext
 s.add(a0 == 0x00112233)
 s.add(b0 == 0x44556677)
@@ -32,8 +30,8 @@ s.add(b0 == 0x44556677)
 
 #	v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (0x00000000 + key[0]);
 #	v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (0x9E3779B9 + key[3]);
-s.add(a1 == a0 + ((((b0<<4) ^ (b0>>5)) + b0) ^ (key0)))
-s.add(b1 == b0 + ((((a1<<4) ^ (a1>>5)) + a1) ^ (key3)))
+s.add(a1 == a0 + ((((b0<<4) ^ (z3.LShR(b0, 5))) + b0) ^ (key0)))
+s.add(b1 == b0 + ((((a1<<4) ^ (z3.LShR(a1, 5))) + a1) ^ (key3)))
 # output vectors must be equal to ciphertext
 s.add(a1 == 0x8BDC52EC)
 s.add(b1 == 0x3391FF02)
