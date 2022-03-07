@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# solve 3 cycles (6 feistel rounds) of xtea with z3
+# solve 4 cycles (8 feistel rounds) of xtea with z3
 
 import sys
 import time

@@ -309,24 +309,42 @@ int main(int ac, char **av)
 	assert("5", ctext[0] == 0xd9a4f870);
 	assert("6", ctext[1] == 0xba1f45d6);
 
+	key[0]=0x00010203; key[1]=0x04050607; key[2]=0x08090A0B; key[3]=0x0C0D0E0F;
 	xtea_encipher_n(1, ptext, key, ctext);
-	printf("1cycle ctext[0]: 0x%08X\n", ctext[0]);
-	printf("1cycle ctext[1]: 0x%08X\n", ctext[1]);
+	printf("xtea1(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
+
+	key[0]=0x31C4BC4A; key[1]=0x00000000; key[2]=0x00000000; key[3]=0xCE288707;
+	xtea_encipher_n(1, ptext, key, ctext);
+	printf("xtea1(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
 
 	/* wow in 2-cycle you can have multiple keys encrypt to same value */
+	key[0]=0x00010203; key[1]=0x04050607; key[2]=0x08090A0B; key[3]=0x0C0D0E0F;
 	xtea_encipher_n(2, ptext, key, ctext);
-	printf("2cycle ctext[0]: 0x%08X\n", ctext[0]);
-	printf("2cycle ctext[1]: 0x%08X\n", ctext[1]);
+	printf("xtea2(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
 
-	uint32_t key_alt[4] = {0xF01CC7A1, 0x11CFB83B, 0x43C28C0D, 0x7400D76C};
-	xtea_encipher_n(2, ptext, key_alt, ctext);
-	printf("2cycle' ctext[0]: 0x%08X\n", ctext[0]);
-	printf("2cycle' ctext[1]: 0x%08X\n", ctext[1]);
+	key[0]=0xF01CC7A1; key[1]=0x11CFB83B; key[2]=0x43C28C0D; key[3]=0x7400D76C;
+	xtea_encipher_n(2, ptext, key, ctext);
+	printf("xtea2(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
 
-	uint32_t key_alt2[4] = {0x7020C171, 0x279403E2, 0x95EBF595, 0x2F3BD80F};
-	xtea_encipher_n(2, ptext, key_alt2, ctext);
-	printf("2cycle' ctext[0]: 0x%08X\n", ctext[0]);
-	printf("2cycle' ctext[1]: 0x%08X\n", ctext[1]);
+	key[0]=0x7020C171; key[1]=0x279403E2; key[2]=0x95EBF595; key[3]=0x2F3BD80F;
+	xtea_encipher_n(2, ptext, key, ctext);
+	printf("xtea2(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
+
+	key[0]=0x9B96170A; key[1]=0x9A9D27C5; key[2]=0xFF99E1DF; key[3]=0x7C0BB8DD;
+	xtea_encipher_n(2, ptext, key, ctext);
+	printf("xtea2(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
+
+	ptext[0]=0xAAAAAAAA; ptext[1]=0xBBBBBBBB;
+	key[0]=0x00010203; key[1]=0x04050607; key[2]=0x08090A0B; key[3]=0x0C0D0E0F;
+	xtea_encipher_n(2, ptext, key, ctext);
+	printf("xtea2(%08X-%08X, %08X-%08X-%08X-%08X) -> %08X-%08X\n",
+		ptext[0], ptext[1], key[0], key[1], key[2], key[3], ctext[0], ctext[1]);
 
 	/* 3 cycle */
 	xtea_encipher_n(3, ptext, key, ctext);
