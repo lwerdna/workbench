@@ -126,9 +126,55 @@ But there are "only" 2^128 possible keys: 34028236692093846346337460743176821145
 
 So, it's silly in hindsight to have thought there was a key for every mapping.
 
-## 2 Cycle Attack
+## 2 Cycle Attack Revisted: Success
 
-Instead of "helping" by supplying the output of the first cycle, let's help by supplying another plaintext/ciphertext pair:
+With a single plaintext/ciphertext pair there are seemingly endless keys. We'll constrain it with more encryption examples:
+
+With two pairs:
+
+```
+0x00112233, 0x44556677 -> 0x5A055406, 0xEC8F42BD
+0xAAAAAAAA, 0xBBBBBBBB -> 0x9BE82231, 0xA67A3F1D
+```
+
+There are 9 keys:
+
+```
+key: 00010203-04050607-08090A0B-0C0D0E0F
+key: 00012322-C205D065-4808FA32-CC0F1E64
+key: 00010322-C205F065-4808FA32-CC0D3F64
+key: 00612322-1A45D065-CC08FA32-5A301E64
+key: 81C0D722-9ADAFF5E-ED917733-DBCC2A01
+key: 01C0D722-1ADAFF5E-ED917733-5FCC2A01
+key: ED00FA2B-7CDF3153-AB8F4B73-BB698840
+key: 85707722-16D6635E-6E61F733-0C1C8F01
+key: 05707722-96D6635E-6E61F733-881C8F01
+```
+
+With three pairs:
+
+```
+0x00112233, 0x44556677 -> 0x5A055406, 0xEC8F42BD
+0xAAAAAAAA, 0xBBBBBBBB -> 0x9BE82231, 0xA67A3F1D
+```
+
+There is only one key, the expected:
+
+```
+key: 00010203-04050607-08090A0B-0C0D0E0F
+```
+
+## 4 Cycle Attack
+
+Reference implementation 4 cycles XTEA should yield:
+
+```
+xtea4(00112233-44556677, 00010203-04050607-08090A0B-0C0D0E0F) -> 5829E8D9-3503BE9C
+```
+
+And again there are seemingly endless keys. Adding another encryption example
+
+
 
 
 
