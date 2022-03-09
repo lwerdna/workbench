@@ -1,0 +1,15 @@
+2022-03-08 "What happens when you try to solve XTEA with Z3? #crypto #smt" ./xtea-z3 github-readme-directory
+2022-03-01 "Can the clang/llvm optimizer be used as a problem solving assistant?" ./clang-as-problem-solving-assistant github-readme-directory
+2022-02-28 "Draw control flow graphs with MIASM, BinaryNinja, and Mermaid. #binja #graph" ./mermaid-control-flow-graphs github-readme-directory
+2022-02-08 "Solve magic square and variants with Z3 #smt" ./magic-square-z3 github-readme-directory
+2022-02-07 "How many irreducible degree 32 polynomials are there? #math" ./find-crc32-irreducibles github-readme-directory
+2022-02-03 "Pipe from dwarfdump to graph DWARF DIEs." ./dwarfdump-miner github-readme-directory
+2022-01-20 "Use dwarfdump to find prototype of function." ./2022-01-20-dwarfdump-find-prototype-function.md date-prefixed-markdown
+2022-01-10 "Interactive binomial distribution with .SVG/.js #math" ./try_svg_js/draw-binomial-distribution github-html-directory
+2021-12-15 "Try MIASM, get a control flow graph. #graph" ./try-miasm github-readme-directory
+2021-06-01 "ARM MRS updates 2021-03 to 2021-06" ./2021-06-01-arm-spec-update.md date-prefixed-markdown
+2020-12-01 "ArmV8.7A 2020-09 to 2020-12" ./2020-12-01-arm-spec-update.md date-prefixed-markdown
+2020-09-01 "ArmV8.6A 2020-03 to ARMv8.7A 2020-09" ./2020-09-01-arm-spec-update.md date-prefixed-markdown
+2019-09-23 "Solve Thinkfun's Cluemaster game with Z3 #smt" ./thinkfun-cluemaster-z3 github-readme-directory
+2019-01-10 "Make cool graphical effects with relatively simply plane mappings. #graphics" ./plane-deformations github-readme-directory
+2017-04-12 "Monetary unit sampling with HTML5 canvas, javascript #math" ./monetary-unit-sampling/index.html github-html-directory
