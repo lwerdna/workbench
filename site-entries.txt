@@ -11,12 +11,13 @@
 2020-12-01 "ArmV8.7A 2020-09 to 2020-12" ./2020-12-01-arm-spec-update.md date-prefixed-markdown
 2020-09-01 "ArmV8.6A 2020-03 to ARMv8.7A 2020-09" ./2020-09-01-arm-spec-update.md date-prefixed-markdown
 2019-09-23 "Solve Thinkfun's Cluemaster game with Z3 #smt" ./thinkfun-cluemaster-z3 github-readme-directory
+2019-02-08 "Turtletoy Drawings #graphics" ./turtletoy-drawings github-readme-directory
 2019-02-08 "Bees and Bombs #graphics" ./bees-and-bombs github-readme-directory
-2019-01-17 "Color Threshold Experiment, Posterization GUI in PySimpleGUI" ./color-threshold-experiment github-readme-directory
+2019-01-17 "Color Threshold Experiment, Posterization GUI in PySimpleGUI #graphics" ./color-threshold-experiment github-readme-directory
 2019-01-11 "Cool lense rendering shortcut trick. #graphics" ./cool-lense-rendering-trick github-readme-directory
 2019-01-10 "Make cool graphical effects with relatively simply plane mappings. #graphics" ./plane-deformations github-readme-directory
 2019-01-02 "Generating meshes procedurally. #graphics" ./generating-meshes github-readme-directory
 2019-01-01 "Experiments in converting palette. #graphics" ./failure-convert-palette github-readme-directory
-2018-12-30 "Phase circles effect. #graphics", ./phase-circles-effect github-readme-directory
-2018-10-18 "Twister effects. #graphics", ./phase-circles-effect github-readme-directory
+2018-12-30 "Phase circles effect. #graphics" ./phase-circles-effect github-readme-directory
+2018-10-18 "Twister effects. #graphics" ./phase-circles-effect github-readme-directory
 2017-04-12 "Monetary unit sampling with HTML5 canvas, javascript #math" ./monetary-unit-sampling/index.html github-html-directory
