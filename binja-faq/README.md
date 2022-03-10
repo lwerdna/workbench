@@ -14,9 +14,22 @@ Binja does not have a strict view of a functions start and end boundaries. See [
 
 If you want the address after the final byte which comprises the function, use `max(bb.end for bb in func.basic_blocks)`.
 
+see binaryninja-api discussion: <https://github.com/Vector35/binaryninja-api/discussions/2189>
+
+# How does Binja think of functions?
+
+**Quick answer**: as a directed [graph](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) of [basic blocks](https://en.wikipedia.org/wiki/Basic_block) where one block is specified as the entry.
+
+Note:
+
+* there is no requirement the blocks be contiguous
+* there is no requirement a block be solely owned (it may exist in multiple functions), see: [How can one address appear in two functions?](#how-can-one-address-appear-in-two-functions)
+
 # How does Binja think of function boundaries?
 
-Short answer: as a graph of basic blocks distributed at arbitrary addresses.
+**Quick answer**: as the union of all [start, end) of every basic block from the function.
+
+See: [How does Binja think of functions?](#how-does-binja-think-of-functions)
 
 In the python API, you might notice `binaryninja.function.Function` has `.start` but not `.end` or `.len` or `.length`. It does have `.total_bytes` which cannot be set and is the sum of the sizes of all its basic blocks.
 
@@ -63,3 +76,44 @@ Binja disassembles:
 ```
 
 If we say `my_add()` starts at 0 and ends at 0x10 that would mistakenly include bytes of `my_sub()`.
+
+# How can one address appear in two functions?
+
+**Quick answer**: because the two functions' graphs of blocks can share.
+
+See: [How does Binja think of functions?](#how-does-binja-think-of-functions)
+
+Here's a simple example:
+
+```asm
+my_add:
+	mov		rax, rdx
+	add		rax, rsi
+	jmp		done
+
+my_sub:
+	mov		rax, rdx
+	sub		rax, rsi
+	jmp		done
+
+done:
+	ret
+```
+
+Each function has two blocks/vertices in its graph. The second block is shared:
+
+```mermaid
+graph TD
+  b0["my_add:<br>00000000: mov rax, rdx<br>00000003: add rax, rsi<br>000000006: jmp done"]
+  b1["my_sub:<br>00000008: mov rax, rdx<br>0000000b: sub rax, rsi<br>0000000e: jmp done"]
+  b2["00000010: retn"]
+  b0 --> b2
+  b1 --> b2
+```
+
+In the python console:
+```
+>>> [f.name for f in bv.get_functions_containing(0x10)]
+['my_sub', 'my_add']
+```
+
