@@ -62,21 +62,38 @@ def show_context():
 
     regs_old = regs
 
+def step(count=1):
+    global mu
+    thumb = bool(mu.reg_read(UC_ARM_REG_CPSR) & 0x20)
+    pointer = mu.reg_read(UC_ARM_REG_PC)
+    if thumb and (pointer & 1) == 0:
+        pointer += 1
+    print('starting emulation at pointer: 0x%08X' % pointer)
+    mu.emu_start(pointer, 0x100000000, timeout=0, count=1)
+
 while 1:
+    thumb = bool(mu.reg_read(UC_ARM_REG_CPSR) & 0x20)
+
     cmd = input('> ')
 
     try:
-        # reg write, example:
-        # r r3 = 0xDEADBEEF
-        if m := re.match(r'r ([^ =]+) *= *([^ ]+)', cmd):
-            (rname, rval) = m.group(1, 2)
-            mu.reg_write(rname_to_unicorn[rname], int(rval, 16))
+        # show context
+        if cmd == 'r':
+            pass
 
         # reg write, example:
-        # r r3 0xDEADBEEF
-        elif m := re.match(r'r ([^ ]+) ([^ ]+)', cmd):
+        # r3 = 0xDEADBEEF
+        elif m := re.match(r'([^\s]+)\s*=\s*(.+)', cmd):
             (rname, rval) = m.group(1, 2)
-            mu.reg_write(rname_to_unicorn[rname], int(rval, 16))
+            if rname in rname_to_unicorn:
+                mu.reg_write(rname_to_unicorn[rname], int(rval, 16))
+
+                # unicorn initialized to arm will fall back to arm automatically after
+                # register set, so compensate for this
+                if thumb:
+                    mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) | 0x20)
+            else:
+                print('ERROR: unknown register %s' % rname)
 
         # dump bytes, example:
         # db 0
@@ -94,31 +111,33 @@ while 1:
             print('writing:', colored(data.hex(), 'green'))
             mu.mem_write(addr, data)
 
+        elif m := re.match(r'go?(\d+)', cmd):
+            pc = mu.reg_read(UC_ARM_REG_PC)
+            mu.emu_start(pc, 0x100000000, timeout=0, count=int(m.group(1)))
+
         # step into, example:
         # t
         elif cmd == 't':
-            pc = mu.reg_read(UC_ARM_REG_PC)
-            mu.emu_start(pc, 0x100000000, timeout=0, count=1)
-            #mu.emu_start(pc, pc + 4)
+            step()
 
         # assemble, example:
         # mov r0, 0xDEAD
-        else:
+        elif cmd:
             # assume the input is assembler and place it at current PC
             asmstr = cmd
             pc = mu.reg_read(UC_ARM_REG_PC)
             encoding, count = None, None
-            if mu.reg_read(UC_ARM_REG_CPSR) & 0x20:
+
+            if thumb:
                 encoding, count = ks_thumb.asm(asmstr, addr=pc)
             else:
                 encoding, count = ks_arm.asm(asmstr, addr=pc)
                 
-            data = b''.join([x.to_bytes(1,'big') for x in encoding])
-            print('assembled %08X:' % pc, colored(data.hex(), 'green'), ' (%d bytes)'%len(encoding))
+            data = b''.join([x.to_bytes(1, 'big') for x in encoding])
+
+            print('%s-assembled %08X:' % ('thumb' if thumb else 'arm', pc), colored(data.hex(), 'green'), ' (%d bytes)'%len(encoding))
             mu.mem_write(pc, data)
-            print('starting emulation at 0x%08X' % pc)
-            mu.emu_start(pc, 0x100000000, timeout=0, count=1)
-            #mu.emu_start(pc, pc + len(encoding) + 4)
+            step()
 
     except KsError as e:
         print('keystone error:', e)
