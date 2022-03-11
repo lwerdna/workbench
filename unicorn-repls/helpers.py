@@ -37,3 +37,4 @@ def get_hex_dump(data, addr=0, grouping=1, endian='little'):
 		result += ' %s\n' % ascii
 		addr += 16;
 	return result
+
