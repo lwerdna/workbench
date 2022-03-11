@@ -1,4 +1,4 @@
-2022-03-10 "Test the exchange behavior of bl, blx instructions #arm #lowlevel" ./2022-03-10-arm-thumb-exchange-tests.md date-prefixed-markdown
+2022-03-10 "Test the exchange behavior of bx, blx instructions #arm #lowlevel" ./2022-03-10-arm-thumb-exchange-tests.md date-prefixed-markdown
 2022-03-10 "Unofficial Binary Ninja FAQ #binja" ./binja-faq github-readme-directory
 2022-03-08 "What happens when you try to solve XTEA with Z3? #crypto #smt" ./xtea-z3 github-readme-directory
 2022-03-01 "Can the clang/llvm optimizer be used as a problem solving assistant?" ./clang-as-problem-solving-assistant github-readme-directory
@@ -9,6 +9,7 @@
 2022-01-20 "Use dwarfdump to find prototype of function." ./2022-01-20-dwarfdump-find-prototype-function.md date-prefixed-markdown
 2022-01-10 "Interactive binomial distribution with .SVG/.js #math" ./try_svg_js/draw-binomial-distribution github-html-directory
 2021-12-15 "Try MIASM, get a control flow graph. #graph" ./try-miasm github-readme-directory
+2021-11-02 "Deobfuscate push+ret obfuscation with architecture hook. #binja" ./binja-call-ret-deobf github-readme-directory
 2021-06-01 "ARM MRS updates 2021-03 to 2021-06" ./2021-06-01-arm-spec-update.md date-prefixed-markdown
 2020-12-01 "ArmV8.7A 2020-09 to 2020-12" ./2020-12-01-arm-spec-update.md date-prefixed-markdown
 2020-09-01 "ArmV8.6A 2020-03 to ARMv8.7A 2020-09" ./2020-09-01-arm-spec-update.md date-prefixed-markdown
