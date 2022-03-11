@@ -1,3 +1,4 @@
+2022-03-11 "Treat blx lr as a return with architecture hook. #binja" ./binja-blx-lr-arch-hook github-readme-directory
 2022-03-10 "Test the exchange behavior of bx, blx instructions #arm #lowlevel" ./2022-03-10-arm-thumb-exchange-tests.md date-prefixed-markdown
 2022-03-10 "Unofficial Binary Ninja FAQ #binja" ./binja-faq github-readme-directory
 2022-03-08 "What happens when you try to solve XTEA with Z3? #crypto #smt" ./xtea-z3 github-readme-directory
