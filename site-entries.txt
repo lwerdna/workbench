@@ -11,6 +11,7 @@
 2022-01-10 "Interactive binomial distribution with .SVG/.js #math" ./try_svg_js/draw-binomial-distribution github-html-directory
 2021-12-15 "Try MIASM, get a control flow graph. #graph" ./try-miasm github-readme-directory
 2021-11-02 "Deobfuscate push+ret obfuscation with architecture hook. #binja" ./binja-call-ret-deobf github-readme-directory
+2021-09-27 "What are Binary Ninja workflows? #binja" ./what-are-binja-workflows github-readme-directory
 2021-06-01 "ARM MRS updates 2021-03 to 2021-06" ./2021-06-01-arm-spec-update.md date-prefixed-markdown
 2020-12-01 "ArmV8.7A 2020-09 to 2020-12" ./2020-12-01-arm-spec-update.md date-prefixed-markdown
 2020-09-01 "ArmV8.6A 2020-03 to ARMv8.7A 2020-09" ./2020-09-01-arm-spec-update.md date-prefixed-markdown
@@ -24,6 +25,6 @@
 2019-01-02 "Generating meshes procedurally. #graphics" ./generating-meshes github-readme-directory
 2019-01-01 "Experiments in converting palette. #graphics" ./failure-convert-palette github-readme-directory
 2018-12-30 "Phase circles effect. #graphics" ./phase-circles-effect github-readme-directory
-2018-10-18 "Twister effects. #graphics" ./phase-circles-effect github-readme-directory
+2018-10-18 "Twister effects. #graphics" ./twister-effect github-readme-directory
 2018-07-15 "Fire, plasma, starfield effects on HTML5 Canvas. #graphics" ./demo-effects-html5-canvas github-readme-directory
 2017-04-12 "Monetary unit sampling with HTML5 canvas, javascript #math" ./monetary-unit-sampling/index.html github-html-directory
