@@ -1,6 +1,6 @@
 2022-03-11 "Treat blx lr as a return with architecture hook. #binja" ./binja-blx-lr-arch-hook github-readme-directory
-2022-03-10 "Test the exchange behavior of bx, blx instructions #arm #lowlevel" ./2022-03-10-arm-thumb-exchange-tests.md date-prefixed-markdown
 2022-03-10 "Unofficial Binary Ninja FAQ #binja" ./binja-faq github-readme-directory
+2022-03-10 "Test the exchange behavior of bx, blx instructions #arm #lowlevel" ./2022-03-10-arm-thumb-exchange-tests.md date-prefixed-markdown
 2022-03-08 "What happens when you try to solve XTEA with Z3? #crypto #smt" ./xtea-z3 github-readme-directory
 2022-03-01 "Can the clang/llvm optimizer be used as a problem solving assistant?" ./clang-as-problem-solving-assistant github-readme-directory
 2022-02-28 "Draw control flow graphs with MIASM, BinaryNinja, and Mermaid. #binja #graph" ./mermaid-control-flow-graphs github-readme-directory
@@ -11,11 +11,23 @@
 2022-01-10 "Interactive binomial distribution with .SVG/.js #math" ./try_svg_js/draw-binomial-distribution github-html-directory
 2021-12-15 "Try MIASM, get a control flow graph. #graph" ./try-miasm github-readme-directory
 2021-11-02 "Deobfuscate push+ret obfuscation with architecture hook. #binja" ./binja-call-ret-deobf github-readme-directory
+2021-10-15 "CFG Dominators, Loop and Subloop Detection, IL Mappings. #binja" ./binja_analysis github-readme-directory
 2021-09-27 "What are Binary Ninja workflows? #binja" ./what-are-binja-workflows github-readme-directory
+2021-09-11 "Guide to writing BinaryNinja architecture plugins part 2 #binja" ./guide_to_arch_plugs2 github-readme-directory
+2021-06-03 "Deduction versus Proof Tree #proof" ./deduction_vs_proof_tree github-readme-directory
 2021-06-01 "ARM MRS updates 2021-03 to 2021-06" ./2021-06-01-arm-spec-update.md date-prefixed-markdown
+2021-04-05 "Generating an A64 disassembler from the ARM machine readable specification (MRS) #binja" ./ground_up_aarch64 github-readme-directory
 2020-12-01 "ArmV8.7A 2020-09 to 2020-12" ./2020-12-01-arm-spec-update.md date-prefixed-markdown
+2020-10-04 "A survey and inventory of the concepts behind BinaryNinja's "semantic flags" #binja" ./binja_flags_semantic_survey_x86 github-readme-directory
 2020-09-01 "ArmV8.6A 2020-03 to ARMv8.7A 2020-09" ./2020-09-01-arm-spec-update.md date-prefixed-markdown
+2020-05-06 "BinaryNinja debugger showcase #binja" ./debugger_showcase github-readme-directory
+2020-01-08 "Guide to writing BinaryNinja architecture plugins part 1 #binja" ./guide_to_arch_plugs1 github-readme-directory
+2019-12-05 "Engine building lessons" ./2019-12-05-engine-building-lessons.md date-prefixed-markdown
 2019-09-23 "Solve Thinkfun's Cluemaster game with Z3 #smt" ./thinkfun-cluemaster-z3 github-readme-directory
+2019-09-19 "Binja Architecture Flags Part 4: Flag Conditions #binja" ./binja_flags_part4 github-readme-directory
+2019-09-10 "Binja Architecture Flags Part 3: Flag Roles #binja" ./binja_flags_part3 github-readme-directory
+2019-08-30 "Binja Architecture Flags Part 2: Flag Producer/Consumer #binja" ./binja_flags_part2 github-readme-directory
+2019-08-27 "Binja Architecture Flags Part 1: The Basics #binja" ./binja_flags_part1 github-readme-directory
 2019-02-08 "Turtletoy Drawings #graphics" ./turtletoy-drawings github-readme-directory
 2019-02-08 "Bees and Bombs #graphics" ./bees-and-bombs github-readme-directory
 2019-01-17 "Matplotlib Color Palettes in convenient form #graphics" ./colors/palettes_matplotlib/index.html github-html-directory
@@ -27,4 +39,15 @@
 2018-12-30 "Phase circles effect. #graphics" ./phase-circles-effect github-readme-directory
 2018-10-18 "Twister effects. #graphics" ./twister-effect github-readme-directory
 2018-07-15 "Fire, plasma, starfield effects on HTML5 Canvas. #graphics" ./demo-effects-html5-canvas github-readme-directory
+2018-06-19 "A Fast Track to Assembler Writing: genetic algorithms for assemblers #binja" ./fast_track_assembler github-readme-directory
 2017-04-12 "Monetary unit sampling with HTML5 canvas, javascript #math" ./monetary-unit-sampling/index.html github-html-directory
+
+2019-08-25 "inject the output of shellcode compiler into 64-bit ELF files #binja" ./binimplant_elf64 github-link
+2019-08-24 "background intelligent transfer service (BITS) in plain C, compiled with shellcode compiler #binja" ./bits_in_c github-readme-directory
+2019-08-19 "histograms of byte frequency in busybox binaries of various architectures #lowlevel" ./binja_byte_histogram_elf github-readme-directory
+2019-08-16 "convert an image to a binary whose feature map is that image #binja" ./binja_draw_feature_map github-readme-directory
+2019-08-13 "calculate most common opcodes in busybox binaries of various architectures #binja" ./binja_pestat github-readme-directory
+2019-08-12 "a Binary Ninja plugin for a contrived rot13 binary type #binja" ./binja_rot13 github-readme-directory
+2019-08-09 "detect architecture by comparing histograms of byte frequencies with chi-squared" ./detect_arch_chi_squared github-readme-directory
+2019-08-08 "use scikit-learn to generate instruction decoding decision trees for z80 #lowlevel" ./try_sklearn_decisiontree github-readme-directory
+
