@@ -22,6 +22,14 @@ using namespace std;
 #define snprintf _snprintf
 #endif
 
+#define PROBE_BODY \
+	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable(); \
+	if(liftedFunc) \
+		printf("0x%" PRIx64 "   Lifted IL instruction count is: %zu\n", function->GetStart(), liftedFunc->GetInstructionCount()); \
+\
+	Ref<LowLevelILFunction> lowLevelILFunc = function->GetLowLevelILIfAvailable(); \
+	if(lowLevelILFunc) \
+		printf("0x%" PRIx64 "   LowLevel IL instruction count is: %zu\n", function->GetStart(), lowLevelILFunc->GetInstructionCount()); \
 
 BN_DECLARE_CORE_ABI_VERSION
 
@@ -35,9 +43,7 @@ extern "C" void hook_core_function_advancedSelector(Ref<AnalysisContext> analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_processAnalysisSkip(Ref<AnalysisContext> analysisContext)
@@ -50,9 +56,7 @@ extern "C" void hook_core_function_processAnalysisSkip(Ref<AnalysisContext> anal
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_basicAnalysis(Ref<AnalysisContext> analysisContext)
@@ -65,9 +69,7 @@ extern "C" void hook_core_function_basicAnalysis(Ref<AnalysisContext> analysisCo
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_modeSelector(Ref<AnalysisContext> analysisContext)
@@ -80,9 +82,7 @@ extern "C" void hook_core_function_modeSelector(Ref<AnalysisContext> analysisCon
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_advancedAnalysis(Ref<AnalysisContext> analysisContext)
@@ -95,9 +95,7 @@ extern "C" void hook_core_function_advancedAnalysis(Ref<AnalysisContext> analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_generateMediumLevelIL(Ref<AnalysisContext> analysisContext)
@@ -110,9 +108,7 @@ extern "C" void hook_core_function_generateMediumLevelIL(Ref<AnalysisContext> an
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_runFunctionRecognizers(Ref<AnalysisContext> analysisContext)
@@ -125,9 +121,7 @@ extern "C" void hook_core_function_runFunctionRecognizers(Ref<AnalysisContext> a
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_update(Ref<AnalysisContext> analysisContext)
@@ -140,9 +134,7 @@ extern "C" void hook_core_function_update(Ref<AnalysisContext> analysisContext)
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_fullAnalysis(Ref<AnalysisContext> analysisContext)
@@ -155,9 +147,7 @@ extern "C" void hook_core_function_fullAnalysis(Ref<AnalysisContext> analysisCon
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeIndirectBranches(Ref<AnalysisContext> analysisContext)
@@ -170,9 +160,7 @@ extern "C" void hook_core_function_analyzeIndirectBranches(Ref<AnalysisContext> 
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_translateTailCalls(Ref<AnalysisContext> analysisContext)
@@ -185,9 +173,7 @@ extern "C" void hook_core_function_translateTailCalls(Ref<AnalysisContext> analy
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_generateLiftedIL(Ref<AnalysisContext> analysisContext)
@@ -200,9 +186,7 @@ extern "C" void hook_core_function_generateLiftedIL(Ref<AnalysisContext> analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_processConstantPointerReferences(Ref<AnalysisContext> analysisContext)
@@ -215,9 +199,7 @@ extern "C" void hook_core_function_processConstantPointerReferences(Ref<Analysis
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeCallsites(Ref<AnalysisContext> analysisContext)
@@ -230,9 +212,7 @@ extern "C" void hook_core_function_analyzeCallsites(Ref<AnalysisContext> analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_controlFlowAnalysis(Ref<AnalysisContext> analysisContext)
@@ -245,9 +225,7 @@ extern "C" void hook_core_function_controlFlowAnalysis(Ref<AnalysisContext> anal
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeCallTypes(Ref<AnalysisContext> analysisContext)
@@ -260,9 +238,7 @@ extern "C" void hook_core_function_analyzeCallTypes(Ref<AnalysisContext> analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_checkForReturnWithBasicBlocksOnly(Ref<AnalysisContext> analysisContext)
@@ -275,9 +251,7 @@ extern "C" void hook_core_function_checkForReturnWithBasicBlocksOnly(Ref<Analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_propagateAnalysis(Ref<AnalysisContext> analysisContext)
@@ -290,9 +264,7 @@ extern "C" void hook_core_function_propagateAnalysis(Ref<AnalysisContext> analys
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeTailCalls(Ref<AnalysisContext> analysisContext)
@@ -305,9 +277,7 @@ extern "C" void hook_core_function_analyzeTailCalls(Ref<AnalysisContext> analysi
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeDataVariables(Ref<AnalysisContext> analysisContext)
@@ -320,9 +290,7 @@ extern "C" void hook_core_function_analyzeDataVariables(Ref<AnalysisContext> ana
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeConstantReferences(Ref<AnalysisContext> analysisContext)
@@ -335,9 +303,7 @@ extern "C" void hook_core_function_analyzeConstantReferences(Ref<AnalysisContext
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_defaultAnalysis(Ref<AnalysisContext> analysisContext)
@@ -350,9 +316,7 @@ extern "C" void hook_core_function_defaultAnalysis(Ref<AnalysisContext> analysis
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_commitAnalysisData(Ref<AnalysisContext> analysisContext)
@@ -365,9 +329,7 @@ extern "C" void hook_core_function_commitAnalysisData(Ref<AnalysisContext> analy
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_module_freeAllUnusedAdvancedAnalysisData(Ref<AnalysisContext> analysisContext)
@@ -379,11 +341,8 @@ extern "C" void hook_core_module_freeAllUnusedAdvancedAnalysisData(Ref<AnalysisC
 		printf("???????? hook_core_module_freeAllUnusedAdvancedAnalysisData()\n");
 		//return;
 	}
-		
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc) {
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
-	}
+
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_concurrent_advancedAnalysis(Ref<AnalysisContext> analysisContext)
@@ -396,9 +355,7 @@ extern "C" void hook_core_function_concurrent_advancedAnalysis(Ref<AnalysisConte
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_resetIndirectBranchesOnFullUpdate(Ref<AnalysisContext> analysisContext)
@@ -411,11 +368,7 @@ extern "C" void hook_core_function_resetIndirectBranchesOnFullUpdate(Ref<Analysi
 		//return;
 	}
 
-	printf("you know it\n");
-
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedIL();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeStackVariableReferences(Ref<AnalysisContext> analysisContext)
@@ -428,9 +381,7 @@ extern "C" void hook_core_function_analyzeStackVariableReferences(Ref<AnalysisCo
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeCachedIndirectStructureReferences(Ref<AnalysisContext> analysisContext)
@@ -443,9 +394,7 @@ extern "C" void hook_core_function_analyzeCachedIndirectStructureReferences(Ref<
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_finishUpdate(Ref<AnalysisContext> analysisContext)
@@ -458,9 +407,7 @@ extern "C" void hook_core_function_finishUpdate(Ref<AnalysisContext> analysisCon
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_findStringReferences(Ref<AnalysisContext> analysisContext)
@@ -473,9 +420,7 @@ extern "C" void hook_core_function_findStringReferences(Ref<AnalysisContext> ana
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeStackAdjustment(Ref<AnalysisContext> analysisContext)
@@ -488,9 +433,7 @@ extern "C" void hook_core_function_analyzeStackAdjustment(Ref<AnalysisContext> a
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_runCompletionCallbacks(Ref<AnalysisContext> analysisContext)
@@ -503,9 +446,7 @@ extern "C" void hook_core_function_runCompletionCallbacks(Ref<AnalysisContext> a
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_generateHighLevelIL(Ref<AnalysisContext> analysisContext)
@@ -518,9 +459,7 @@ extern "C" void hook_core_function_generateHighLevelIL(Ref<AnalysisContext> anal
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeAndExpandFlags(Ref<AnalysisContext> analysisContext)
@@ -533,9 +472,7 @@ extern "C" void hook_core_function_analyzeAndExpandFlags(Ref<AnalysisContext> an
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_checkForPureFunction(Ref<AnalysisContext> analysisContext)
@@ -548,9 +485,7 @@ extern "C" void hook_core_function_checkForPureFunction(Ref<AnalysisContext> ana
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeHLILTypeReferences(Ref<AnalysisContext> analysisContext)
@@ -563,9 +498,7 @@ extern "C" void hook_core_function_analyzeHLILTypeReferences(Ref<AnalysisContext
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_intermediateAnalysis(Ref<AnalysisContext> analysisContext)
@@ -578,9 +511,7 @@ extern "C" void hook_core_function_intermediateAnalysis(Ref<AnalysisContext> ana
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_basicBlockAnalysis(Ref<AnalysisContext> analysisContext)
@@ -593,9 +524,7 @@ extern "C" void hook_core_function_basicBlockAnalysis(Ref<AnalysisContext> analy
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeMLILTypeReferences(Ref<AnalysisContext> analysisContext)
@@ -608,9 +537,7 @@ extern "C" void hook_core_function_analyzeMLILTypeReferences(Ref<AnalysisContext
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_processCompletionState(Ref<AnalysisContext> analysisContext)
@@ -623,9 +550,7 @@ extern "C" void hook_core_function_processCompletionState(Ref<AnalysisContext> a
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_checkForReturn(Ref<AnalysisContext> analysisContext)
@@ -638,9 +563,7 @@ extern "C" void hook_core_function_checkForReturn(Ref<AnalysisContext> analysisC
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" void hook_core_function_analyzeSystemCalls(Ref<AnalysisContext> analysisContext)
@@ -653,9 +576,7 @@ extern "C" void hook_core_function_analyzeSystemCalls(Ref<AnalysisContext> analy
 		//return;
 	}
 
-	Ref<LowLevelILFunction> liftedFunc = function->GetLiftedILIfAvailable();
-	if(liftedFunc)
-		printf("Lifted IL instruction count is: %zu\n", liftedFunc->GetInstructionCount());
+	PROBE_BODY
 }
 
 extern "C" BINARYNINJAPLUGIN bool CorePluginInit()
