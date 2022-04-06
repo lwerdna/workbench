@@ -17,13 +17,20 @@ import os, sys, re, time
 #------------------------------------------------------------------------------
 
 def bbid(bb):
-    if type(bb) != binaryninja.basicblock.BasicBlock:
+    if type(bb) != binaryninja.basicblock.BasicBlock \
+      and type(bb) != binaryninja.lowlevelil.LowLevelILBasicBlock \
+      and type(bb) != binaryninja.mediumlevelil.MediumLevelILBasicBlock \
+      and type(bb) != binaryninja.highlevelil.HighLevelILBasicBlock:
         breakpoint()
+
     return 'b%d' % bb.index
 
-# "b3@0x10003ea6"
+# "b3 [0x100003a60, 0x100003a78)"
 def bbstr(bb):
-    return 'b%d@0x%X' % (bb.index, bb.start)
+    if type(bb) == binaryninja.basicblock.BasicBlock:
+        return 'b%d [0x%X, 0x%X)' % (bb.index, bb.start, bb.end)
+    else:
+        return 'b%d [%d, %d)' % (bb.index, bb.start, bb.end)
 
 def bbtext(bb):
     lines = []
@@ -51,7 +58,15 @@ def quick_get_func(fpath='./tests', symbol='_fizzbuzz'):
 
     print('opening %s in binaryninja' % fpath)
     t0 = time.perf_counter()
-    bv = binaryninja.open_view(fpath, update_analysis, callbacks, options)
+
+    if 1:
+        bv = BinaryViewType.get_view_of_file(fpath)
+        bv.update_analysis_and_wait()
+    else:
+        bv = binaryninja.open_view(fpath)
+        #bv = binaryninja.open_view(fpath, update_analysis)
+        #bv = binaryninja.open_view(fpath, update_analysis, callbacks)
+        #bv = binaryninja.open_view(fpath, update_analysis, callbacks, options)
     if not bv:
         raise Exception('binary ninja didnt return analysis on -%s-' % fpath)
     #bv.update_analysis_and_wait()
@@ -242,7 +257,7 @@ def graphviz_func(fname, func, reds=[], greens=[], blues=[]):
 
     # write attributes
     for bb in func.basic_blocks:
-        label = '\\l'.join(['; '+bbid(bb)] + bbtext(bb).split('\n')) + '\\l'
+        label = '\\l'.join(['; '+bbstr(bb)] + bbtext(bb).split('\n')) + '\\l'
         label = label.replace('\\n', '\\\\n')
         label = label.replace('"', '\\"')
         color = 'black'
