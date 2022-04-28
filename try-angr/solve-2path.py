@@ -2,68 +2,46 @@
 
 import os
 import sys
-import angr
 from pprint import pprint
 
+import angr
+import angr.calling_conventions
+import claripy
+
+from helpers import *
 
 fpath = '../testbins/tests-macos-x64-macho'
+if sys.argv[1:]:
+    fpath = sys.argv[1]
 project = angr.Project(fpath, load_options={"auto_load_libs": False})
 
-# .blank_state()
-# .entry_state
-# .full_init_state()
+# get start/end addresses
+addr_start = GetFunctionAddress(project, '_print_2path')
+addr_end = GetFunctionAddress(project, '_mark_success')
+print(f'searching %08X -> %08X' % (addr_start, addr_end))
+
 # .call_state()
-state = project.factor.entry_state
-# display symbols in main object
-print('SYMBOLS IN MAIN OBJECT:')
+arg1 = claripy.BVS('arg1', 32)
+#state = project.factory.call_state(addr_start, arg1, cc=angr.calling_conventions.SimCCSystemVAMD64)
+state = project.factory.call_state(addr_start, arg1)
 
-# for Mach-O we have to do shit a bit manually:
-pprint(list(obj.symbols))
-addr2name = {s.linked_addr : s.name for s in obj.symbols}
-name2addr = {s.name : s.linked_addr for s in obj.symbols}
+sm = project.factory.simulation_manager(state)
 
-# Generate a CFG first. In order to generate data dependence graph afterwards, you’ll have to:
-# - keep all input states by specifying keep_state=True.
-# - store memory, register and temporary values accesses by adding the angr.options.refs option set.
-# Feel free to provide more parameters (for example, context_sensitivity_level) for CFG 
-# recovery based on your needs.
+print('explore()')
+sm.explore(find=addr_end)
+assert sm.found
 
-# control flow graph
-# cfg: angr.analyses.cfg.cfg_emulated.CFGEmulated
-cfg = project.analyses.CFGEmulated(keep_state=True, 
-                             state_add_options=angr.sim_options.refs, 
-                             context_sensitivity_level=2
-                            )
+state = sm.found[0]
 
-#DrawGraphEnodes(cfg.graph, lookup, './cfg.png')
+# print trace, METHOD#1
+def history_addrs(history):
+    if not history or not history.addr:
+        return []
+    return history_addrs(history.parent) + [history.addr]
+trace = history_addrs(state.history) + [state.addr]
+print(' -> '.join([hex(a) for a in trace]))
 
-# control dependence graph
-# cdg: angr.analyses.cdg.CDG
-cdg = project.analyses.CDG(cfg)
-#DrawGraphEnodes(cdg.graph, lookup, './cdg.png')
+# print trace, METHOD#2
+trace = list(state.history.bbl_addrs) + [state.addr]
+print(' -> '.join([hex(a) for a in trace]))
 
-# Build the data dependence graph. It might take a while. Be patient! <DDG Analysis Result at 0x10b1df910>
-# ddg: angr.analyses.ddg.DDG
-ddg = project.analyses.DDG(cfg)
-#DrawGraphCodeLocations(ddg.graph, lookup, './ddg.png')
-
-# See where we wanna go... let’s go to the exit() call, which is modeled as a 
-# SimProcedure.
-
-#           cfg.kb: angr.knowledge_base.knowledge_base.KnowledgeBase
-# cfg.kb.functions: angr.knowledge_plugins.functions.function_manager.FunctionManager
-#target_func = cfg.kb.functions.function(name="_print_2path")
-
-# We need the CFGNode instance
-breakpoint()
-target_node = cfg.get_any_node(name2addr['_print_2path'])
-
-# Let’s get a BackwardSlice out of them!
-# `targets` is a list of objects, where each one is either a CodeLocation 
-# object, or a tuple of CFGNode instance and a statement ID. Setting statement 
-# ID to -1 means the very beginning of that CFGNode. A SimProcedure does not 
-# have any statement, so you should always specify -1 for it.
-bs = project.analyses.BackwardSlice(cfg, cdg=cdg, ddg=ddg, targets=[ (target_node, -1) ])
-
-# Here is our awesome program slice!
-print(bs)

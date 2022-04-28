@@ -47,14 +47,14 @@ def SymbolToAddr(symbol):
     #return symbol.relative_addr
 
 # for symbol resolution name -> addr
-def GetSymbolsByName(project, func_name):
+def GetSymbolsByName(project, name):
     symbols = []
 
     loader = project.loader
 
     # METHOD #1: convenience function in loader (assume it visits all objects)
     try:
-        sym = project.loader.find_symbol(func_name)
+        sym = project.loader.find_symbol(name)
         if sym:
             #print('method#1 found:', sym)
             symbols.append(sym)
@@ -69,7 +69,7 @@ def GetSymbolsByName(project, func_name):
     # METHOD #2: convenience function in each object
     for obj in loader.all_objects:
         #print(f'searching in {obj}')
-        syms = obj.get_symbol('_main')
+        syms = obj.get_symbol(name)
         if syms:
             #print('method#2 found:', syms)
             symbols.extend(syms)
@@ -86,9 +86,19 @@ def GetSymbolsByName(project, func_name):
             #print('doesn\'t contain .symbols_by_addr')
             continue
 
-        if func_name in obj.symbols_by_name:
-            sym = obj.symbols_by_name[func_name]
+        if name in obj.symbols_by_name:
+            sym = obj.symbols_by_name[name]
             #print('method#3 found:', sym)
             symbols.append(sym)
     
     return symbols
+
+def GetFunctionAddress(project, func_name):
+    syms = GetSymbolsByName(project, func_name)
+    if syms:
+        return SymbolToAddr(syms[0])
+
+    if func_name.startswith('_'):
+        return GetFunctionAddress(project, func_name[1:])
+
+    return None
