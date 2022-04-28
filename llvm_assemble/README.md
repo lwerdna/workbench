@@ -1,7 +1,6 @@
-standalone disassemblers by linking with LLVM
+Sandalone disassemblers by linking with LLVM.
 
-no modifications to LLVM like keystone does, but we lose ability to assemble at address
-without fill bytes
+No modifications to LLVM like keystone does, but we lose ability to assemble at address without fill bytes.
 
 ## methodA
 * assemble to an in-memory assembler file, parse out the comments

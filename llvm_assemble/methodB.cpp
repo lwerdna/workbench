@@ -30,9 +30,11 @@ using namespace std;
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
+
+using namespace llvm;
 
 #include "help.h"
 
@@ -110,7 +112,7 @@ int main(int ac, char **av)
 
     /* from the target we get almost everything */
     unique_ptr<MCRegisterInfo> MRI(TheTarget->createMCRegInfo(machSpec));
-    unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, machSpec));
+    unique_ptr<MCAsmInfo> MAI(TheTarget->createMCAsmInfo(*MRI, machSpec, MCTargetOptions()));
     unique_ptr<MCInstrInfo> MCII(TheTarget->createMCInstrInfo()); /* describes target instruction set */
     MCSubtargetInfo *STI = TheTarget->createMCSubtargetInfo(machSpec, "", ""); /* subtarget instr set */
     MCAsmBackend *MAB = TheTarget->createMCAsmBackend(*MRI, machSpec, /* specific CPU */ "");

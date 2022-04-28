@@ -11,7 +11,8 @@ FLAGS_LINK += -lz
 #FLAGS_LINK += -ltinfo
 FLAGS_LINK += -lncurses
 
-all: methodA methodB
+#all: methodA methodB methodC
+all: methodC
 
 methodA: methodA.cpp
 	g++ $(FLAGS_COMPILE) methodA.cpp help.cpp $(FLAGS_LINK) -o methodA
@@ -19,7 +20,7 @@ methodA: methodA.cpp
 methodB: methodB.cpp
 	g++ $(FLAGS_COMPILE) methodB.cpp help.cpp $(FLAGS_LINK) -o methodB
 
-methodC: methodC.cpp
+methodC: methodC.cpp help.cpp
 	g++ $(FLAGS_COMPILE) methodC.cpp help.cpp $(FLAGS_LINK) -o methodC
 
 clean:

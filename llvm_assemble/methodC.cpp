@@ -8,9 +8,18 @@
 #include <vector>
 using namespace std;
 
+/* local include */
+#include "help.h"
+
 #define LLVM_SVCS_DIALECT_UNSPEC 0
 #define LLVM_SVCS_DIALECT_ATT 1
 #define LLVM_SVCS_DIALECT_INTEL 2
+
+#define LLVM_SVCS_CM_DEFAULT 0
+#define LLVM_SVCS_CM_SMALL   1
+#define LLVM_SVCS_CM_KERNEL  2
+#define LLVM_SVCS_CM_MEDIUM  3
+#define LLVM_SVCS_CM_LARGE   4
 
 #define LLVM_SVCS_RM_STATIC 0
 #define LLVM_SVCS_RM_PIC 1
@@ -66,7 +75,7 @@ using namespace std;
 #include <llvm/Support/PrettyStackTrace.h>
 #include <llvm/Support/Signals.h>
 #include <llvm/Support/SourceMgr.h>
-#include <llvm/Support/TargetRegistry.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ToolOutputFile.h>
 
@@ -129,7 +138,6 @@ static uint64_t bswap64(uint64_t x)
 		((x&0xFF0000000000)>>24) |
 		((x&0xFF000000000000)>>40) |
 		((x&0xFF00000000000000)>>56);
-
 }
 
 static uint32_t fetch32(char *data, bool swap=false)
@@ -327,7 +335,7 @@ int BNLlvmServicesAssemble(
 	int dialect, 				/* eg: LLVM_SVCS_DIALECT_ATT */
 	const char *triplet, 		/* eg: x86_64-thumb-linux-gnu */
 	int codeModel,				/* LLVM_SVCS_CM_JIT, LLVM_SVCS_CM_SMALL, etc. */
-	int relocMode, 				/* LLVM_SVCS_DEFAULT, LLVM_SVCS_STATIC, etc. */
+	int relocMode, 				/* LLVM_SVCS_RM_STATIC, etc. */
 
 	/* out parameters */
 	char **outBytes, int *outBytesLen,
@@ -408,7 +416,7 @@ int BNLlvmServicesAssemble(
 	MCObjectFileInfo objFileInfo;
 
 	/* MC/MCContext.h */
-	MCContext context(asmInfo.get(), regInfo.get(), &objFileInfo, &srcMgr);
+	MCContext context(TheTriple, asmInfo.get(), regInfo.get(), subTargetInfo.get(), &srcMgr);
 
 	/* yes, this is circular (MCContext requiring MCObjectFileInfo and visa
 		versa, and is marked "FIXME" in llvm-mc.cpp */
@@ -416,11 +424,8 @@ int BNLlvmServicesAssemble(
 	/* also see initMachOMCObjectFileInfo(), initELFMCObjectFileInfo(),
 		initCOFFMCObjectFileInfo() ... will ask TT.getObjectFormat() if not
 		specified */
-	objFileInfo.InitMCObjectFileInfo(
-		TheTriple,
-		map_reloc_mode(relocMode),
-		context
-	);
+	objFileInfo.initMCObjectFileInfo(context, /* LargeCodeModel */ false);
+	context.setObjectFileInfo(&objFileInfo);
 
 	/* code emitter llvm/MC/MCCodeEmitter.h
 		has encodeInstruction() which maps MCInstr -> bytes
@@ -698,3 +703,30 @@ int BNLlvmServicesDisassembleLengths(
 	return rc;
 }
 
+int main(int ac, char **av)
+{
+	char *output;
+	int out_len = 0;
+	char *error = NULL;
+	int err_len = 0;
+
+	int rc;
+
+	rc = BNLlvmServicesAssemble(
+		"mov x0, x0",
+		LLVM_SVCS_DIALECT_UNSPEC, 
+		"aarch64-none-none",
+		LLVM_SVCS_CM_DEFAULT, /* code model */
+		LLVM_SVCS_RM_STATIC, /* reloc model */
+		&output, &out_len,
+		&error, &err_len
+	);
+
+	if(rc || err_len) {
+		printf("ERROR %d: %s\n", rc, error);
+		return -1;
+	}
+
+	dump_bytes((uint8_t *)output, out_len, 0);
+	return 0;
+}
