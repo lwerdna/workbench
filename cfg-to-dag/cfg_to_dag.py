@@ -1,39 +1,57 @@
-#!/usr/bin/env python
-
 import os, sys
-
-import binaryninja
-
-from loop_detection import calculate_natural_loops
+from pprint import pprint
 
 import networkx as nx
 
-# return a string identifier for a given basic block node
-def bbid(bb):
-    return 'b%d' % bb.index
+import binaryninja
 
-# convert a Binary Ninja CFG to a networkx graph
-def binja_func_to_networkx_graph(func):
-    G = nx.DiGraph()
+#------------------------------------------------------------------------------
+# LOOP DETECTION
+#------------------------------------------------------------------------------
 
-    for src in func.basic_blocks:
-        G.add_node(bbid(src))
+# return list for each loops
+# each loop is a list of basic blocks
+# eg:
+# [[b0,b1,b2], [b7,b8,b9]] means two loops, the first with {b0,b1,b2}, the second with {b7,b8,b9}
+def calculate_natural_loops(func):
+    loops = []
 
-        for dst in [edge.target for edge in src.outgoing_edges]:
-            G.add_node(bbid(dst))
-            G.add_edge(bbid(src), bbid(dst))
-        
-    return G
+    # find back edges (B -> A when A dominates B)
+    # A is called "header", B is called "footer"
+    #
+    # WARNING:
+    #   Basic_block.back_edge is a less strict "edge to ancestor" definition of back edge.
+    #   We need the stricter "edge to dominator" definition for loop detection.
+    back_edges = []
+    for bb in func.basic_blocks:
+        for edge in bb.outgoing_edges:
+            if edge.target in edge.source.dominators:
+                back_edges.append(edge)
+                #print('back edge %s -> %s' % (bbstr(edge.source), bbstr(edge.target)))
 
-# draw a networkx graph into a png by exporting to .DOT and invoking graphviz
-# pip install pydot
-def draw_graph(G, output='/tmp/tmp.png'):
-    fpath = '/tmp/tmp.dot'
-    print('writing '+fpath)
-    nx.drawing.nx_pydot.write_dot(G, fpath) 
+    # reverse breadth-first search from footer to header, collecting all nodes
+    for edge in back_edges:
+        (header, footer) = (edge.target, edge.source)
+        #print('collecting blocks for loop fenced between %s and %s:' % (bbstr(header), bbstr(footer)))
+        loop_blocks = set([header, footer])
+        if header != footer:
+            queue = [edge.source]
+            while queue:
+                cur = queue.pop(0)
+                loop_blocks.add(cur)
+                new_batch = [e.source for e in cur.incoming_edges if (not e.source in loop_blocks)]
+                #print('incoming blocks to %s: %s' % (bbstr(cur), [bbstr(x) for x in new_batch]))
+                queue.extend(new_batch)
+        #print(','.join([bbstr(n) for n in loop_blocks]))
 
-    print('writing '+output)
-    os.system('dot %s -Tpng -o %s' % (fpath, output))
+        # store this loop
+        loops.append(list(loop_blocks))
+
+    return loops
+
+#------------------------------------------------------------------------------
+# BUILD NETWORKX GRAPHS FROM BINJA FUNCS
+#------------------------------------------------------------------------------
 
 def dfs_clamped(block, required, banned):
     result = []
@@ -50,50 +68,88 @@ def dfs_clamped(block, required, banned):
 
     return result
 
-if __name__ == '__main__':
-    fpath = '../testbins/tests-macos-x64-macho' if not sys.argv[1:] else sys.argv[1]
-    fname = '_some_loops' if not sys.argv[2:] else sys.argv[2]
+#------------------------------------------------------------------------------
+# COLLAPSE LOOPS
+#------------------------------------------------------------------------------
 
-    bview = binaryninja.open_view(fpath)
-    assert bview
-    func = bview.get_functions_by_name(fname)[0]
+class Binary():
+    def __init__(self, fpath):
+        self.bview = binaryninja.open_view(fpath)
+        assert self.bview
 
-    # collect all loop blocks
-    all_loop_blocks = set()
-    nat_loops = calculate_natural_loops(func)
-    for (i,loop) in enumerate(nat_loops):
-        print('loop%d has %d blocks: %s' % (i, len(loop), loop))
-        all_loop_blocks.update(loop)
+    def bbid(self, bb):
+        return f'block@{bb.start:X}'
 
-    # consolidate loops, two cases I can think of:
-    # one loop is within another
-    # two loops share _some_ of their blocks
-    seen_so_far = set()
-    consolidated_loops = []
-    for (i,loop) in enumerate(nat_loops):
-        searched = dfs_clamped(loop[0], all_loop_blocks, seen_so_far)
-        print('loop%d has %d blocks: %s' % (i, len(searched), searched))
-        seen_so_far.update(searched)
-        consolidated_loops.append(searched)
+    # get a function's control flow graph
+    def get_cfg(self, func_name):
+        func = self.bview.get_functions_by_name(func_name)[0]
+        assert func
 
-    # create mapping to replacement nodes
-    block_to_loop_id = {}
-    for (i,loop) in enumerate(consolidated_loops):
-        for block in loop:
-            block_to_loop_id[block] = i
+        G = nx.DiGraph()
 
-    # create networkX graph
-    G = nx.DiGraph()
+        for src in func.basic_blocks:
+            G.add_node(self.bbid(src))
 
-    for src in func.basic_blocks:
-        label_src = block_to_loop_id.get(src, f'{src.index}') 
-        G.add_node(label_src)
+            for dst in [edge.target for edge in src.outgoing_edges]:
+                G.add_node(self.bbid(dst))
+                G.add_edge(self.bbid(src), self.bbid(dst))
+        
+        return G
 
-        for dst in [edge.target for edge in src.outgoing_edges]:
-            label_dst = block_to_loop_id.get(src, f'{dst.index}')
+    # get a function's control flow graph as a DAG by collapsing loop blocks
+    def get_cfg_dag(self, func_name):
+        func = self.bview.get_functions_by_name(func_name)[0]
+        assert func
 
-            G.add_node(label_dst)
-            G.add_edge(label_src, label_dst)
+        # collect all loop blocks
+        all_loop_blocks = set()
+        nat_loops = calculate_natural_loops(func)
+        for (i,loop) in enumerate(nat_loops):
+            #print('loop%d has %d blocks: %s' % (i, len(loop), loop))
+            all_loop_blocks.update(loop)
 
-    draw_graph(G)
+        # consolidate loops, two cases I can think of:
+        # one loop is within another
+        # two loops share _some_ of their blocks
+        seen_so_far = set()
+        consolidated_loops = []
+        for (i,loop) in enumerate(nat_loops):
+            searched = dfs_clamped(loop[0], all_loop_blocks, seen_so_far)
+            #print('loop%d has %d blocks: %s' % (i, len(searched), searched))
+            seen_so_far.update(searched)
+            if searched:
+                consolidated_loops.append(searched)
+
+        # create mapping to replacement nodes
+        block2loop = {}
+        for (i,loop) in enumerate(consolidated_loops):
+            name = 'loop@%X' % min(b.start for b in loop)
+            for block in loop:
+                block2loop[block] = name
+
+        #pprint(block2loop)
+
+        # create networkX graph
+        G = nx.DiGraph()
+
+        for src in func.basic_blocks:
+            label_src = block2loop.get(src, self.bbid(src))
+            if label_src.startswith('loop'):
+                #breakpoint()
+                pass
+            G.add_node(label_src)
+
+            for dst in [edge.target for edge in src.outgoing_edges]:
+                label_dst = block2loop.get(dst, self.bbid(dst))
+
+                # skip intra-loop edges
+                if label_src == label_dst:
+                    #print(f'skipping {label_src}->{label_dst}')
+                    continue
+
+                G.add_node(label_dst)
+                #print(f'adding {label_src} to {label_dst}')
+                G.add_edge(label_src, label_dst)
+
+        return G
 
