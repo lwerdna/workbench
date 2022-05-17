@@ -10,9 +10,11 @@
     </style>
   </head>
   <body>
-    <h3>What's the probability a randomly selected 2-child family has girl-girl given a girl's name is "Florida"?</h3>
-    Probability of a girl being named "Florida": <input type="range" id="slider" min=".001" max="1" value=".001" step=".001">
-    <span id="slider-value">50</span>
+    <p>What's the probability a randomly selected two-child family has two daughters given a girl's name is "Florida"? From Mlodinow's book <b>The Drunkard's Walk: How Randomness Rules Our Lives</b>.</p>
+    <p>
+      Probability of a girl being named "Florida": <input type="range" id="slider" min=".001" max="1" value=".001" step=".001">
+      <span id="slider-value">50</span>
+    </p>
     <canvas style="border:1" id="draw_area" width="640" height="480"></canvas>
     <br>
     <span style="background-color: #bde0fe;">boy, boy families</span>: <span id="boy-boy-value"></span><br>

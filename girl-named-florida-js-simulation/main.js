@@ -3,9 +3,13 @@ const boy_girl = 1
 const girl_boy = 2
 const girl_girl = 3
 
+const WIDTH = 640;
+const HEIGHT = 480;
+const N_FAMILIES = WIDTH*HEIGHT;
+
 function setPixelRgb(data, x, y, rgb)
 {
-	var idx = 4*(y*640 + x)
+	var idx = 4*(y*WIDTH + x)
 	data[idx] = rgb[0]
 	data[idx+1] = rgb[1]
 	data[idx+2] = rgb[2]
@@ -30,9 +34,9 @@ function run_experiment(p_florida)
 	gg_counts = [0, 0, 0, 0];
 	names_counts = [0, 0, 0, 0];
 
-	for(let x=0; x<640; x++)
+	for(let x=0; x<WIDTH; x++)
 	{
-		for(let y=0; y<480; y++)
+		for(let y=0; y<HEIGHT; y++)
 		{
 			// 0 == boy boy
 			// 1 == boy girl
@@ -73,12 +77,12 @@ function draw()
 		[0xff, 0xc8, 0xdd] // girl girl
 	]
 
-	let imgData = context2d.getImageData(0, 0, 640, 480);
+	let imgData = context2d.getImageData(0, 0, WIDTH, HEIGHT);
 	let data = imgData.data;
 
-	for(let x=0; x<640; x++)
+	for(let x=0; x<WIDTH; x++)
 	{
-		for(let y=0; y<480; y++)
+		for(let y=0; y<HEIGHT; y++)
 		{
 			genders = population[x][y];
 
@@ -98,9 +102,9 @@ let slider_value = document.getElementById('slider-value');
 let info = document.getElementById('info');
 
 /* experiment results */
-let population = Array(640);
-for(let i=0; i<640; i++)
-	population[i] = Array(480);
+let population = Array(WIDTH);
+for(let i=0; i<WIDTH; i++)
+	population[i] = Array(HEIGHT);
 let gg_counts;
 let names_counts;
 
@@ -111,13 +115,13 @@ function update()
 	draw();
 
 	slider_value.innerHTML = p_florida;
-	document.getElementById('boy-boy-value').innerHTML = `${gg_counts[0]}  (${(100*gg_counts[0]/(640*480)).toPrecision(4)}%)`;
+	document.getElementById('boy-boy-value').innerHTML = `${gg_counts[0]}  (${(100*gg_counts[0]/N_FAMILIES).toPrecision(4)}%)`;
 	document.getElementById('boy-girl-value').innerHTML = 
-	  `${gg_counts[1]}  (${(100*gg_counts[1]/(640*480)).toPrecision(4)}%), ${names_counts[1]} have <span style="background-color:red">a girl named Florida</span>`;
+	  `${gg_counts[1]}  (${(100*gg_counts[1]/N_FAMILIES).toPrecision(4)}%), ${names_counts[1]} have <span style="background-color:red">a girl named Florida</span>`;
 	document.getElementById('girl-boy-value').innerHTML =
-	  `${gg_counts[2]}  (${(100*gg_counts[2]/(640*480)).toPrecision(4)}%), ${names_counts[2]} have <span style="background-color:red">a girl named Florida</span>`;
+	  `${gg_counts[2]}  (${(100*gg_counts[2]/N_FAMILIES).toPrecision(4)}%), ${names_counts[2]} have <span style="background-color:red">a girl named Florida</span>`;
 	document.getElementById('girl-girl-value').innerHTML =
-	  `${gg_counts[3]}  (${(100*gg_counts[3]/(640*480)).toPrecision(4)}%), ${names_counts[3]} have <span style="background-color:red">a girl named Florida</span>`;
+	  `${gg_counts[3]}  (${(100*gg_counts[3]/N_FAMILIES).toPrecision(4)}%), ${names_counts[3]} have <span style="background-color:red">a girl named Florida</span>`;
     info.innerHTML = `<b>Probability girl-girl given a girl named Florida is ${names_counts[3]}/(${names_counts[1]}+${names_counts[2]}+${names_counts[3]}) = ${(100*names_counts[3] / (names_counts[1] + names_counts[2] + names_counts[3])).toPrecision(4)}%</b>`
 }
 
