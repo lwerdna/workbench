@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>Girl Named Florida Simulation</title>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>What's the probability a randomly selected 2-child family has girl-girl given a girl's name is "Florida"?</h3>
+    Probability of a girl being named "Florida": <input type="range" id="slider" min=".001" max="1" value=".001" step=".001">
+    <span id="slider-value">50</span>
+    <canvas style="border:1" id="draw_area" width="640" height="480"></canvas>
+    <br>
+    <span style="background-color: #bde0fe;">boy, boy families</span>: <span id="boy-boy-value"></span><br>
+    <span style="background-color: #cdb4db;">boy, girl families</span>: <span id="boy-girl-value"></span><br>
+    <span style="background-color: #cdb4db;">girl, boy families</span>: <span id="girl-boy-value"></span><br>
+    <span style="background-color: #ffc8dd;">girl, girl families</span>: <span id="girl-girl-value"></span><br>
+    <div id="info">
+    </div>
+    </center>
+  </body>
+  <script src="main.js"></script>
+</html>
+
