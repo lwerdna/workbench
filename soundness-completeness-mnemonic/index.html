@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <title>Soundness/Completeness Mnemonic Toy</title>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+	<p>This is a mnemonic for soundness/completeness and related concepts. The red balls represent true positives and the grey balls represent true negatives. The box represents the set of balls for which the test returns positive.</p>
+
+    <canvas style="border:0" id="draw_area" width="640" height="120"></canvas>
+    <br>
+    test positive region: <input type="range" id="slider" min="0" max="100" value="50">
+    <br>
+    <br>
+    <div id="info">
+    </div>
+    </center>
+  </body>
+  <script type="module" src="main.js"></script>
+</html>
+
