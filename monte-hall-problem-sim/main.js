@@ -70,7 +70,7 @@ function door_close(i)
 	doors[i].innerHTML = '?'
 }
 
-function door_reveal(i)
+function door_reveal(i, play_sound)
 {
 	console.log(`revealing door ${i}`);
 	doors[i].innerHTML = '';
@@ -81,7 +81,18 @@ function door_reveal(i)
 		//sleep(50);
 	}
 
-	doors[i].innerHTML = (i == door_prize) ? 'CAR' : 'GOAT'
+	if(i == door_prize)
+	{
+		doors[i].innerHTML = '<img src="res/car.jpg">';
+		if(play_sound)
+			(new Audio('./res/car.mp3')).play();
+	}
+	else
+	{
+		doors[i].innerHTML = '<img src="res/goat.jpg">';
+		if(play_sound)
+			(new Audio('./res/goat.mp3')).play();
+	}
 }
 
 function game_reset()
@@ -122,7 +133,7 @@ function onclick_door(choice)
 		// open another door
 		candidates = [0,1,2].filter(d => d!=choice && d!=door_prize);
 		i = rand_select(candidates)
-		door_reveal(i)
+		door_reveal(i, true)
 		door_revealed = i;
 
 		game_state = 1;
@@ -136,11 +147,11 @@ function onclick_door(choice)
 		door_select(choice);
 
 		// reveal selected door
-		door_reveal(choice);
+		door_reveal(choice, true);
 
 		// reveal remaining door
 		candidates = [0,1,2].filter(d => d!=choice && d!=door_revealed);
-		door_reveal(candidates[0]);
+		door_reveal(candidates[0], false);
 
 		// won? update stats
 		won = choice == door_prize;
