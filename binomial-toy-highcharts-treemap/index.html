@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" >
 <head>
-  <title>Binomial Distribution Sankey Chart</title>
+  <title>Binomial Distribution Treemap</title>
   <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://code.highcharts.com/modules/sankey.js"></script>
+  <script src="https://code.highcharts.com/modules/treemap.js"></script>
 </head>
 <body>
   <p>
@@ -14,7 +14,7 @@
   </p>
   <p>
     P(trial):
-    <input type="range" min="0" max="1" value=".5" step=".1" class="slider" id="p_trial"
+    <input type="range" min="0" max="1" value=".5" step=".01" class="slider" id="p_trial"
            oninput="document.getElementById('e001').innerHTML = this.value;" />
     <span id="e001">.5</span>
   </p>
