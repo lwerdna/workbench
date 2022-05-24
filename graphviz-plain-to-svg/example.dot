@@ -1,0 +1,18 @@
+digraph G {
+  nodesep = 0.2;
+  ranksep = 0.2;
+  edge [arrowhead="none"] /* so edge goes all the way to destination vertex */
+  // vertices
+  bb0 [label="bb0" shape="rectangle"];
+  bb1 [label="bb1" shape="rectangle"];
+  bb2 [label="bb2" shape="rectangle"];
+  bb3 [label="bb3" shape="rectangle"];
+  bb4 [label="bb4" shape="rectangle"];
+  // edges
+  bb0 -> bb1 [label="TrueBranch"];
+  bb0 -> bb2 [label="FalseBranch"];
+  bb1 -> bb3 [label="TrueBranch"];
+  bb1 -> bb4 [label="FalseBranch"];
+  bb2 -> bb1 [label="UnconditionalBranch"];
+  bb4 -> bb3 [label="UnconditionalBranch"];
+}

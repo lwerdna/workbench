@@ -1,0 +1,13 @@
+graph 1 2.8333 4.2222
+node bb0 0.65278 0.25 0.75 0.5 bb0 solid rectangle black lightgrey
+node bb1 0.375 2.1111 0.75 0.5 bb1 solid rectangle black lightgrey
+node bb2 1.6944 1.1806 0.75 0.5 bb2 solid rectangle black lightgrey
+node bb3 0.375 3.9722 0.75 0.5 bb3 solid rectangle black lightgrey
+node bb4 1.6944 3.0417 0.75 0.5 bb4 solid rectangle black lightgrey
+edge bb0 bb1 7 0.48437 0.50495 0.40953 0.62659 0.32982 0.77999 0.29167 0.93056 0.21185 1.2455 0.26436 1.6225 0.31496 1.8609 TrueBranch 0.75694 1.1806 solid black
+edge bb0 bb2 4 0.92646 0.50108 1.0784 0.63273 1.2668 0.79603 1.419 0.92792 FalseBranch 1.75 0.71528 solid black
+edge bb1 bb3 10 0.33767 2.365 0.31985 2.4916 0.30051 2.6496 0.29167 2.7917 0.27786 3.0135 0.27786 3.0699 0.29167 3.2917 0.30051 3.4337 0.31985 3.5918 0.33767 3.7183 TrueBranch 0.75694 3.0417 solid black
+edge bb1 bb4 4 0.72167 2.3622 0.91408 2.4938 1.1527 2.6571 1.3455 2.789 FalseBranch 1.6389 2.5764 solid black
+edge bb2 bb1 4 1.3478 1.4316 1.1554 1.5633 0.91671 1.7266 0.72393 1.8585 UnconditionalBranch 1.9931 1.6458 solid black
+edge bb4 bb3 4 1.3478 3.2927 1.1554 3.4244 0.91671 3.5877 0.72393 3.7196 UnconditionalBranch 1.9931 3.5069 solid black
+stop
