@@ -13,4 +13,18 @@ But it raises an interesting question. **Could we glean insights to problems by 
 
 If the complexity of the compiled checker reduces, the partial solution is correct. Iterate this process to converge on a solution.
 
-See [./tests.c](./tests.c) for the tests and results.
+See [./tests.c](./tests.c) for the tests cases. Result:
+
+```
+failed to optimize/simplify simple_divisibility0()
+failed to optimize/simplify simple_divisibility1()
+failed to optimize/simplify simple_divisibility3()
+failed to optimize/simplify simple_divisibility6()
+failed to optimize/simplify cleared_bits1()
+failed to optimize/simplify cleared_bits2()
+failed to optimize/simplify set_bits1()
+failed to optimize/simplify set_bits2()
+failed to optimize/simplify htpi0()
+failed to optimize/simplify magic_square()
+failed to optimize/simplify magic_triangle()
+```

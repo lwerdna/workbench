@@ -1,4 +1,4 @@
-LIBCLANG = $(HOME)/libclang/12.0.0/bin
+LIBCLANG = $(HOME)/libclang/14.0.0/bin
 
 all: tests tests-O0.ll tests-O3.ll tests-O0-opt-pass.ll tests-O3-opt-pass.ll
 
