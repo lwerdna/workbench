@@ -1,22 +1,23 @@
 The "exchange" part in arm/thumb instructions like `bx` and `blx` have confused me for too long. It's time I run some tests (using [unicorn engine emulator](https://www.unicorn-engine.org/)) and commit these instructions' behavior to memory once and for all.
 
-Summary:
+**Summary**:
 
-1. when the operand is a register, it contains an absolute address whose lsb marks the destination mode (0 for arm, 1 for thumb).
-2. when the operand is a displacement, the mode always flips (exchanges) with the current mode
+1. when the operand is an **absolute** address, the lsb marks the destination mode (0 for arm, 1 for thumb)
+2. when the operand is a register, it contains an **absolute** address, see rule #1
+3. when the operand is a **relative address** (displacement), the mode always toggles (exchanges) with the current mode
 
 In other words, exchange instructions that use a register **may** change the state while instructions that use displacements **will** change the state.
 
-Tabulated:
+**Tabulated**:
 
-| instruction    | destination mode                           |
-| -------------- | ------------------------------------------ |
-| `bx Rm`        | lsb of Rm                                  |
-| `bx{cond} Rm`  | lsb of Rm                                  |
-| `bx label`     | (this instruction form doesn't exist)      |
-| `blx` Rm       | lsb of Rm                                  |
-| `blx{cond} Rm` | lsb of Rm                                  |
-| `blx label`    | opposite of current mode (always exchange) |
+| instruction                  | destination mode                           | toggles? |
+| ---------------------------- | ------------------------------------------ | -------- |
+| `bx Rm`<br />`bx{cond} Rm`   | lsb of Rm                                  | maybe    |
+| `blx Rm`<br />`blx{cond} Rm` | lsb of Rm                                  | maybe    |
+| `mov pc, Rm`                 | lsb of Rm                                  | maybe    |
+| `ldm Rm, {..., pc}`          | lsb of                                     | maybe    |
+| `bx label`                   | (this instruction form doesn't exist)      |          |
+| `blx label`                  | opposite of current mode (always exchange) | always   |
 
 The link register `lr` will be set by `blx` to the pointer to instruction following the source instruction. If the source of the branch was in thumb mode, the pointer will have its lsb set, otherwise it will be cleared.
 
@@ -232,3 +233,40 @@ starting emulation at pointer: 0x00000009
  cpsr=00000000400001D3 (N=0 Z=1 C=0 V=0 T=0)
 ```
 
+## experiment: ldm Rm, {..., pc}
+
+At address 0x10 I have set up four odd pointers: 0x00000011, 0x00000021, 0x00000031, 0x00000041:
+
+```
+> db 0x10
+00000010: 11 00 00 00 21 00 00 00 31 00 00 00 41 00 00 00  ....!...1...A...
+```
+
+Now set r5 to point at this memory and load multiple:
+
+```
+> r5 = 0x10
+> ldm r5, {r0, r1, r2, pc}
+ r0=00000011  r1=00000021  r2=00000031  r3=00000000
+ r4=00000000  r5=00000010  r6=00000000  r7=00000000
+ r8=00000000  r9=00000000 r10=00000000 r11=00000000
+ ip=00000000  sp=00000000  lr=00000000  pc=00000040
+ cpsr=400001F3 (N=0 Z=1 C=0 V=0 T=1)
+```
+
+Registers r0, r1, r2 picked up the first three pointers, and PC picked up the fourth address (lsb stripped from pointer) and transitioned to thumb.
+
+I set them to even pointers and execute the same `ldm`:
+
+```
+> ldm r5, {r0, r1, r2, pc}
+thumb-assembled 00000040: 95e80780  (4 bytes)
+starting emulation at pointer: 0x00000041
+ r0=00000010  r1=00000020  r2=00000030  r3=00000000
+ r4=00000000  r5=00000010  r6=00000000  r7=00000000
+ r8=00000000  r9=00000000 r10=00000000 r11=00000000
+ ip=00000000  sp=00000000  lr=00000000  pc=00000040
+ cpsr=400001D3 (N=0 Z=1 C=0 V=0 T=0)
+```
+
+And we return to ARM mode.
