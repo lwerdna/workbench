@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# an assembly REPL for aarch64
+# an assembly REPL for aarch64 execution environment (A64 instruction set)
+
 # pip install keystone-engine
 # pip install unicorn
 

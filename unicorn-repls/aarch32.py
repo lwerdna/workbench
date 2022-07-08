@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# an assembly REPL for aarch64
+# an assembly REPL for aarch32 execution environment (A32/T32 instruction sets)
 
 import re
 import struct
@@ -30,7 +30,6 @@ cs_arm = Cs(CS_ARCH_ARM, CS_MODE_ARM + CS_MODE_LITTLE_ENDIAN)
 cs_thumb = Cs(CS_ARCH_ARM, KS_MODE_THUMB + KS_MODE_LITTLE_ENDIAN)
 mu = Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_LITTLE_ENDIAN)
 mu.mem_map(0, 4096)
-mu.mem_map(0x8091a00, 4096)
 
 # track context
 
@@ -48,7 +47,7 @@ def show_context():
     ]
 
     regs = [mu.reg_read(x) for x in reg_ids]
-    regs_str = ['%016X' % x for x in regs]
+    regs_str = ['%08X' % x for x in regs]
     regs_str = [x if regs[i]==regs_old[i] else colored(x, 'red') for (i,x) in enumerate(regs_str)]
 
     # special handling of nzcv
@@ -107,6 +106,8 @@ while 1:
                 # register set, so compensate for this
                 if thumb:
                     mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) | 0x20)
+
+                do_show_context = True
             else:
                 print('ERROR: unknown register %s' % rname)
 
@@ -151,7 +152,7 @@ while 1:
             mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) ^ (0x20))
             do_show_context = True
 
-        # assemble, example:
+        # assemble, step, example:
         # mov r0, 0xDEAD
         elif cmd:
             # assume the input is assembler and place it at current PC
@@ -168,6 +169,7 @@ while 1:
             print('%s-assembled %08X:' % ('thumb' if thumb else 'arm', pc), colored(data.hex(), 'green'), ' (%d bytes)'%len(encoding))
             mu.mem_write(pc, data)
             step()
+            do_show_context = True
 
     except KsError as e:
         print('keystone error:', e)
