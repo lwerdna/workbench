@@ -117,3 +117,8 @@ In the python console:
 ['my_sub', 'my_add']
 ```
 
+# How can I programmatically access the feature map?
+
+There's no API to access the result of the feature map (the image data) but you can access everything the feature map widget uses to draw the image in order to draw it yourself.
+
+See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to produce a .png.
