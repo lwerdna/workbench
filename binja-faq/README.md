@@ -122,3 +122,23 @@ In the python console:
 There's no API to access the result of the feature map (the image data) but you can access everything the feature map widget uses to draw the image in order to draw it yourself.
 
 See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to produce a .png.
+
+# Does the index of a block indicate the order of execution of the blocks?
+
+No, counterexamples are easy to find with the following script:
+
+```python
+bv = binaryninja.open_view(sys.argv[1])
+for func in bv.functions:
+    print(f'analyzing function {func}')
+    bbs = list(func.basic_blocks)
+    for (i, bb) in enumerate(bbs):
+        left = set(bb.strict_dominators)
+        right = set(bbs[i+1:])
+        both = left.intersection(right)
+        if both:
+            print(f'blocks {both} execute before, but appear after {bb}')
+            sys.exit(-1)
+```
+
+That is, there are blocks that appear later in an enumeration that dominate blocks that appear earlier.
