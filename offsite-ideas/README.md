@@ -52,7 +52,7 @@
 
 ![](./spacer.png)
 
-# How well would edit distance or minimum alignment work on function matching with IL's?
+# How well would edit distance (and derivatives like LCS), or multiple sequence alignment work on function matching with IL's?
 
 ## - We know it doesn't work so well on assembler opcodes (equivalent behavior but very different instructions, reordering, etc.)
 
@@ -83,4 +83,13 @@
 ## What will most users want to navigate to? main()? strings? High entropy areas? We could put homing beacon animations on these spots
 ## Imagine cells for functions popping into existence as they are found by analysis
 ## Imagine the areas allocated for functions color transitioning as analysis completes
-## User is immediately orien
+
+![](./spacer.png)
+
+# Go social! A "Share this" plugin.
+
+## We have the export to svg API example
+## Instantly generate a http://binary.ninja/8266372 link?
+## Export to github? With mermaid, CFG is efficiently stored:
+
+![](./10.png)
