@@ -33,6 +33,8 @@ assert sm.found
 
 state = sm.found[0]
 
+breakpoint()
+
 # print trace, METHOD#1
 def history_addrs(history):
     if not history or not history.addr:
@@ -42,6 +44,7 @@ trace = history_addrs(state.history) + [state.addr]
 print(' -> '.join([hex(a) for a in trace]))
 
 # print trace, METHOD#2
-trace = list(state.history.bbl_addrs) + [state.addr]
-print(' -> '.join([hex(a) for a in trace]))
+for state in sm.active:
+    trace = list(state.history.bbl_addrs) + [state.addr]
+    print(', '.join([hex(a) for a in trace]))
 
