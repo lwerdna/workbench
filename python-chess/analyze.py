@@ -1,35 +1,43 @@
 #!/usr/bin/env python
 
 import chess
-import chess.uci
 import chess.pgn
+import chess.engine
 
-def getBestMove(board):
-    eng = chess.uci.popen_engine("/usr/local/bin/stockfish")
-    eng.uci()
-    eng.ucinewgame()
-    eng.position(board)
-    result = eng.go(movetime=2000)
-    return result[0]
+engine = None
+def get_best_move(board):
+    global transport, engine
+
+    if not engine:
+        engine = chess.engine.SimpleEngine.popen_uci(r'/usr/local/bin/stockfish')
+
+    result = engine.play(board, chess.engine.Limit(time=2))    
+    #breakpoint()
+    return result.move
 
 f = open('example.pgn')
-gameNode = chess.pgn.read_game(f)
+game = chess.pgn.read_game(f)
 
-i = 0;
-while 1:
-    move = ''
-    if gameNode.parent:
-        move = gameNode.san()
+# chess.Board
+board = game.board()
+print(board.fen())
 
-    board = gameNode.board()
+#breakpoint()
+# move in chess.pgn.Mainline
+for (i,move) in enumerate(game.mainline_moves()):
+    space = f'...' if i%2 else '. '
 
-    moveBestUci = getBestMove(board)
-    moveBestSan = board.san(moveBestUci)
+    best_move = get_best_move(board)
 
-    print "state %d: %s (from %s, best was %s)" % (i, board.fen(), move, moveBestSan)
+    print(f'{i+1}{space}{move} (stockfish recommended: {i+1}{space}{best_move})')
 
-    if gameNode.is_end():
-        break;
+    board.push(move)
+    print(board.fen())
 
-    gameNode = gameNode.variation(0)
+
+    #print("state %d: %s (from %s, best was %s)" % (i, board.fen(), move, moveBestSan))
+
+    #if game.is_end():
+    #    break;
+
 
