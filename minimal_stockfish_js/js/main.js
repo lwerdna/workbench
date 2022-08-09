@@ -5,19 +5,25 @@ export const name = 'main'
 
 import {Chessboard, COLOR, INPUT_EVENT_TYPE} from "./cm-chessboard/Chessboard.js"
 
-export function CreateGameDiv(fen, title)
+export function CreateGame(fen, title, elem_id)
 {
+	/*
 	let h2 = document.createElement('h2');
 	h2.innerText = title;
 	document.body.append(h2)
+	*/
 
+	/*
 	let div = document.createElement('div');
 	div.style.width = '400px';
 	div.style.height = '400px';
 	document.body.append(div)
+	*/
 
 	/* set up chessboard */
-    var chessboard = new Chessboard(div, {position: fen})
+	console.log(`element id is: ${elem_id}`)
+	let elem = document.getElementById(elem_id);
+    let chessboard = new Chessboard(elem, {position: fen});
 
 	/* set up game state, attach to UI board */
 	let game = new Chess(fen);
@@ -35,6 +41,38 @@ export function CreateGameDiv(fen, title)
 	            console.log(`moveCanceled`);
 	    }
 	});
+}
+
+/* convert long algebraic like "e2e4" to short algebraic notation like "Bxf7+" */
+function lan_to_san(game, line)
+{
+	let sans = []
+
+	/* save game state */
+	let fen = game.fen();
+
+	for (const lan of line.split(' '))
+	{
+		/* eg: "e2e4" */
+		let src = lan.substr(0, 2);
+		let dst = lan.substr(2, 4);
+    	let move = game.move({from: src, to: dst, promotion: 'q'});
+
+		if (move === null)
+		{
+			console.log(`ERROR: Stockfish returned illegal move: ${lan}`);
+			return null
+		}
+
+		sans.push(move.san);
+	}
+
+
+	/* restore game state */
+	game.load(fen);
+
+	/* done */
+	return sans.join(' ');
 }
 
 function handle_move_done(board, source, target)
@@ -63,15 +101,17 @@ function handle_move_done(board, source, target)
 
 	/* how will the engine reply? */
     let engine = new Worker('./js/stockfish.js');
+    //engine.postMessage('setoption name MultiPV value 3');
     engine.postMessage('uci');
 
     engine.onmessage = function(event) {
-        var line = event.data;
+        let line = event.data;
         if(line == 'uciok') {
 			console.log("engine replied 'uciok'");
         } else if(line == 'readyok') {
 			console.log("engine replied 'readyok'");
         } else {
+            console.log('line: ' + line);
             var match = line.match(/^bestmove ([a-h][1-8])([a-h][1-8])([qrbk])?/);
             if(match) {
 				console.log("engine has a move! " + line);
@@ -79,6 +119,20 @@ function handle_move_done(board, source, target)
 				board.setPosition(game.fen(), true);
 				engine.postMessage('stop');
             }
+
+			// eg: 
+            var match = line.match(/^info depth \d+ seldepth \d+ score cp (\d+) nodes \d+ nps \d+ time \d+ multipv \d+ pv (.*)/);
+            if(match) {
+            	console.log("engine has new line! " + line);
+	            let [_, score, moves] = match
+	            score = parseInt(score) * .01
+	            score = Math.round((score + Number.EPSILON) * 100) / 100
+
+	            //console.log("parsed out: " + moves);
+	            let san = lan_to_san(game, moves);
+	            //console.log('san: ' + san);
+	            document.getElementById('board0_line0').value = `${score} ${san}`
+	        }
         }
     };
 

@@ -1,19 +1,30 @@
 <!doctype html>
 <html>
 	<head>
-		<link rel="stylesheet" href="css/chessboard-0.3.0.min.css" />
-		<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+		<link rel="stylesheet" href="style.css" />
+		<link rel="stylesheet" href="assets/styles/cm-chessboard.css" />
+
 		<script src="js/chess.min.js"></script>
-		<script src="js/chessboard-0.3.0.min.js"></script>
-		<script src="js/puzzle.js"></script>
 	</head>
+
 	<body>
-		<div id="board" style="width: 400px"></div>
-		<script>
+		<div class="flex-container">
+
+			<div id="board0" style="width:400px; height:400px">
+			</div>
+
+			<div class="flex-child" style="background-color: red; padding:8px">
+				foo: <input id="board0_line0" type="text" value="blah blah" width="100%" style="width:100%"/><br>
+				bar: <input type=text>blah blah</input>
+			</div>
+
+		</div>
+
+		<script type="module">
+			import {CreateGame} from "./js/main.js"
 			var fen = '3r1rk1/pp3ppp/3pn3/1qpN4/5PP1/P5PQ/1PP5/1K1R4 w - - 0 1';
-			var game = engineGame(fen);
+			CreateGame(fen, "hello", 'board0')
 		</script>
-		<p>MegaBook Chapter 3 Test Problem 2</p>
-		<p>White to Play</p>
+
 	</body>
 </html>
