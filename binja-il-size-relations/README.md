@@ -169,8 +169,55 @@ asm <= lifted
 
 ## Explanation: Why there may be less ASM blocks than lifted blocks
 
-An easy example is x86 `rep movsb` which is a single instruction that doesn't break control flow in assembler, but becomes a loop in lifted IL on the condition of `rcx` being nonzero.
+An easy example is x86 `rep movsb` which is a single instruction that doesn't break control flow in assembler (and therefore doesn't split into blocks), but becomes a loop in lifted IL on the condition of `rcx` being nonzero.
 
 ## Explanation: Why medium ? high
 
-TODO
+MLIL to HLIL can shrink blocks because (at least) blocks consisting only of a goto are eliminated. And example in MLIL is:
+
+```
+0 @ 00400100 bool cond:0 = [data_6ed640].b == 0
+1 @ 0x40010b if (cond:0) then 2 @0x40011d else 5 @ 0x40010d
+```
+
+```
+5 @ 0040010d goto 11 @ 0x400148
+```
+
+```
+11 @ 00400148 return
+```
+
+Gets collapsed to this HLIL:
+
+```
+0 @ 0040010b if (data_6ed640 == 0)
+```
+
+```
+9 @ 00400148 return
+```
+
+MLIL to HLIL can grow blocks because in MLIL you can the declaration and assignment of a temporary variable in one line:
+
+```
+...
+43 @ 0040033b uint64_t rax_3 = rax_3 - 1
+```
+
+But in HLIL it will be pulled out as a separate block:
+
+```
+11 @ 0040033e uint64_t temp2_1
+```
+
+```
+...
+21 @ 0040033b temp2_1 = rax_3
+...
+```
+
+
+
+
+

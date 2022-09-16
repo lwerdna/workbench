@@ -1,14 +1,43 @@
 #!/usr/bin/env python
 
-# Q: Does
-# A: yes
+# Determine the size relationships between the various intermediate languages (ILs)
+# by analyzing all the busybox binaries in BinaryNinja.
 
 import os
 import sys
 import binaryninja
 
-# returning number of instructions in a:
-#  type                                            example source
+# How they print differently
+#
+# function.Function                         like "int64_t _init()"
+# lowlevelil.LowLevelILFunction             like "<llil func: x86_64@0x4000e8>"
+# mediumlevelil.MediumLevelILFunction       like "<mlil func: x86_64@0x4000e8>"
+# highlevelil.HighLevelILFunction           the whole function including its instructions 
+
+# (Pdb) func
+# <func: x86_64@0x4000e8>
+# (Pdb) print(func)
+# int64_t _init()
+# (Pdb) print(func.lifted_il)
+# <llil func: x86_64@0x4000e8>
+# (Pdb) print(func.low_level_il)
+# <llil func: x86_64@0x4000e8>
+# (Pdb) print(func.low_level_il.ssa_form)
+# <llil func: x86_64@0x4000e8>
+# (Pdb) print(func.medium_level_il)
+# <mlil func: x86_64@0x4000e8>
+# (Pdb) print(func.medium_level_il.ssa_form)
+# <mlil func: x86_64@0x4000e8>
+# (Pdb) print(func.high_level_il)
+# sub_400150()
+# return sub_400960()
+# (Pdb) print(func.high_level_il.ssa_form)
+# sub_400150() @ mem#0 -> mem#1
+# return sub_400960() @ mem#1 -> mem#2
+
+# How to get the various levels
+#
+#  type                                            how
 #  ----                                            --------------
 #  binaryninja.function.Function                   bv.get_function_at(0x100000f50)   
 #  binaryninja.lowlevelil.LowLevelILFunction       func.lifted_il
@@ -18,7 +47,7 @@ import binaryninja
 #                                                  func.medium_level_il.ssa_form
 #  binaryninja.highlevelil.HighLevelILFunction     func.high_level_il
 #                                                  func.high_level_il.ssa_form
-#  
+
 def counti(func):
     return sum([b.instruction_count for b in func])
 
@@ -28,27 +57,27 @@ def countb(func):
 class relation(object):
     def __init__(self, description):
         self.description = description
-        self.lt = True
-        self.le = True
-        self.eq = True
-        self.ge = True
-        self.gt = True
+        self.lt = True # <
+        self.le = True # <=
+        self.eq = True # ==
+        self.ge = True # >=
+        self.gt = True # >
 
     def consume(self, func_a, func_b, a, b):
         if self.lt and a >= b:
-            print(f'({self.description}) < disproved, counterexample: {func_a} has {a} >= {b}')
+            print(f'({self.description}) < disproved, counterexample: {repr(func_a)} has {a} >= {b}')
             self.lt = False
         if self.le and a > b:
-            print(f'({self.description}) <= disproved, counterexample: {func_a} has {a} > {b}')
+            print(f'({self.description}) <= disproved, counterexample: {repr(func_a)} has {a} > {b}')
             self.le = False
         if self.eq and a != b:
-            print(f'({self.description}) == disproved, counterexample: {func_a} has {a} != {b}')
+            print(f'({self.description}) == disproved, counterexample: {repr(func_a)} has {a} != {b}')
             self.eq = False
         if self.ge and a < b:
-            print(f'({self.description}) >= disproved, counterexample: {func_a} has {a} < {b}')
+            print(f'({self.description}) >= disproved, counterexample: {repr(func_a)} has {a} < {b}')
             self.ge = False
         if self.gt and a <= b:
-            print(f'({self.description}) > disproved, counterexample: {func_a} has {a} <= {b}')
+            print(f'({self.description}) > disproved, counterexample: {repr(func_a)} has {a} <= {b}')
             self.gt = False
 
     def count_instrs(self, func_a, func_b):
