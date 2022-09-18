@@ -1,3 +1,34 @@
+# How do I open a file?
+
+Actual opening is done in class BinaryViewType's methods. When the module binaryninja has a convenience wrapper, it is recommended you use it. 
+
+The following table shows the convenience functions in the left column and the functions wrapped in the right.
+
+| module binaryninja | class BinaryViewType              |
+| ------------------ | --------------------------------- |
+| `open_view()`      | `get_view_of_file_with_options()` |
+|                    | `get_view_of_file()`              |
+| `load()`           | `load()`                          |
+|                    | `load_raw_view_with_options()`    |
+|                    | `open()`                          |
+|                    | `create()`                        |
+
+You can view the source of module binaryninja in `api/python/__init__.py` and see some examples. You can view class BinaryViewType in `api/python/binaryview.py`.
+
+The `open_view()` allows you to use python's context manager `with` keyword to get a runtime context:
+
+```python
+from binaryninja import *
+with open_view("/bin/ls") as bv:
+    print(len(list(bv.functions)))
+```
+
+But it's not required:
+
+```python
+bv = open_view('/bin/ls')
+```
+
 # How can I set a function boundary?
 
 Mostly you can't, you must rely on analysis. Analysis performs actions like making functions at call destinations and potentially ending functions at returns.
