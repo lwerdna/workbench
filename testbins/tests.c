@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 void mark_success(void)
 {
@@ -404,6 +405,102 @@ void switcher(unsigned int a, unsigned int b)
 			printf("COMPOSITE OR OUT OF RANGE\n");
 	}
 }
+
+/* this attempt to compile to the running example from the DREAM "no more gotos" decompiler PDF */
+
+/*
+void dream_cfg(bool cond_A, bool cond_b1, bool cond_b2, bool cond_c1, bool cond_c2, bool cond_d1, bool cond_d2, bool cond_d3)
+{
+	goto A;
+
+	A:
+	if(cond_A)
+		goto c1;
+	else
+		goto b1;
+
+	//
+	// R1
+	//
+	c1:
+	if(cond_c1)
+		goto n1;
+	else
+		goto c2;
+
+	n1:
+	goto c1;
+
+	c2:
+	if(cond_c2)
+		goto n2;
+	else
+		goto n3;
+
+	n2:
+	goto n9;
+
+	n3:
+	goto c3;
+
+	c3:
+	goto c1;
+
+	//
+	// R2
+	//
+	b1:
+	if(cond_b1)
+		goto b2;
+	else
+		goto n4;
+	
+	b2:
+	if(cond_b2)
+		goto n6;
+	else
+		goto n5;
+
+	n4:
+	goto n5;
+
+	n5:
+	goto n7;
+
+	n6:
+	goto n7;
+
+	n7:
+	goto d1;
+
+	//
+	// R3
+	//
+	d1:
+	if(cond_d1)
+		goto d3;
+	else
+		goto d2;
+
+	d2:
+	if(cond_d2)
+		goto n8;
+	else
+		goto n9;
+
+	d3:
+	if(cond_d3)
+		goto n8;
+	else
+		goto n9;
+
+	n8:
+	goto d1;
+
+	n9:
+	return;
+}
+*/
 
 int main(int ac, char **av)
 {
