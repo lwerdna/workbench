@@ -13,9 +13,9 @@ The following table shows the convenience functions in the left column and the f
 |                    | `open()`                          |
 |                    | `create()`                        |
 
-You can view the source of module binaryninja in `api/python/__init__.py` and see some examples. You can view class BinaryViewType in `api/python/binaryview.py`.
+You can view the source of module binaryninja in `api/python/__init__.py` and see some examples. You can view class BinaryViewType in `api/python/binaryview.py`.
 
-The `open_view()` allows you to use python's context manager `with` keyword to get a runtime context:
+The `open_view()` allows you to use python's context manager `with` keyword to get a runtime context:
 
 ```python
 from binaryninja import *
@@ -154,7 +154,9 @@ In the python console:
 
 There's no API to access the result of the feature map (the image data) but you can access everything the feature map widget uses to draw the image in order to draw it yourself.
 
-See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to produce a .png.
+See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to produce a .png:
+
+![](./assets/feature-map.png)
 
 # Does the index of a block indicate the order of execution of the blocks?
 
@@ -220,3 +222,8 @@ The usual definition of back edges given in academic texts for finding "natural 
 
 The BinaryNinja only captures property 1. If you'd like to add property 2, you can say `edge.back_edge and edge.target in edge.source.dominators`.
 
+# How do I access high level IL in AST form?
+
+The UI presents HLIL only in control flow graph form. You can use `hlil_function.root` to get at the AST. See [hlil-ast.py](./code/hlil-ast.py) for how to generate graphs like this:
+
+![](./assets/hlil-cfg.svg)
