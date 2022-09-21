@@ -2,16 +2,9 @@
 
 Actual opening is done in class BinaryViewType's methods. When the module binaryninja has a convenience wrapper, it is recommended you use it. 
 
-The following table shows the convenience functions in the left column and the functions wrapped in the right.
+The following graph shows the convenience functions in red:
 
-| module binaryninja | class BinaryViewType              |
-| ------------------ | --------------------------------- |
-| `open_view()`      | `get_view_of_file_with_options()` |
-|                    | `get_view_of_file()`              |
-| `load()`           | `load()`                          |
-|                    | `load_raw_view_with_options()`    |
-|                    | `open()`                          |
-|                    | `create()`                        |
+![](./assets/binja-open-functions.svg)
 
 You can view the source of module binaryninja in `api/python/__init__.py` and see some examples. You can view class BinaryViewType in `api/python/binaryview.py`.
 
@@ -224,6 +217,6 @@ The BinaryNinja only captures property 1. If you'd like to add property 2, you c
 
 # How do I access high level IL in AST form?
 
-The UI presents HLIL only in control flow graph form. You can use `hlil_function.root` to get at the AST. See [hlil-ast.py](./code/hlil-ast.py) for how to generate graphs like this:
+The UI presents HLIL only in control flow graph form. You can use `hlil_function.root` to get at the AST. See [hlil-ast.py](./code/hlil-ast.py) for how to generate trees like this:
 
 ![](./assets/hlil-cfg.svg)

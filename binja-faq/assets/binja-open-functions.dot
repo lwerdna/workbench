@@ -1,0 +1,45 @@
+digraph G {
+	rankdir=LR;
+	size="8,5"
+
+    node [shape="box"]
+
+	// module binaryninja
+	A [label="binaryninja.\lopen_view()" fillcolor=red, style=filled]
+    B [label="binarynina.\lload()" fillcolor=red, style=filled]
+
+	// class BinaryViewType
+    F [label="BinaryViewType.\lget_view_of_file_with_options()" fillcolor=green, style=filled]
+    E [label="BinaryViewType.\lget_view_of_file()" fillcolor=green, style=filled]
+    C [label="BinaryViewType.\lload()" fillcolor=green, style=filled]
+    D [label="BinaryViewType.\lload_raw_view_with_options()" fillcolor=green, style=filled]	
+    H [label="BinaryViewType.\lcreate()" fillcolor=green, style=filled]
+	J [label="BinaryViewType.\lopen()" fillcolor=green, style=filled]
+
+	// class BinaryView
+	Q [label="BinaryView.\lopen()\l" fillcolor=cyan style=filled]
+	R [label="BinaryView.\lnew()\l" fillcolor=cyan style=filled]
+	T [label="BinaryView.\lBinaryView()\l" fillcolor=cyan style=filled]
+	U [label="BinaryView.\lget_view_of_type()" fillcolor=cyan, style=filled]	
+
+	// edges
+	A -> F;
+	B -> C;
+	F -> C;
+
+	D -> U;
+	D -> H;
+
+	C -> D;
+	C -> Q;
+	C -> R;
+
+	H -> T;
+	J -> Q;
+	J -> H;
+
+	E -> Q;
+	E -> J;
+	E -> U;
+}
+
