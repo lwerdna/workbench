@@ -1,0 +1,137 @@
+digraph chess_openings {
+	rankdir=LR;
+	size="8,5"
+
+    node [shape="box"]
+	indian_defense2 [label=""];
+	indian_defense3 [label=""];
+	indian_defense4 [label=""];
+	indian_defense5 [label=""];
+	open_game_2 [label=""];
+	old_benoni2 [label=""];
+	two_knights_defense2 [label=""];
+	two_knights_defense3 [label=""];
+	two_knights_defense4 [label=""];
+	two_knights_defense5 [label=""];
+	caro_kann2 [label=""];
+	caro_kann3 [label=""];
+	center_game2 [label=""];
+	open_sicilian2 [label=""];
+	open_sicilian3 [label=""];
+	open_sicilian4 [label=""];
+	open_sicilian5 [label=""];
+	open_sicilian6 [label=""];
+	open_sicilian7 [label=""];
+
+	initial [label="initial"]
+
+	initial -> kings_pawn [label="e4"];
+	initial -> queens_pawn [label="d4"];
+	initial -> english [label="c4"];
+	initial -> birds_opening [label="f4"];
+	initial -> larsen_attack [label="b3"];
+	initial -> polish [label="b4"];
+
+	kings_pawn -> open_game [label="e5"];
+	kings_pawn -> french_defense [label="e6"];	
+	kings_pawn -> alekhines_defense [label="Nf6"];
+	kings_pawn -> caro_kann [label="c6"];
+	kings_pawn -> sicilian [label="c5"];
+	kings_pawn -> vienna_game [label="Nc3"];
+
+	caro_kann -> caro_kann2 [label="d4"];
+	caro_kann2 -> caro_kann3 [label="d5"];
+	caro_kann3 -> caro_kann_advance [label="e5"];
+	caro_kann3 -> caro_kann_exchange [label="exd5"];
+	caro_kann3 -> caro_kann_fantasy [label="f3"];
+
+	sicilian -> open_sicilian [label="Nf3"];
+	sicilian -> closed_sicilian [label="Nc3"];
+	sicilian -> smith_morra_gambit [label="d4"];
+
+	open_sicilian -> open_sicilian2 [label="d6"]
+
+	open_sicilian2 -> open_sicilian3 [label="d4"]
+	open_sicilian3 -> open_sicilian4 [label="cxd4"]
+	open_sicilian4 -> open_sicilian5 [label="Nxd4"]
+	open_sicilian5 -> open_sicilian6 [label="Nf6"]
+	open_sicilian6 -> open_sicilian7 [label="Nc3"]
+
+	open_sicilian7 -> scheveningen [label="e6"]
+	open_sicilian7 -> najdorf [label="a6"]	
+
+	english -> reverse_sicilian [label="e5"];
+
+	queens_pawn -> old_benoni [label="c5"];
+	queens_pawn -> closed_game [label="d5"];
+	queens_pawn -> englund_gambit [label="e5"];	
+	queens_pawn -> indian_defense [label="Nf6"];	
+
+	englund_gambit -> center_game [label="e4"];
+
+	old_benoni -> old_benoni2 [label="c4"];
+
+	old_benoni2 -> benoni_defense [label="Nf6"];
+
+	indian_defense -> indian_defense2 [label="c4"];
+
+    indian_defense2 -> benoni_defense [label="c5"];
+	indian_defense2 -> old_indian_defense [label="d6"];
+	indian_defense2 -> budapest_gambit [label="e5"];
+    indian_defense2 -> indian_defense3 [label="e6"];
+	indian_defense2 -> kings_indian_defense [label="g6"];
+
+	kings_indian_defense -> kings_indian_defense2 [label="Nc3"];
+	kings_indian_defense2 -> grunfeld [label="d5"];
+
+	indian_defense3 -> catalan [label="g3"];
+	indian_defense3 -> indian_defense4 [label="Nc3"];
+	indian_defense3 -> indian_defense5 [label="Nf3"];
+
+	indian_defense4 -> nimzo_indian [label="Bb4"];
+
+	indian_defense5 -> bogo_indian [label="Bb4"];
+	bogo_indian -> nimzo_indian [label="Nc3"];
+
+	closed_game -> queens_gambit [label="c4"];
+
+	queens_gambit -> queens_gambit_declined [label="e6"];
+	queens_gambit -> queens_gambit_accepted [label="dxc4"];
+	queens_gambit -> slav_defense [label="c6"];
+
+	open_game -> open_game_2 [label="Nf3"];
+	open_game -> center_game [label="d4"];	
+
+	open_game_2 -> petrov_defense [label="Nf6"];
+	open_game_2 -> kings_knight_opening [label="Nc6"];
+
+	center_game -> center_game2 [label="exd4"];
+
+	center_game2 -> danish_gambit [label="c3"];
+
+	kings_knight_opening -> three_knights_game [label="Nc3"];
+	kings_knight_opening -> ruy_lopez [label="Bb5"];
+	kings_knight_opening -> italian_game [label="Bc4"];	
+	kings_knight_opening -> scotch_game [label="d4"];
+	kings_knight_opening -> ponziani [label="c3"];	
+
+	italian_game -> giuoco_piano [label="Bc5"];
+	italian_game -> two_knights_defense [label="Nf6"];
+
+	giuoco_piano -> evans_gambit [label="b4"];
+
+	ruy_lopez -> berlin_defense [label="Nf6"];
+
+	two_knights_defense -> two_knights_defense2 [label="Ng5"];
+	two_knights_defense2 -> two_knights_defense3 [label="d5"];
+	two_knights_defense3 -> two_knights_defense4 [label="exd5"];
+	two_knights_defense4 -> two_knights_defense5 [label="Nxd5"];
+	two_knights_defense5 -> fried_liver_attack [label="Nxf7"];
+
+	three_knights_game -> four_knights_game [label="Nf6"];
+
+	four_knights_game -> four_knights_italian [label="Bc4"];
+
+	four_knights_italian -> center_fork_trick [label="Nxe4"];
+}
+
