@@ -32,6 +32,7 @@ digraph chess_openings {
 	initial -> larsen_attack [label="b3"];
 	initial -> polish [label="b4"];
 
+	kings_pawn -> scandanavian [label="d5"];
 	kings_pawn -> open_game [label="e5"];
 	kings_pawn -> french_defense [label="e6"];	
 	kings_pawn -> alekhines_defense [label="Nf6"];
@@ -94,16 +95,18 @@ digraph chess_openings {
 	bogo_indian -> nimzo_indian [label="Nc3"];
 
 	closed_game -> queens_gambit [label="c4"];
+	closed_game -> london_accelerated [label="Bf4"];
 
 	queens_gambit -> queens_gambit_declined [label="e6"];
 	queens_gambit -> queens_gambit_accepted [label="dxc4"];
 	queens_gambit -> slav_defense [label="c6"];
 
-	open_game -> open_game_2 [label="Nf3"];
+	open_game -> open_game2 [label="Nf3"];
 	open_game -> center_game [label="d4"];	
 
-	open_game_2 -> petrov_defense [label="Nf6"];
-	open_game_2 -> kings_knight_opening [label="Nc6"];
+	open_game2 -> philidor_defense [label="Nd6"];
+	open_game2 -> petrov_defense [label="Nf6"];
+	open_game2 -> kings_knight_opening [label="Nc6"];
 
 	center_game -> center_game2 [label="exd4"];
 
