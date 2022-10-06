@@ -1,5 +1,7 @@
 # How do I open a file?
 
+**Quick answer:** `binaryninja.open_view(path)`
+
 Actual opening is done in class BinaryViewType's methods. When the module binaryninja has a convenience wrapper, it is recommended you use it. 
 
 The following graph shows the convenience functions in red:
@@ -23,6 +25,8 @@ bv = open_view('/bin/ls')
 ```
 
 # How can I set a function boundary?
+
+**Quick answer:** You can set function starts, but you can't set the end of a function because Binja doesn't conceptualize functions that way.
 
 Mostly you can't, you must rely on analysis. Analysis performs actions like making functions at call destinations and potentially ending functions at returns.
 
@@ -145,6 +149,8 @@ In the python console:
 
 # How can I programmatically access the feature map?
 
+**Quick answer:** See the example code below.
+
 There's no API to access the result of the feature map (the image data) but you can access everything the feature map widget uses to draw the image in order to draw it yourself.
 
 See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to produce a .png:
@@ -153,7 +159,9 @@ See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to p
 
 # Does the index of a block indicate the order of execution of the blocks?
 
-No, counterexamples are easy to find with the following script:
+**Quick answer:** No.
+
+Counterexamples are easy to find with the following script:
 
 ```python
 bv = binaryninja.open_view(sys.argv[1])
@@ -220,3 +228,29 @@ The BinaryNinja only captures property 1. If you'd like to add property 2, you c
 The UI presents HLIL only in control flow graph form. You can use `hlil_function.root` to get at the AST. See [hlil-ast.py](./code/hlil-ast.py) for how to generate trees like this:
 
 ![](./assets/hlil-cfg.svg)
+
+# How do the version numbers work?
+
+There are three numbers separated by dots: major, minor, and build.
+
+```
+>>> import binaryninja
+>>> binaryninja.core_version()
+'3.1.3469'
+```
+
+On newer version of the API you have also the update channel from which BinaryNinja came, like "test", "dev", etc.
+
+```
+>>> binaryninja.core_version_info()
+CoreVersionInfo(major=3, minor=1, build=3729, channel='dev')
+```
+
+The build number increments every time a new build is released, and is independent of the other version numbers, the update channel (dev, stable, etc.) and the license type (personal, commercial). So version 3.1.3469 is the 3469'th build our build machines have ever built and made available for customers.
+
+If BinaryNinja is built from source on a developer machine, it has no build number and the channel is set to "Local":
+
+```
+>>> binaryninja.core_version_info()
+CoreVersionInfo(major=3, minor=1, build=0, channel='Local')
+```
