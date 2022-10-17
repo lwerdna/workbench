@@ -159,3 +159,99 @@
 (check-sat)
 (get-value (f)) ; returns a lookup table
 
+(echo "-- basic bit vectors")
+(reset)
+
+(define-fun return-deadbeef ((addr (_ BitVec 32))) (_ BitVec 32)
+	#xdeadbeef
+)
+(assert (= (return-deadbeef #x04000000) #xdeadbeef))
+(check-sat)
+
+(define-fun get-lsb ((x (_ BitVec 32))) (_ BitVec 1)
+	((_ extract 0 0) x)
+)
+(assert (= (get-lsb #x55555555) #b1))
+(assert (= (get-lsb #x66666666) #b0))
+(check-sat)
+
+; test that extract takes msb, lsb
+(declare-fun x () (_ BitVec 32))
+;(declare-const x (_ BitVec 32))
+(assert (= ((_ extract 7 0) x) #xEF))
+(assert (= ((_ extract 15 8) x) #xBE))
+(assert (= ((_ extract 23 16) x) #xAD))
+(assert (= ((_ extract 31 24) x) #xDE))
+(check-sat)
+(get-value (x))
+
+(define-fun popCount8 ((x (_ BitVec 8))) (_ BitVec 8)
+                      (bvadd (ite (= #b1 ((_ extract 0 0) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 1 1) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 2 2) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 3 3) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 4 4) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 5 5) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 6 6) x)) #x01 #x00)
+                             (ite (= #b1 ((_ extract 7 7) x)) #x01 #x00)))
+
+; can it solve for an unknown mem_read8?
+(declare-fun mem_read8 ((_ BitVec 32)) (_ BitVec 8))
+(assert (= (mem_read8 #x04000000) #xEF))
+(assert (= (mem_read8 #x04000001) #xBE))
+(assert (= (mem_read8 #x04000002) #xAD))
+(assert (= (mem_read8 #x04000003) #xDE))
+(check-sat)
+(get-value (mem_read8))
+
+(reset)
+(declare-fun mem_read8 ((_ BitVec 32)) (_ BitVec 8))
+(assert (= (mem_read8 #x04000000) #xEF))
+(assert (= (bvshl ((_ zero_extend 8) (mem_read8 (bvadd #x04000000 #x00000001))) #x0008) #xBE00))
+(assert (= (bvshl ((_ zero_extend 16) (mem_read8 (bvadd #x04000000 #x00000002))) #x000010) #xAD0000))
+(assert (= (bvshl ((_ zero_extend 24) (mem_read8 (bvadd #x04000000 #x00000003))) #x00000018) #xDE000000))
+(check-sat)
+(get-value (mem_read8))
+
+(reset)
+(declare-fun mem_read8 ((_ BitVec 32)) (_ BitVec 8))
+(assert (= ((_ zero_extend 24) (mem_read8 #x04000000)) #x000000EF))
+(assert (= ((_ zero_extend 16) (bvshl ((_ zero_extend 8) (mem_read8 (bvadd #x04000000 #x00000001))) #x0008)) #x0000BE00))
+(assert (= ((_ zero_extend 8) (bvshl ((_ zero_extend 16) (mem_read8 (bvadd #x04000000 #x00000002))) #x000010)) #x00AD0000))
+(assert (= (bvshl ((_ zero_extend 24) (mem_read8 (bvadd #x04000000 #x00000003))) #x00000018) #xDE000000))
+(check-sat)
+(get-value (mem_read8))
+
+; can mem_read32 be written in terms of mem_read8?
+
+(reset)
+(declare-fun mem_read8 ((_ BitVec 32)) (_ BitVec 8))
+(define-fun mem_read32 ((addr (_ BitVec 32))) (_ BitVec 32)
+	(bvor
+		((_ zero_extend 24) (mem_read8 addr))
+		((_ zero_extend 16) (bvshl ((_ zero_extend 8) (mem_read8 (bvadd addr #x00000001))) #x0008))
+		((_ zero_extend 8) (bvshl ((_ zero_extend 16) (mem_read8 (bvadd addr #x00000002))) #x000010))
+		(bvshl ((_ zero_extend 24) (mem_read8 (bvadd addr #x00000003))) #x00000018)
+	)
+)
+(assert (= (mem_read32 #x04000000) #xdeadbeef))
+(check-sat)
+(get-value (mem_read8))
+
+; (assert (= (mem_read32
+
+;(define-fun mem_read32 ((addr (_ BitVec 32))) (_ BitVec 32)
+;	(bvor
+;		((_ zero_extend 24) (mem_read8 addr))
+;		((_ zero_extend 16) (bvshl (mem_read8 addr) #x08))
+;		#x01000000
+;	)
+
+;	(bvor
+;	  (mem_read8 addr)
+;      (bvshl (mem_read8 (bvadd addr #x00000001)) #x08)
+;      (bvshl (mem_read8 (bvadd addr #x00000002)) #x10)
+;      (bvshl (mem_read8 (bvadd addr #x00000003)) #x18)
+;    )
+;)
+
