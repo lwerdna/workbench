@@ -24,6 +24,8 @@ But it's not required:
 bv = open_view('/bin/ls')
 ```
 
+But be sure to `bv.file.close()` to cleanup properly.
+
 # How can I set a function boundary?
 
 **Quick answer:** You can set function starts, but you can't set the end of a function because Binja doesn't conceptualize functions that way.
@@ -145,6 +147,24 @@ In the python console:
 ```
 >>> [f.name for f in bv.get_functions_containing(0x10)]
 ['my_sub', 'my_add']
+```
+
+# How can I programmatically disassemble some bytes?
+
+**Quick answer:** See the example code below for the `ret` instruction in 64-bit arm:
+
+```python
+data = b'\xc0\x03\x5f\xd6'
+arch = binaryninja.Architecture['aarch64']
+tokens, length = arch.get_instruction_text(data, 0) or ('', 0)
+if length > 0:
+    print(data.hex() + ': ' + ' '.join([t.text for t in tokens]))
+```
+
+It prints:
+
+```
+c0035fd6: ret
 ```
 
 # How can I programmatically access the feature map?
