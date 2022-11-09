@@ -1,6 +1,8 @@
-#!/usr/bin/env
+#!/usr/bin/env python
 
 import z3
+
+from parser import parse, ExprNode, AndNode, OrNode, NotNode, ValNode, VarNode
 
 from subprocess import Popen, PIPE
 
@@ -52,7 +54,7 @@ class TruthTable(object):
                 continue
 
             # line like "1- 1"
-            print('line: ' + line)
+            #print('line: ' + line)
             (inputs, outputs) = line.split(' ')
             assert len(inputs) == self.n_inputs
             assert len(outputs) == self.n_outputs
@@ -101,7 +103,7 @@ def bool_gen(varnames):
     n = len(varnames)
     for i in range(2**n):
         yield {name: bool(i & (1<<(n-pos-1))) for (pos, name) in enumerate(varnames)}
-        
+
 # minimize a z3 expression
 def minimize_z3(expr):
     variables = variables_z3(expr)
@@ -118,19 +120,58 @@ def minimize_z3(expr):
         #print(f'tt_inputs: {tt_inputs}')
         #print(f'tt_outputs: {tt_outputs}')
         tt.add(tt_inputs, tt_outputs)
-  
+
     sum_ = True
     for product in tt.minimize():
         (lits, nlits) = product
 
-        product = True  
+        product = True
         for i in lits:
             product = z3.And(variables[i])
 
-def minimize_py(expr):
-    
+def minimize(expr):
+    if type(expr) == str:
+        expr = parse(expr)
+
+    vnames = list(expr.varnames())
+
+    tt = TruthTable(len(vnames), 1)
+    for inputs in bool_gen(vnames):
+        #print(f'evaluating {expr} under {inputs}')
+        result = expr.evaluate(inputs)
+
+        tt_inputs = inputs.values()
+        tt_outputs = [int(result)]
+        #print(f'tt_inputs: {tt_inputs}')
+        #print(f'tt_outputs: {tt_outputs}')
+        tt.add(tt_inputs, tt_outputs)
+
+    sum_ = ValNode(False)
+
+    for product in tt.minimize():
+        (lits, nlits) = product
+
+        product = ValNode(True)
+        for i in lits:
+            product = AndNode([VarNode(vnames[i]), product])
+        for i in nlits:
+            product = AndNode([NotNode(VarNode(vnames[i])), product])
+
+        sum_ = OrNode([product, sum_])
+
+    result = sum_.prune_vals()
+
+    return result
+
+def minimize_str(expr:str):
+    etree = parse(expr)
+    assert etree
+    etree2 = minimize_etree(etree)
+    return str(etree2)
 
 if __name__ == '__main__':
+    import sys
+
     # A + /AB
     # should simplify to
     # A + B
@@ -139,7 +180,7 @@ if __name__ == '__main__':
     tt.add([0, 1], [1])
     tt.add([1, 0], [1])
     tt.add([1, 1], [1])
-    tt.minimize()
+    #print(tt.minimize())
 
     # A + /AB + /A/B
     tt = TruthTable(2, 1)
@@ -147,11 +188,21 @@ if __name__ == '__main__':
     tt.add([0, 1], [1])
     tt.add([1, 0], [1])
     tt.add([1, 1], [1])
-    tt.minimize()
+    #print(tt.minimize())
 
-    #
-    A = z3.Bool('A')
-    B = z3.Bool('B')
-    expr = z3.Or(A, z3.And(z3.Not(A), B))
-    expr2 = minimize_z3(expr)
+    # A+/AB  ->  A+B
+    tmp = minimize('A or (not A and B)')
+    assert str(tmp) in ['(A or B)', '(B or A)']
 
+    # A/B + AB  ->  A
+    tmp = minimize('(A and not B) or (A and B)')
+    assert str(tmp) == 'A'
+
+    # /A/B/C + /A/BC  ->  /A/B
+    tmp = minimize('(not A and not B and not C) or (not A and not B and C)')
+    assert str(tmp) in ['((not B) and (not A))', '((not A) and (not B))']
+
+    # /X/YZ + /XYZ + X/Y  - > /XZ + X/Y
+    tmp = minimize('(not X and not Y and Z) or (not X and Y and Z) or (X and not Y)')
+    assert str(tmp) in ['(((not X) and Z) or ((not Y) and X))',
+                        '(((not Y) and X) or ((not X) and Z))']
