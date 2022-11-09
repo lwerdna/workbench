@@ -33,7 +33,7 @@ class TruthTable(object):
         #print(script)
 
         # pipe to espresso
-        process = Popen('./espresso', stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        process = Popen('espresso', stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = process.communicate(script)
         stdout = stdout.decode("utf-8")
         stderr = stderr.decode("utf-8")

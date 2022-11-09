@@ -24,6 +24,9 @@ class ExprNode(object):
             result = result.union(c.varnames())
         return result
 
+    def __repr__(self):
+        return str(self)
+
 class AndNode(ExprNode):
     def __init__(self, children):
         self.children = children
