@@ -31,3 +31,25 @@ paths from 11 converge at 12
 paths from 7 converge at 8
 ```
 
+## Applied to reaching conditions
+
+Let letters from the alphabet represent path conditions from nodes that branch.
+
+Then the node `dst` where all paths from `src` converge can completely disregard the path condition variable `X` set at `src`.
+
+### Example 0
+
+![](./generated0-logic.svg)
+
+And after reduction we get:
+
+![](./generated0-reduced.svg)
+
+### Example 1
+
+![](./generated1-logic.svg)
+
+And after reduction we get:
+
+![](./generated1-reduced.svg)
+
