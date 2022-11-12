@@ -6,7 +6,7 @@ import chess.pgn
 # https://www.melonimarco.it/en/2021/03/08/stockfish-and-lc0-test-at-different-number-of-nodes/
 NODES_ELO_2500 = 10000
 
-N_POSITIONS = 2000
+N_POSITIONS = 500
 
 def get_positions(limit):
     # read positions
