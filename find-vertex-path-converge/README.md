@@ -1,5 +1,7 @@
 Calculate where all paths from a CFG node converge.
 
+(these results have been integrated into [curiousbits](https://github.com/lwerdna/curiousbits) library)
+
 https://stackoverflow.com/questions/59656961/in-a-dag-how-to-find-vertices-where-paths-converge
 
 It's equivalent to asking "What's the most immediate post dominator?".

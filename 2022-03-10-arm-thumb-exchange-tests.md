@@ -15,7 +15,7 @@ In other words, exchange instructions that use a register **may** change the sta
 | `bx Rm`<br />`bx{cond} Rm`   | lsb of Rm                                  | maybe    |
 | `blx Rm`<br />`blx{cond} Rm` | lsb of Rm                                  | maybe    |
 | `mov pc, Rm`                 | lsb of Rm                                  | maybe    |
-| `ldm Rm, {..., pc}`          | lsb of                                     | maybe    |
+| `ldm Rm, {..., pc}`          | lsb of Rm                                  | maybe    |
 | `bx label`                   | (this instruction form doesn't exist)      |          |
 | `blx label`                  | opposite of current mode (always exchange) | always   |
 

@@ -1,5 +1,7 @@
 Minimize logic by calling out to the [Espresso heuristic logic minimizer](https://en.wikipedia.org/wiki/Espresso_heuristic_logic_minimizer).
 
+(these results have been integrated into [curiousbits](https://github.com/lwerdna/curiousbits) library)
+
 Strings are given in Python format.
 
 This is not very efficient. It generates all minterms for a given expression and asks Espresso the result over a pipe.

@@ -30,7 +30,7 @@ foo-linux-x64.so: foo-linux-x64.o
 	$(LD_LLD) --shared foo-linux-x64.o -o foo-linux-x64.so
 
 foo-linux-x64.o: foo.c
-	$(CLANG) -fpic -target x86_64-none-linux-elf -c foo.c -o foo-linux-x64.o
+	$(CLANG) -g -fpic -target x86_64-none-linux-elf -c foo.c -o foo-linux-x64.o
 
 foo-linux-x86.so: foo-linux-x86.o
 	$(LD_LLD) --shared foo-linux-x86.o -o foo-linux-x86.so
