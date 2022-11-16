@@ -168,8 +168,6 @@ int magic_square(int a, int b, int c, int d, int e, int f, int g, int h, int i)
 	if(a+e+i != 15) return -1;
 	if(c+e+g != 15) return -1;
 
-	// TODO: all variables unique
-
 	/* success */
 	return 0;
 }
@@ -517,5 +515,8 @@ int main(int ac, char **av)
 		xtea_1cycle(0x00010203, 0x04050607, 0x08090A0B, 0x0C0D0E0F));
 	printf("xtea_2cycle(0x00010203, 0x04050607, 0x08090A0B, 0x0C0D0E0F)=%d\n",
 		xtea_2cycle(0x00010203, 0x04050607, 0x08090A0B, 0x0C0D0E0F));
+	printf("magic_square(2,7,6,9,5,1,4,3,8)=%d\n", magic_square(2,7,6,9,5,1,4,3,8));
+	printf("magic_square(2,2,6,9,5,1,4,3,8)=%d\n", magic_square(2,2,6,9,5,1,4,3,8));
+	printf("magic_square(1,2,3,4,5,6,7,8,9)=%d\n", magic_square(1,2,3,4,5,6,7,8,9));
 	return 0;
 }
