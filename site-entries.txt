@@ -1,4 +1,5 @@
 2022-03-11 "Treat blx lr as a return with architecture hook. #binja" ./binja-blx-lr-arch-hook github-readme-directory
+2022-03-10 "Exhaustive Tests of ARM/Thumb Interworking Instructions" ./-faq date-prefixed-markdown
 2022-03-10 "Unofficial Binary Ninja FAQ #binja" ./binja-faq github-readme-directory
 2022-03-10 "Test the exchange behavior of bx, blx instructions #arm #lowlevel" ./2022-03-10-arm-thumb-exchange-tests.md date-prefixed-markdown
 2022-03-08 "What happens when you try to solve XTEA with Z3? #crypto #smt" ./xtea-z3 github-readme-directory
@@ -22,7 +23,6 @@
 2020-09-01 "ArmV8.6A 2020-03 to ARMv8.7A 2020-09" ./2020-09-01-arm-spec-update.md date-prefixed-markdown
 2020-05-06 "BinaryNinja debugger showcase #binja" ./debugger_showcase github-readme-directory
 2020-01-08 "Guide to writing BinaryNinja architecture plugins part 1 #binja" ./guide_to_arch_plugs1 github-readme-directory
-2019-12-05 "Engine building lessons" ./2019-12-05-engine-building-lessons.md date-prefixed-markdown
 2019-09-23 "Solve Thinkfun's Cluemaster game with Z3 #smt" ./thinkfun-cluemaster-z3 github-readme-directory
 2019-09-19 "Binja Architecture Flags Part 4: Flag Conditions #binja" ./binja_flags_part4 github-readme-directory
 2019-09-10 "Binja Architecture Flags Part 3: Flag Roles #binja" ./binja_flags_part3 github-readme-directory

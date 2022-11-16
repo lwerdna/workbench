@@ -20,7 +20,7 @@ let chart;
         {id: '111', value:.125, name:'111', parent:'11'}
       ]
 */
-function generate(base, p_current, p, remaining) {
+function generate_re(base, p_current, p, remaining) {
 	if(!remaining)
 		return []
 
@@ -29,8 +29,40 @@ function generate(base, p_current, p, remaining) {
 		{id:base+'1', value:p_current*p, name:base+'1', parent:base}
 	]
 	
-	result.push(...generate(base+'0', p_current*(1-p), p, remaining-1));
-	result.push(...generate(base+'1', p_current*p, p, remaining-1));
+	result.push(...generate_re(base+'0', p_current*(1-p), p, remaining-1));
+	result.push(...generate_re(base+'1', p_current*p, p, remaining-1));
+
+	return result;
+}
+
+function generate(base, p_current, p, remaining) {
+	result = generate_re(base, p_current, p, remaining);
+
+	result.sort(function (a, b) {
+	    if(a.id.length == b.id.length)
+	        return a.id < b.id ? -1 : 1;
+	    return a.id.length < b.id.length ? -1 : 1;
+	})
+
+	let colors = [
+		'#377EB8', '#4DAF4A', '#984EA3', '#999999',
+		'#A65628', '#E41A1C', '#F781BF', '#FF7F00'
+	];
+
+	if(result.length == 2) {
+		for(let i=0; i<2; ++i)
+			result[i].color = colors[i];
+	}
+	else
+	if(result.length == 6) {
+		for(let i=0; i<4; ++i)
+			result[2+i].color = colors[i];
+	}
+	else
+	if(result.length >= 12) {
+		for(let i=0; i<8; ++i)
+			result[6+i].color = colors[i];
+	}
 
 	return result;
 }

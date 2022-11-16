@@ -24,8 +24,8 @@ def print_cursor(cursor):
         i += 1
 
 fpath = '/bin/ls' if len(sys.argv)==1 else sys.argv[1]
-with binaryninja.open_view(fpath) as bv:
 
+with binaryninja.open_view(fpath) as bv:
     settings = function.DisassemblySettings()
     settings.set_option(DisassemblyOption.ShowAddress)
     settings.set_option(DisassemblyOption.ShowOpcode)

@@ -33,6 +33,10 @@ args = parser.parse_args()
 debug = args.debug
 back = args.back
 
+# 'cause it's too fucking hard to make a simple default value in argparse
+if not back:
+    back = 12
+
 def log(message):
     if debug:
         print(message, file=sys.stderr)

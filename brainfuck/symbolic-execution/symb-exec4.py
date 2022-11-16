@@ -18,7 +18,9 @@ debug_settings = \
     'countdown': 0,
     'last_command': '',
     'show_state': True,
-    'quit': False
+    'quit': False,
+    'stop_on_input': False, # on ','
+    'stop_on_split': False # on symbolic state branch, not '['
 }
 
 class State(object):
@@ -187,12 +189,12 @@ def graph(root, current, fpath='/tmp/tmp.dot'):
 
     result.append('}')
 
-    print(GREEN + 'writing %s' % fpath + NORMAL)
+    #print(GREEN + 'writing %s' % fpath + NORMAL)
     with open(fpath, 'w') as fp:
         fp.write('\n'.join(result))
 
     fpath2 = os.path.splitext(fpath)[0] + '.png'
-    print(GREEN + 'writing %s' % fpath2 + NORMAL)
+    #print(GREEN + 'writing %s' % fpath2 + NORMAL)
     os.system('dot %s -Tpng -o %s' % (fpath, fpath2))
 
 # given a state and the code, decide whether to continue this path
@@ -274,9 +276,15 @@ def main():
             # debugger activates when execution engine is about to split states
             if state and code[state.ip] == '[':
                 if not z3.is_bv_value(state.expression_get(state.current_cell())):
-                    if debug_settings['stop_on_branch']:
+                    if debug_settings['stop_on_split']:
                         debug_settings['foreground'] = True
                         print(f'{GREEN}debug event: imminent state split{NORMAL}')
+
+            # debugger activates when execution engine is about to take input
+            if state and code[state.ip] == ',':
+                if debug_settings['stop_on_input']:
+                    debug_settings['foreground'] = True
+                    print(f'{GREEN}debug event: imminent state split{NORMAL}')
 
             # debugger activates when a breakpoint is hit
             if state and state.ip in debug_settings['breakpoints']:
@@ -288,7 +296,8 @@ def main():
                 # activating debugger cancels previous conditions
                 debug_settings['countdown'] = 0
                 debug_settings['stop_on_open_bracket'] = False
-                debug_settings['stop_on_branch'] = False
+                debug_settings['stop_on_input'] = False
+                debug_settings['stop_on_split'] = False
 
                 while 1:
                     if debug_settings['show_state']:
@@ -326,9 +335,14 @@ def main():
                         debug_settings['stop_on_open_bracket'] = True
                         break
                     # go until branch or split
-                    elif cmd in ['gb', 'gs']:
+                    elif cmd in ['gs', 'gsplit']:
                         debug_settings['foreground'] = False
-                        debug_settings['stop_on_branch'] = True
+                        debug_settings['stop_on_split'] = True
+                        break
+                    # go until input
+                    elif cmd in ['gi', 'ginput']:
+                        debug_settings['foreground'] = False
+                        debug_settings['stop_on_input'] = True
                         break
                     # go unconditionally
                     elif cmd in ['g', 'go', 'c', 'continue']:
@@ -368,9 +382,7 @@ def main():
                         print(f'unrecognized command: {cmd}')
 
                 if debug_settings['quit']:
-                    state = None
-                    queue = []
-                    break
+                    sys.exit(-1)
 
             c = code[state.ip]
 

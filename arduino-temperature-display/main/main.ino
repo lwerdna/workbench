@@ -1,7 +1,5 @@
 #include "DHT.h"
 
-#define DHTTYPE DHT11
-
 DHT dht(14, DHT11);
 
 int segA = 2;
@@ -18,446 +16,168 @@ int d2 = 11;
 int d3 = 12;
 int d4 = 13;
 
-void one()
-{
-  digitalWrite(segA, LOW);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, LOW);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, LOW);
-  digitalWrite(segG, LOW);
-  digitalWrite(segPt, LOW);
-}
-
-void two()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, LOW);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, HIGH);
-  digitalWrite(segF, LOW);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void three()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, LOW);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void four()
-{
-  digitalWrite(segA, LOW);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, LOW);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, HIGH);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void five()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, LOW);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, HIGH);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void six()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, LOW);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, HIGH);
-  digitalWrite(segF, HIGH);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void seven()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, LOW);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, LOW);
-  digitalWrite(segG, LOW);
-  digitalWrite(segPt, LOW);
-}
-
-void eight()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, HIGH);
-  digitalWrite(segF, HIGH);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void nine()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, HIGH);
-  digitalWrite(segG, HIGH);
-  digitalWrite(segPt, LOW);
-}
-
-void zero()
-{
-  digitalWrite(segA, HIGH);
-  digitalWrite(segB, HIGH);
-  digitalWrite(segC, HIGH);
-  digitalWrite(segD, HIGH);
-  digitalWrite(segE, HIGH);
-  digitalWrite(segF, HIGH);
-  digitalWrite(segG, LOW);
-  digitalWrite(segPt, LOW);
-}
-
-void clear()
-{
-  digitalWrite(segA, LOW);
-  digitalWrite(segB, LOW);
-  digitalWrite(segC, LOW);
-  digitalWrite(segD, LOW);
-  digitalWrite(segE, LOW);
-  digitalWrite(segF, LOW);
-  digitalWrite(segG, LOW);
-  digitalWrite(segPt, LOW);
-}
-
-void point()
-{
-  digitalWrite(segPt, HIGH);
-}
-
-void selectDigit(int d)
-{
-  switch (d)
-  {
-    case 1:
-      digitalWrite(d1, LOW);
-      break;
-    case 2:
-      digitalWrite(d2, LOW);
-      break;
-    case 3:
-      digitalWrite(d3, LOW);
-      break;
-    default:
-      digitalWrite(d4, LOW);
-      break;
-  }
-}
-
-void deselectDigit(int d)
-{
-  switch (d)
-  {
-    case 1:
-      digitalWrite(d1, HIGH);
-      break;
-    case 2:
-      digitalWrite(d2, HIGH);
-      break;
-    case 3:
-      digitalWrite(d3, HIGH);
-      break;
-    default:
-      digitalWrite(d4, HIGH);
-      break;
-  }
-}
-
-void sendDigit(int x)
-{
-  switch(x)
-  {
-    case 1: one(); break;
-    case 2: two(); break;
-    case 3: three(); break;
-    case 4: four(); break;
-    case 5: five(); break;
-    case 6: six();  break;
-    case 7: seven(); break;
-    case 8: eight(); break;
-    case 9: nine(); break;
-    default: zero(); break;
-  }
-}
-
 int hundreds(float x)
 {
-  return (int) (x / 100.0);
+	return (int) (x / 100.0);
 }
 
 int tens(float x)
 {
-  int result = ((int) (x/10.0)) % 10;
-  Serial.print("tens: ");
-  Serial.println(result);
-  return result;
+	int result = ((int) (x/10.0)) % 10;
+	Serial.print("tens: ");
+	Serial.println(result);
+	return result;
 }
 
 int ones(float x)
 {
-  int result = ((int) x) % 10;
-  Serial.print("ones: ");
-  Serial.println(result);
-  return result;
+	int result = ((int) x) % 10;
+	Serial.print("ones: ");
+	Serial.println(result);
+	return result;
 }
 
 int tenths(float x)
 {
-  int result = ((int) (x * 10)) % 10;
-  Serial.print("tenths: ");
-  Serial.println(result);
-  return result;
+	int result = ((int) (x * 10)) % 10;
+	Serial.print("tenths: ");
+	Serial.println(result);
+	return result;
 }
 
 int hundredths(float x)
 {
-  int result = ((int) (x * 10)) % 10;
-  Serial.print("hundredths: ");
-  Serial.println(result);
-  return result;
+	int result = ((int) (x * 10)) % 10;
+	Serial.print("hundredths: ");
+	Serial.println(result);
+	return result;
 }
 
 int points(float x)
 {
-  float divided = x - (10.0 * tens(x)) - ones(x);
-  divided *= 10;
-  return (int)divided;
+	float divided = x - (10.0 * tens(x)) - ones(x);
+	divided *= 10;
+	return (int)divided;
 }
 
-void KYX5461AS_select_raw(int lohi1, int lohi2, int lohi3, int lohi4)
+byte current_data[4] = {0, 0, 0, 0};
+int position = 0;
+byte pins_seg[8] = { segA, segB, segC, segD, segE, segF, segG, segPt };
+byte pins_dig[4] = { d1, d2, d3, d4 };
+byte patterns[16] = {
+	0b00111111, 0b00000110, 0b01011011, 0b01001111, /* 0, 1, 2, 3 */
+	0b00110011, 0b01011011, 0b01011111, 0b01110000, /* 4, 5, 6, 7 */
+	0b01111111, 0b01111011, 0b00000000, 0b00000000, /* 8, 9, A, B */
+	0b00000000, 0b00000000, 0b00000000, 0b01111001  /* C, D, E, F */
+};
+
+void KYX5461AS_setup()
 {
-  digitalWrite(d1, lohi1 ? HIGH : LOW);
-  digitalWrite(d2, lohi2 ? HIGH : LOW);
-  digitalWrite(d3, lohi3 ? HIGH : LOW);
-  digitalWrite(d4, lohi4 ? HIGH : LOW);
+	/* set segment pins and digit select pins to output */
+	for (int i=0; i<8; i++)
+		pinMode(pins_seg[i], OUTPUT);
+
+	for (int i=0; i<4; i++)
+		pinMode(pins_dig[i], OUTPUT);
+
+	/* disable any digit selection */
+	for (int i=0; i<4; i++)
+		digitalWrite(pins_dig[i], HIGH);
+
+	/* set last digit to 0 */
+	position = 0;
 }
 
-void KYX5461AS_select_digit(int displayDigit)
+void KYX5461AS_debug()
 {
-  switch(displayDigit)
-  {
-    case 1: KYX5461AS_select_raw(0, 1, 1, 1); break;
-    case 2: KYX5461AS_select_raw(1, 0, 1, 1); break;
-    case 3: KYX5461AS_select_raw(1, 1, 0, 1); break;
-    case 4: KYX5461AS_select_raw(1, 1, 1, 0); break;
-  }
+	char buf[256];
+	sprintf(buf, "position=%d, digit enable pins = (%d, %d, %d, %d)",
+		position,
+		digitalRead(pins_dig[0]), digitalRead(pins_dig[1]),
+		digitalRead(pins_dig[2]), digitalRead(pins_dig[3]));
+	Serial.println(buf);
 }
 
-void KYX5461AS_deselect_digit(int displayDigit)
+int first = 1;
+void KYX5461AS_loop()
 {
-  switch(displayDigit)
-  {
-    case 1: digitalWrite(d1, HIGH); break;
-    case 2: digitalWrite(d2, HIGH); break;
-    case 3: digitalWrite(d3, HIGH); break;
-    case 4: digitalWrite(d4, HIGH); break;
-  }
+	/* disable current digit, move to next */
+	digitalWrite(pins_dig[position], HIGH);
+
+	position = (position + 1) % 4;
+
+	/* set the segments */
+	if(1) {
+		byte pattern = current_data[position];
+		for(int i=0; i<8; ++i)
+			digitalWrite(pins_seg[i], (pattern >> i) & 1 ? HIGH : LOW);
+		first = 0;
+	}
+
+	/* enable current position */
+	digitalWrite(pins_dig[position], LOW);
 }
 
-void KYX5461AS_print(int numToPrint, int displayDigit, bool point=false)
+// value in {0, 1, 2, ..., 15}
+// position in {0, 1, 2, 3} where 0 is leftmost digit, 3 is rightmost
+void KYX5461AS_set(byte value, byte position, bool point=false)
 {
-  int pinAstate, pinBstate, pinCstate, pinDstate, pinEstate, pinFstate, pinGstate;
-  switch(numToPrint) {
-    case 0:
-      pinAstate = HIGH;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = HIGH;   
-      pinEstate = HIGH;   
-      pinFstate = HIGH;   
-      pinGstate = LOW;
-      break;
-    case 1:
-      pinAstate = LOW;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = LOW;   
-      pinEstate = LOW;   
-      pinFstate = LOW;   
-      pinGstate = LOW;
-      break;
-    case 2:
-      pinAstate = HIGH;   
-      pinBstate = HIGH;   
-      pinCstate = LOW;   
-      pinDstate = HIGH;   
-      pinEstate = HIGH;   
-      pinFstate = LOW;   
-      pinGstate = HIGH;
-      break;
-    case 3:
-      pinAstate = HIGH;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = HIGH;   
-      pinEstate = LOW;   
-      pinFstate = LOW;   
-      pinGstate = HIGH;
-      break;
-    case 4:
-      pinAstate = LOW;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = LOW;   
-      pinEstate = LOW;   
-      pinFstate = HIGH;   
-      pinGstate = HIGH;
-      break;
-    case 5:
-      pinAstate = HIGH;   
-      pinBstate = LOW;   
-      pinCstate = HIGH;   
-      pinDstate = HIGH;   
-      pinEstate = LOW;   
-      pinFstate = HIGH;   
-      pinGstate = HIGH;
-      break;
-    case 6:
-      pinAstate = HIGH;   
-      pinBstate = LOW;   
-      pinCstate = HIGH;   
-      pinDstate = HIGH;   
-      pinEstate = HIGH;   
-      pinFstate = HIGH;   
-      pinGstate = HIGH;
-      break;
-    case 7:
-      pinAstate = HIGH;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = LOW;   
-      pinEstate = LOW;   
-      pinFstate = LOW;   
-      pinGstate = LOW;
-      break;
-    case 8:
-      pinAstate = HIGH;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = HIGH;   
-      pinEstate = HIGH;   
-      pinFstate = HIGH;   
-      pinGstate = HIGH;
-      break;
-    case 9:
-      pinAstate = HIGH;   
-      pinBstate = HIGH;   
-      pinCstate = HIGH;   
-      pinDstate = HIGH;   
-      pinEstate = LOW;   
-      pinFstate = HIGH;   
-      pinGstate = HIGH;
-      break;
-     case 0xF:
-      pinAstate = HIGH;   
-      pinBstate = LOW;   
-      pinCstate = LOW;   
-      pinDstate = LOW;   
-      pinEstate = HIGH;   
-      pinFstate = HIGH;   
-      pinGstate = HIGH;
-      break;
-  }
+	if (position >= 4)
+		return;
+	if (value >= 16)
+		return;
 
-  digitalWrite(segA, pinAstate);   
-  digitalWrite(segB, pinBstate);   
-  digitalWrite(segC, pinCstate);   
-  digitalWrite(segD, pinDstate);   
-  digitalWrite(segE, pinEstate);   
-  digitalWrite(segF, pinFstate);   
-  digitalWrite(segG, pinGstate);
-  digitalWrite(segPt, point ? HIGH : LOW);
+	current_data[position] = patterns[value];
 
-  KYX5461AS_select_digit(displayDigit);
-  delay(4);
-  KYX5461AS_deselect_digit(displayDigit);  
+	if (point)
+		current_data[position] |= 0b10000000;
 }
 
-// the setup function runs once when you press reset or power the board
 void setup() {
-  // initialize digital pin LED_BUILTIN as an output.
-  Serial.begin(9600);
-  //pinMode(0, INPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
-  //pinMode(14, INPUT)
-  dht.begin();
+	// initialize digital pin LED_BUILTIN as an output.
+	Serial.begin(9600);
+	pinMode(LED_BUILTIN, OUTPUT);
 
-  // seven segment setup
-  pinMode(segA, OUTPUT);
-  pinMode(segB, OUTPUT);
-  pinMode(segC, OUTPUT);
-  pinMode(segD, OUTPUT);
-  pinMode(segE, OUTPUT);
-  pinMode(segF, OUTPUT);
-  pinMode(segG, OUTPUT);
-  pinMode(segPt, OUTPUT);
-  pinMode(d1, OUTPUT);
-  pinMode(d2, OUTPUT);
-  pinMode(d3, OUTPUT);
-  pinMode(d4, OUTPUT);
+	//dht.begin();
+
+	KYX5461AS_setup();
 }
 
 float last_temp = 0;
 
-int digit1 = 0;
-int digit2 = 0;
-int digit3 = 0;
-int digit4 = 0;
-  
-// the loop function runs over and over again forever
 void loop() {
-  float f = dht.readTemperature(true);
+	//float f = dht.readTemperature(true);
 
- 
-  if(last_temp != f) { 
-    digit1 = tens(f);
-    digit2 = ones(f);
-    digit3 = tenths(f);
-    last_temp = f;
-  }
-  
-  KYX5461AS_print(digit1, 1);
-  KYX5461AS_print(digit2, 2, true);
-  KYX5461AS_print(digit3, 3);
-  KYX5461AS_print(0xF, 4);
+		KYX5461AS_set(0, 0);
+		KYX5461AS_set(1, 1);
+		KYX5461AS_set(2, 2);
+		KYX5461AS_set(3, 3);
 
-  if(f > 78) {
-    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-  }
-  else {
-    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-  }
-  
-  Serial.print("temperature is ");
-  Serial.println(f);
+	//if(last_temp != f) {
+	if (0)
+	{
+		//last_temp = f;
+
+		KYX5461AS_set(0, 0);
+		KYX5461AS_set(1, 1);
+		KYX5461AS_set(2, 2);
+		KYX5461AS_set(3, 3);
+
+/*
+		KYX5461AS_set(tens(f), 3);
+		KYX5461AS_set(ones(f), 2, true);
+		KYX5461AS_set(tenths(f), 1);
+		KYX5461AS_set(0xF, 0);
+*/
+		//Serial.print("temperature updated to: ");
+		//Serial.println(f);
+	}
+
+/*
+	if(f > 74)
+		digitalWrite(LED_BUILTIN, HIGH);
+	else
+		digitalWrite(LED_BUILTIN, LOW);
+*/
+	KYX5461AS_loop();
 }

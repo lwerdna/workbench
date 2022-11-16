@@ -1,4 +1,4 @@
-OFFICIAL RELEASE: https://binary.ninja/2018/06/19/fast-track-to-assembler-writing.html
+OFFICIAL RELEASE: <https://binary.ninja/2018/06/19/fast-track-to-assembler-writing.html>
 
 This post describes how we wrote assemblers in an atypical manner: using genetic algorithms. Instead of containing logic as to how every opcode and operand is encoded, we guess. To score each guess, and guide the next guess toward the correct encoding, we invoke a disassembler and analyze its output string. The result is a surprisingly fast process that can assemble any string output by the disassembler. In effect, we construct an assembler by inverting a disassembler. It worked for PPC, then for MIPS, and it nears completion for ARM. I believe it's presentable as a general approach, at least for fixed-width instruction encodings.
 

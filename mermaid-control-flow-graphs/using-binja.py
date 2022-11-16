@@ -41,8 +41,14 @@ if __name__ == '__main__':
         sym_name = sys.argv[2]
     sym_name = sym_name.lower()
 
+    print(f'opening: {fpath}')
     with binaryninja.open_view(fpath) as bview:
-        functions = [f for f in bview.functions if f.name.lower() == sym_name]
+        print(f'looking up symbol: {sym_name}')
+        functions = [f for f in bview.functions if f.name.lower() == sym_name.lower()]
+        if not functions:
+            raise Exception(f'symbol {sym_name} not in function list')
+        if len(functions) > 1:
+            print(f'symbol {sym_name} is ambiguous (appearing multiple times in function list), taking first...')
         function = functions[0]
 
         print('```mermaid')

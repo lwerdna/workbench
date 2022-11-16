@@ -19,7 +19,7 @@ class MyEventHandler(watchdog.events.FileSystemEventHandler):
     def on_any_event(self, event):
         #global main_window
         print('on_any_event()')
-        #main_window.reload_image()
+        main_window.reload_image()
 
 class MainWindow(QWidget):
     def __init__(self):

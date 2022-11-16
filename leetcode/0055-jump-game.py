@@ -4,7 +4,7 @@ import os, sys
 
 from pprint import pprint
 
-# strategy: track how much "fuel" is LEFT is travelling left-to-right
+# strategy: track how much "fuel" is remaining while travelling left-to-right
 # eg: initial fuel is [2,3,1,1,4]
 #     at location 0: 2 fuel left
 #     at location 1: 3 fuel left (maximum of 2 from left side or the three present)
@@ -43,6 +43,8 @@ class Solution0:
 # - abandon calculation early if 0 fuel ever encountered
 # - keep only the most recent "fuel remaining" value
 # - know at least one value will be sent
+
+# Runtime: 388 ms, faster than 93.55% of Python online submissions for Jump Game.
 
 class Solution1:
     def canJump(self, nums):

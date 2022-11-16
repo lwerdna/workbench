@@ -9,4 +9,6 @@ method2: py -ctypes-> cs_disasm_iter()
 
 method3: py disasm_lite()
           100,000 instrs/sec
-         
+
+make
+./run.sh

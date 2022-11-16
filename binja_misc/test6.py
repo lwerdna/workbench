@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-# do multiple binaries opened reference the same architecture instance?
+# Q: do multiple binaries opened reference the same architecture instance?
+# A: yes
+
+# binary views: 4331636720 4331636672 4331636432
+# architectures: 4331636192 4331636192 4331636192 <--- same
 
 import binaryninja
 

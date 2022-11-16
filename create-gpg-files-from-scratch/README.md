@@ -1,4 +1,4 @@
-Demonstrate creating PGP files from first principles.
+Demonstrate creating GnuPG files from first principles.
 
 * [version0.py](./version0.py) - old, minimal implementation in python2 using three packets
 * [version1.py](./version1.py) - updated to python3

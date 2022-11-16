@@ -7,7 +7,6 @@ digraph chess_openings {
 	indian_defense3 [label=""];
 	indian_defense4 [label=""];
 	indian_defense5 [label=""];
-	open_game_2 [label=""];
 	old_benoni2 [label=""];
 	two_knights_defense2 [label=""];
 	two_knights_defense3 [label=""];
@@ -47,6 +46,7 @@ digraph chess_openings {
 	caro_kann3 -> caro_kann_fantasy [label="f3"];
 
 	sicilian -> open_sicilian [label="Nf3"];
+	sicilian -> bowdler_attack [label="Bc4"];
 	sicilian -> closed_sicilian [label="Nc3"];
 	sicilian -> smith_morra_gambit [label="d4"];
 
