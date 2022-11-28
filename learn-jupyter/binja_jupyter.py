@@ -173,7 +173,7 @@ def nx2dot(G):
         label = G.get_edge_data(n0, n1).get('label', '')
         dot.append(f'{n0} -> {n1} [label="{label}"];')
     dot.append('}')
-    breakpoint()
+    #breakpoint()
     return '\n'.join(dot)
 
 def dot_to_svg_obj(dot):
@@ -215,7 +215,7 @@ def bn2nx(func):
             G.add_node(bbid(dst))
             #G.add_edge(bbid(src), bbid(dst), label=f'{bbid(src)} -> {bbid(dst)}')
             G.add_edge(bbid(src), bbid(dst))
-            breakpoint()
+            #breakpoint()
 
     return G
 
