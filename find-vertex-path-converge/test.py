@@ -58,6 +58,19 @@ def compute_converge_points(G):
     dtree = dominator_tree(rgraph)
     return {b:a for (a,b) in dtree.edges}
 
+def compute_dominators(G):
+    T = dominator_tree(G)
+
+    result = {}
+    for dominator in T.nodes:
+        for dominatee in nx.descendants(T, dominator):
+            result[dominatee] = result.get(dominatee, []) + [dominator]
+
+    return result
+
+def compute_postdominators(G):
+    return compute_dominators(reversed_graph(G))
+
 def gen_logic(G):
     # STEP1: tag edges with reaching condition transmitted
     # before: foo -----> bar
@@ -102,19 +115,49 @@ if __name__ == '__main__':
     # generate reaching conditions
     gen_logic(G)
     for n in G:
-        G.nodes[n]['label'] = G.nodes[n]['reaching_condition']
+        G.nodes[n]['label'] = f'{n}:\\l' + str(G.nodes[n]['reaching_condition'])
     draw(G, fpath.replace('.graph', '-logic.svg'))
 
-    # reduce reaching conditions by setting variables to "omnitrue" at convergence points
-    lookup = {}
-    cpoints = compute_converge_points(G)
-    for (a,b) in cpoints.items():
-        if len(G[a]) < 2:
-            continue
-        #print(f'paths from {a} converge at {b}')
-        varname = G.nodes[a]['varname']
-        #print(f'setting {a}\'s variable {varname} to omnitrue at {b}')
-        lookup[b] = lookup.get(b, []) + [varname]
+    # OPTION 1/3: simplify at join/converge point
+    if 0:
+        lookup = {}
+        cpoints = compute_converge_points(G)
+        for (a,b) in cpoints.items():
+            if len(G[a]) < 2:
+                continue
+            #print(f'paths from {a} converge at {b}')
+            varname = G.nodes[a]['varname']
+            #print(f'setting {a}\'s variable {varname} to omnitrue at {b}')
+            lookup[b] = lookup.get(b, []) + [varname]
+
+    # OPTION 2/3: simplify at all postdominators
+    if 0:
+        for (a, postdoms) in compute_postdominators(G).items():
+            varname = G.nodes[a].get('varname')
+            if not varname:
+                continue
+
+            for b in postdoms:
+                print(f'setting {a}\'s variable {varname} to omnitrue at {b}')
+                lookup[b] = lookup.get(b, []) + [varname]
+
+    # OPTION 3/3: simplify at converge point and all descendants
+    if 1:
+        lookup = {}
+        cpoints = compute_converge_points(G)
+        for (a, cpoint) in cpoints.items():
+            varname = G.nodes[a].get('varname')
+            if not varname:
+                continue
+
+            #print(f'{a} converges at {cpoint}')
+            queue = {cpoint}.union(nx.descendants(G, cpoint))
+            #print(f'which expands to {queue}')
+
+            for b in queue:
+                print(f'setting {a}\'s variable {varname} to omnitrue at {b}')
+                lookup[b] = lookup.get(b, []) + [varname]
+
 
     #
     for (node, vnames) in lookup.items():

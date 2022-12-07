@@ -43,7 +43,11 @@ Then the node `dst` where all paths from `src` converge can completely disregard
 
 ![](./generated0-logic.svg)
 
-And after reduction we get:
+After reduction just at the converge points we get:
+
+![](./generated0-reduced-converge.svg)
+
+After reduction at the converge points AND DESCENDANTS we get:
 
 ![](./generated0-reduced.svg)
 
@@ -51,7 +55,11 @@ And after reduction we get:
 
 ![](./generated1-logic.svg)
 
-And after reduction we get:
+After reduction just at the converge points we get:
+
+![](./generated1-reduced-converge.svg)
+
+After reduction at the converge points AND DESCENDANTS we get:
 
 ![](./generated1-reduced.svg)
 
