@@ -543,8 +543,8 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <tchar.h>
-#define HAVE_MMAP 1
-#define HAVE_MORECORE 0
+#define HAVE_MMAP 0
+#define HAVE_MORECORE 1
 #define LACKS_UNISTD_H
 #define LACKS_SYS_PARAM_H
 #define LACKS_SYS_MMAN_H
@@ -569,7 +569,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 /* Mac OSX docs advise not to use sbrk; it seems better to use mmap */
 #ifndef HAVE_MORECORE
 #define HAVE_MORECORE 0
-#define HAVE_MMAP 1
+#define HAVE_MMAP 0
 /* OSX allocators provide 16 byte alignment */
 #ifndef MALLOC_ALIGNMENT
 #define MALLOC_ALIGNMENT ((size_t)16U)
@@ -637,7 +637,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define MALLOC_INSPECT_ALL 0
 #endif  /* MALLOC_INSPECT_ALL */
 #ifndef HAVE_MMAP
-#define HAVE_MMAP 1
+#define HAVE_MMAP 0
 #endif  /* HAVE_MMAP */
 #ifndef MMAP_CLEARS
 #define MMAP_CLEARS 1
@@ -663,7 +663,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #if !HAVE_MORECORE
 #define MORECORE_CONTIGUOUS 0
 #else   /* !HAVE_MORECORE */
-#define MORECORE_DEFAULT sbrk
+#define MORECORE_DEFAULT custom_sbrk
 #ifndef MORECORE_CONTIGUOUS
 #define MORECORE_CONTIGUOUS 1
 #endif  /* MORECORE_CONTIGUOUS */
@@ -1424,3 +1424,5 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
   on the next line, as well as in programs that use this malloc.
   ========================================================================
 */
+
+void *custom_sbrk(intptr_t increment);

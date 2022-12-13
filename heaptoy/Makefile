@@ -1,9 +1,9 @@
-FLAGS = -g -O0 -DUSE_DL_PREFIX
+FLAGS = -g -O0 -DUSE_DL_PREFIX -DMORECORE_CANNOT_TRIM
 
-all: toy
+all: test
 
-toy: main.c malloc.c malloc.h
-	gcc $(FLAGS) main.c malloc.c -o toy
+test: test.c malloc.c malloc.h
+	gcc $(FLAGS) test.c malloc.c -o test
 
 clean:
-	rm -rf toy
+	rm -rf test
