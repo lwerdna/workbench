@@ -2602,6 +2602,8 @@ static void add_segment(mstate m, char* tbase, size_t tsize, flag_t mmapped) {
 /* -------------------------- System allocation -------------------------- */
 
 /* Get memory from system using MORECORE or MMAP */
+
+/* nb: number of bytes? */
 static void* sys_alloc(mstate m, size_t nb) {
   char* tbase = CMFAIL;
   size_t tsize = 0;
