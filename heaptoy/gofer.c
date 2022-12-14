@@ -1,7 +1,8 @@
 // gofer (n) - a person who runs errands, especially on a movie set or in an office
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* for malloc() (the real one) */
+#include <string.h> /* for memcpy() */
 
 #define CORE_MEM_SZ 1*1024*1024 // 1MB
 
@@ -62,6 +63,7 @@ void *custom_sbrk(intptr_t increment)
 void *gofer_initialize(void)
 {
 	core_mem_base = malloc(CORE_MEM_SZ);
+	memset(core_mem_base, 0, CORE_MEM_SZ);
 	core_mem_break = core_mem_base;
 	core_mem_limit = core_mem_base + CORE_MEM_SZ;
 	printf("gofer_initialize(): allocated core mem: [%p,%p)\n", core_mem_base, core_mem_limit);
@@ -83,4 +85,14 @@ void gofer_free(void *p)
 	dlfree(p);
 }
 
+void *gofer_memset(void *buf, unsigned char c, size_t n)
+{
+	printf("gofer_memset(%p, 0x%X, 0x%X)\n", buf, c, n);
+	return memset(buf, c, n);
+}
 
+void gofer_get_core(unsigned char *p)
+{
+	printf("gofer_get_core() returning 0x%X bytes\n", CORE_MEM_SZ);
+	memcpy(p, core_mem_base, CORE_MEM_SZ);
+}
