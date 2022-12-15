@@ -70,6 +70,12 @@ void *gofer_initialize(void)
 	return core_mem_base;
 }
 
+void gofer_uninitialize(void)
+{
+	free(core_mem_base);
+	printf("gofer_uninitialize()\n");
+}
+
 //extern "C" void *gofer_malloc(size_t size)
 void *gofer_malloc(size_t size)
 {

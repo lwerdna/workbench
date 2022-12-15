@@ -3112,6 +3112,8 @@ static void* tmalloc_small(mstate m, size_t nb) {
 #if !ONLY_MSPACES
 
 void* dlmalloc(size_t bytes) {
+
+	printf("sizeof(struct malloc_state): %d\n", sizeof(struct malloc_state));
   /*
      Basic algorithm:
      If a small request (< 256 bytes minus per-chunk overhead):
