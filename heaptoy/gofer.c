@@ -4,23 +4,24 @@
 #include <stdlib.h> /* for malloc() (the real one) */
 #include <string.h> /* for memcpy() */
 
-#define CORE_MEM_SZ 1*1024*1024 // 1MB
 
 #include "malloc.h"
+#define MFAIL ((void*)(MAX_SIZE_T)) /* ideally in malloc.h, but actually not */
 
-static int G_VERBOSE = 0;
+//static int G_VERBOSE = 0;
+static int G_VERBOSE = 1;
 
 //-----------------------------------------------------------------------------
 // custom core memory
 //-----------------------------------------------------------------------------
 unsigned char *core_mem_base = NULL;
 unsigned char *core_mem_break = NULL;
-unsigned char *core_mem_limit = NULL;
+static unsigned int core_mem_sz = 0;
 
 void *custom_sbrk(intptr_t increment)
 {
 	unsigned int core_mem_used = core_mem_break - core_mem_base;
-	unsigned int core_mem_avail = core_mem_limit - core_mem_break;
+	unsigned int core_mem_avail = core_mem_sz - core_mem_used;
 
 	if(G_VERBOSE) {
 		printf("custom_sbrk(increment=0x%X) used=0x%X avail=0x%X\n",
@@ -34,8 +35,9 @@ void *custom_sbrk(intptr_t increment)
 	if(increment < 0)
 	{
 		if(G_VERBOSE) {
-			printf("  negative value (did you set DMORECORE_CANNOT_TRIM?), returning -1\n", core_mem_break);
-			return -1;
+			printf("  negative value (did you set DMORECORE_CANNOT_TRIM?), returning %d\n",
+				core_mem_break, MFAIL);
+			return MFAIL;
 		}
 	}
 
@@ -52,12 +54,12 @@ void *custom_sbrk(intptr_t increment)
 
 	unsigned char *previous_break = core_mem_break;
 
-	if(core_mem_break + increment >= core_mem_limit)
+	if(increment > core_mem_avail)
 	{
 		if(G_VERBOSE) {
 			printf("  too large, returning -1\n");
 		}
-		return -1;
+		return MFAIL;
 	}
 
 	core_mem_break += increment;
@@ -72,14 +74,15 @@ void *custom_sbrk(intptr_t increment)
 // API (meant to be called by python via ctypes)
 //-----------------------------------------------------------------------------
 //extern "C" void gofer_initialize()
-void *gofer_initialize(void)
+void *gofer_initialize(size_t size)
 {
-	core_mem_base = malloc(CORE_MEM_SZ);
-	memset(core_mem_base, 0, CORE_MEM_SZ);
+	core_mem_sz = size;
+	core_mem_base = malloc(core_mem_sz);
+	memset(core_mem_base, 0, core_mem_sz);
 	core_mem_break = core_mem_base;
-	core_mem_limit = core_mem_base + CORE_MEM_SZ;
 	if(G_VERBOSE) {
-		printf("gofer_initialize(): allocated core mem: [%p,%p)\n", core_mem_base, core_mem_limit);
+		printf("gofer_initialize(): allocated 0x%X bytes core mem: [%p,%p)\n",
+			core_mem_sz, core_mem_base, core_mem_base + core_mem_sz);
 	}
 	return core_mem_base;
 }
@@ -88,7 +91,7 @@ void gofer_uninitialize(void)
 {
 	free(core_mem_base);
 	if(G_VERBOSE) {
-		printf("gofer_uninitialize()\n");
+		printf("gofer_uninitialize(%p)\n", core_mem_base);
 	}
 }
 
@@ -122,9 +125,9 @@ void *gofer_memset(void *buf, unsigned char c, size_t n)
 void gofer_get_core(unsigned char *p)
 {
 	if(G_VERBOSE) {
-		printf("gofer_get_core() returning 0x%X bytes\n", CORE_MEM_SZ);
+		printf("gofer_get_core() returning 0x%X bytes\n", core_mem_sz);
 	}
-	memcpy(p, core_mem_base, CORE_MEM_SZ);
+	memcpy(p, core_mem_base, core_mem_sz);
 }
 
 void *gofer_get_core_base(void)
