@@ -9,7 +9,7 @@
 #define MFAIL ((void*)(MAX_SIZE_T)) /* ideally in malloc.h, but actually not */
 
 //static int G_VERBOSE = 0;
-static int G_VERBOSE = 1;
+static int G_VERBOSE = 0;
 
 //-----------------------------------------------------------------------------
 // custom core memory
@@ -81,18 +81,29 @@ void *gofer_initialize(size_t size)
 	memset(core_mem_base, 0, core_mem_sz);
 	core_mem_break = core_mem_base;
 	if(G_VERBOSE) {
-		printf("gofer_initialize(): allocated 0x%X bytes core mem: [%p,%p)\n",
-			core_mem_sz, core_mem_base, core_mem_base + core_mem_sz);
+	//if(1) {
+		printf("gofer_initialize(0x%X)\n", size);
+		printf("   core_mem_base: 0x%X\n", core_mem_base);
+		printf("  core_mem_break: 0x%X\n", core_mem_break);
+		printf("     core_mem_sz: 0x%X\n", core_mem_sz);
 	}
 	return core_mem_base;
 }
 
 void gofer_uninitialize(void)
 {
-	free(core_mem_base);
 	if(G_VERBOSE) {
+	//if(1) {
 		printf("gofer_uninitialize(%p)\n", core_mem_base);
 	}
+
+	free(core_mem_base);
+
+	core_mem_base = NULL;
+	core_mem_break = NULL;
+	core_mem_sz = 0;
+
+	dl_hard_reset();
 }
 
 //extern "C" void *gofer_malloc(size_t size)
@@ -136,4 +147,14 @@ void *gofer_get_core_base(void)
 		printf("gofer_get_core_base() returning %p\n", core_mem_base);
 	}
 	return core_mem_base;
+}
+
+void gofer_set_verbose(void)
+{
+	G_VERBOSE = 1;
+}
+
+void gofer_clear_verbose(void)
+{
+	G_VERBOSE = 0;
 }

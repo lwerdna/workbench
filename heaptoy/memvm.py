@@ -43,19 +43,19 @@ class MemVM(object):
 
     def __del__(self):
         # free memory on the native side
-        print(self)
-        print('__del__()')
         self.dll.gofer_uninitialize()
 
-    def malloc(self, amount):
+    def malloc(self, amount, verbose=False):
         addr = self.dll.gofer_malloc(amount)
 
         if addr == None:
-            print(f'gofer_malloc() returned: 0 (it failed)')
+            if verbose:
+                print(f'gofer_malloc() returned: 0 (it failed)')
             # (ctypes returns NONE for null pointer, let's stick with convention of zero)
             addr = 0
         else:
-            print(f'gofer_malloc() returned: 0x{addr:X}')
+            if verbose:
+                print(f'gofer_malloc() returned: 0x{addr:X}')
 
             # mark allocated bytes with 0x80
             self.dll.gofer_memset(addr, 0x80, amount);
@@ -82,7 +82,7 @@ class MemVM(object):
         addr = random.choice(list(self.active_buffers.keys()))
         self.free(addr)
 
-    def snap(self, fpath, width=None, height=None):
+    def snap(self, fpath, width=None, height=None, verbose=False):
         palette = [
             0x00007F, 0x000084, 0x000088, 0x00008D, 0x000091, 0x000096, 0x00009A,
             0x00009F, 0x0000A3, 0x0000A8, 0x0000AC, 0x0000B1, 0x0000B6, 0x0000BA,
@@ -128,12 +128,20 @@ class MemVM(object):
         img = Image.new('RGB', (1024, 1024))
         img_data = [rgb_hex_to_tuple(palette[x]) for x in p.raw]
         img.putdata(img_data)
-        print(f'writing {fpath}')
+        if verbose:
+            print(f'writing {fpath}')
         img.save(fpath)
         if width and height:
             cmd = f'convert -quality 100 -resize {width}x{height} "{fpath}" "{fpath}"'
-            print(cmd)
+            if verbose:
+                print(cmd)
             os.system(cmd)
+
+    def set_backend_verbose(self):
+        self.dll.gofer_set_verbose()
+
+    def clear_backend_verbose(self):
+        self.dll.gofer_clear_verbose()
 
     def __str__(self):
         lines = []
@@ -143,38 +151,44 @@ class MemVM(object):
         return '\n'.join(lines)
 
 if __name__ == '__main__':
-    # can we survive failed allocations?
     ONE_MB = 1*1024*1024
+
+    print('SURVIVE FAILED ALLOCATIONS')
     mvm = MemVM(ONE_MB)
+    mvm.clear_backend_verbose()
 
     addr = mvm.malloc(ONE_MB//2)
-    print(f'-- result0: 0x{addr:X}')
+    print(f'-- result0: 0x{addr:X} (expect non-NULL)')
     assert addr
 
     addr = mvm.malloc(ONE_MB//2)
-    print(f'-- result1: 0x{addr:X}')
+    print(f'-- result1: 0x{addr:X} (expect NULL)')
     assert addr == 0
 
     addr = mvm.malloc(ONE_MB//2)
-    print(f'-- result2: 0x{addr:X}')
+    print(f'-- result2: 0x{addr:X} (expect NULL)')
     assert addr == 0
 
     addr = mvm.malloc(ONE_MB//2)
-    print(f'-- result3: 0x{addr:X}')
+    print(f'-- result3: 0x{addr:X} (expect NULL)')
     assert addr == 0
 
     addr = mvm.malloc(ONE_MB//8)
-    print(f'-- result4: 0x{addr:X}')
-    assert addr == 0
+    print(f'-- result4: 0x{addr:X} (expect non-NULL)')
+    assert addr
 
-    sys.exit(0)
-
-    for i in range(20):
+    print('SURVIVE MANY ALLOCS IN MANY MEMVMS')
+    for i in range(2000):
         mvm = MemVM()
-        
+        mvm.clear_backend_verbose()
+
         for k in range(20):
-            mvm.malloc(random.randint(1, 0xF0000))
+            sizes = [0x1000, 0x4000, 0x8000, 0xC000,
+                    0x10000, 0x40000, 0x80000, 0xC0000,
+                    0x100000, 0x400000, 0x800000, 0xC00000,
+                    0x1000000]
+            mvm.malloc(random.choice(sizes))
 
         del mvm
 
-        print('NEXT!')
+    print('PASS!')

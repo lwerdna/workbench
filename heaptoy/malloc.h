@@ -1426,3 +1426,5 @@ DLMALLOC_EXPORT int mspace_mallopt(int, int);
 */
 
 void *custom_sbrk(intptr_t increment);
+
+void dl_hard_reset(void);

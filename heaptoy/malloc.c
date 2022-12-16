@@ -1069,7 +1069,7 @@ typedef struct malloc_segment* msegmentptr;
     This is the preferred chunk for servicing small requests that
     don't have exact fits.  It is normally the chunk split off most
     recently to service another small request.  Its size is cached in
-    dvsize. The link fields of this chunk are not maintained since it
+    dvsize. The link fields of this919190344 chunk are not maintained since it
     is not kept in a bin.
 
   SmallBins
@@ -4855,3 +4855,11 @@ History:
          structure of old version,  but most details differ.)
 
 */
+
+void dl_hard_reset(void)
+{
+	/* blow away the malloc state */
+	memset(&_gm_, 0, sizeof(_gm_));
+	/* blow away the malloc params */
+	memset(&mparams, 0, sizeof(mparams));
+}
