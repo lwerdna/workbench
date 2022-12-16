@@ -44,14 +44,20 @@ class MemVM(object):
         # void *gofer_memset(void *buf, unsigned char c, size_t n)
         dll.gofer_memset.restype = c_void_p
         dll.gofer_memset.argtypes = [c_void_p, c_char, c_size_t]
+        # void *gofer_get_core_base(void)
+        dll.gofer_get_core_base.restype = c_void_p
+        dll.gofer_get_core_base.argtypes = None
 
         # alloc memory on the native side
         result = dll.gofer_initialize()
+        self.core_mem_base = dll.gofer_get_core_base()
         # store history
         self.active_buffers = {}
 
     def __del__(self):
         # free memory on the native side
+        print(self)
+        print('__del__()')
         self.dll.gofer_uninitialize()
 
     def malloc(self, amount):
@@ -133,15 +139,21 @@ class MemVM(object):
         img.putdata(img_data)
         print(f'writing {fpath}')
         img.save(fpath)
+        if width and height:
+            cmd = f'convert -quality 100 -resize {width}x{height} "{fpath}" "{fpath}"'
+            print(cmd)
+            os.system(cmd)
 
     def __str__(self):
         lines = []
+        lines.append(f'-------- MemVM id:{id(self)} base:0x{self.core_mem_base:X} --------')
         for addr,size in self.active_buffers.items():
             lines.append(f'buffer 0x{addr:X} has 0x{size:X} bytes')
         return '\n'.join(lines)
 
 if __name__ == '__main__':
     mvm = MemVM()
+    print(mvm)
 
     while 1:
         inp = input('SHELL> ')
@@ -249,7 +261,8 @@ if __name__ == '__main__':
             for n in nodes:
                 print(f'ADD_NODE({n})')
 
-                dll.gofer_initialize()
+                breakpoint()
+                mvm = MemVM()
 
                 if n == 'root':
                     print(f'ADD_NODE({n})')
@@ -257,7 +270,7 @@ if __name__ == '__main__':
                     print(f'NEXT_FRAME()')
 
                     print(f'SET_NODE_PROPERTY({n}, "image", "/tmp/image_root.png")')
-                    snap(dll, '/tmp/image_root.png')
+                    mvm.snap('/tmp/image_root.png', 128, 128)
                     print(f'NEXT_FRAME()')
 
                     continue
@@ -279,17 +292,25 @@ if __name__ == '__main__':
                 actions = [G.edges[a,b]['action'] for a,b in zip(path, path[1:])]
                 print(f'performing actions: {actions}')
                 for action in actions:
+                    print('A')
+                    print(mvm)
                     print(f'performing action: {action}')
                     if m := re.match(r'^A(.*)$', action):
                         amount = int(m.group(1), 16)
-                        malloc(dll, amount)
+                        mvm.malloc(amount)
                     elif m := re.match(r'^F(.*)$', action):
                         pass
+                    else:
+                        print(f'WTF: {action}')
+                    print('B')
+                    print(mvm)
 
                 fpath = f'/tmp/image_{n}.png'
-                snap(dll, fpath)
+                mvm.snap(fpath, 128, 128)
                 print(f'SET_NODE_PROPERTY({n}, "image", "{fpath}")')
                 print(f'NEXT_FRAME()')
+
+                breakpoint()
 
                 #print(actions)
                 #print(f'{edge[0]}->{edge[1]} uses actions {actions}')
