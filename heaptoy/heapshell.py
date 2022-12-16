@@ -6,15 +6,13 @@ import re
 import random
 import readline
 
-from PIL import Image
 
 from ctypes import *
 
 # must match CORE_MEM_SZ in gofer
 CORE_MEM_SZ = 1024*1024
 
-def rgb_hex_to_tuple(h):
-    return (h>>16, (h>>8)&0xFF, h&0xFF)
+
 
 def edge_label_action(G, a, b):
     action = G.edges[a,b]['action']

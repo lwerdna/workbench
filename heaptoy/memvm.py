@@ -4,6 +4,8 @@ import os
 import sys
 import random
 
+from PIL import Image
+
 from ctypes import *
 
 class MemVM(object):
@@ -123,6 +125,9 @@ class MemVM(object):
             0x8D0000, 0x880000, 0x840000, 0x7F0000
         ]
 
+        def rgb_hex_to_tuple(h):
+            return (h>>16, (h>>8)&0xFF, h&0xFF)
+
         p = create_string_buffer(1024*1024)
         self.dll.gofer_get_core(byref(p))
         img = Image.new('RGB', (1024, 1024))
@@ -177,17 +182,30 @@ if __name__ == '__main__':
     print(f'-- result4: 0x{addr:X} (expect non-NULL)')
     assert addr
 
-    print('SURVIVE MANY ALLOCS IN MANY MEMVMS')
+    print('SURVIVE MANY ALLOCS+FREES IN MANY MEMVMS')
     for i in range(2000):
         mvm = MemVM()
         mvm.clear_backend_verbose()
 
-        for k in range(20):
+        for k in range(200):
             sizes = [0x1000, 0x4000, 0x8000, 0xC000,
                     0x10000, 0x40000, 0x80000, 0xC0000,
-                    0x100000, 0x400000, 0x800000, 0xC00000,
-                    0x1000000]
-            mvm.malloc(random.choice(sizes))
+                    ]
+                    #0x100000, 0x400000, 0x800000, 0xC00000,
+                    #0x1000000]
+
+            if random.randint(0,1):
+                size = random.choice(sizes)
+                addr = mvm.malloc(random.choice(sizes))
+                #print(f'allocated 0x{size:X} bytes to 0x{addr:X}')
+            else:
+                if mvm.active_buffers:
+                    addr = random.choice(list(mvm.active_buffers.keys()))
+                    mvm.free(addr)
+                    #print(f'freeing addess 0x{addr:X}')
+
+        #print(mvm)
+        #mvm.snap(f'/tmp/mvm{i:08d}.png')
 
         del mvm
 
