@@ -6,6 +6,7 @@ import re
 import random
 import readline
 
+from memvm import MemVM
 
 from ctypes import *
 
@@ -157,11 +158,9 @@ if __name__ == '__main__':
                 assert len(paths) == 1
                 path = paths[0]
                 actions = [G.edges[a,b]['action'] for a,b in zip(path, path[1:])]
-                print(f'performing actions: {actions}')
+                print(f'// performing actions: {actions}')
                 for action in actions:
-                    print('A')
-                    print(mvm)
-                    print(f'performing action: {action}')
+                    print(f'// performing action: {action}')
                     if m := re.match(r'^A(.*)$', action):
                         amount = int(m.group(1), 16)
                         mvm.malloc(amount)
@@ -169,8 +168,6 @@ if __name__ == '__main__':
                         pass
                     else:
                         print(f'WTF: {action}')
-                    print('B')
-                    print(mvm)
 
                 fpath = f'/tmp/image_{n}.png'
                 mvm.snap(fpath, 128, 128)
@@ -179,6 +176,8 @@ if __name__ == '__main__':
 
                 #print(actions)
                 #print(f'{edge[0]}->{edge[1]} uses actions {actions}')
+
+                del mvm
 
             #print(traverse_pre(G, 'root'))
 
