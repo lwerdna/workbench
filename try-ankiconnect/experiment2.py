@@ -33,58 +33,66 @@ class MarkdownWithAnkiFences(object):
         self.elements = []
         self.parse()
 
-    # convert the contents of an anki-fenced code block to a dictionary, eg:
+    # convert the contents (lines) of an anki-fenced code block to a dictionary, eg:
+    #
+    # ```anki
+    # FRONT: What's the first animal?
+    # BACK: Aardvark
+    # NID: 12345678
+    # ```
+    #
+    # is parsed into a list of lines:
     #
     # [
     #   "FRONT: What's the first animal?",
     #   "BACK: Aardvark",
-    #   "CID: 12345678"
+    #   "NID: 12345678"
     # ]
     #
-    # to:
+    # then to:
     #
-    # {'front':'What\'s the first animal?', 'back':'Aaardvark', 'cid':12345678}
+    # {'front':'What\'s the first animal?', 'back':'Aaardvark', 'nid':12345678}
     def parse_anki_fence(self, lines):
-        front_i, back_i, card_id_i = None, None, None
+        front_i, back_i, note_id_i = None, None, None
         for (i, line) in enumerate(lines):
             if line.startswith('FRONT: '):
                 front_i = i
             elif line.startswith('BACK: '):
                 back_i = i
-            elif line.startswith('CID: '):
-                card_id_i = i
+            elif line.startswith('NID: '):
+                note_id_i = i
 
         if front_i == None:
             raise Exception('parsing card: couldn\'t find FRONT:')
         if back_i == None:
             raise Exception('parsing card: couldn\'t find BACK:')
 
-        if card_id_i == None:
+        if note_id_i == None:
             if not (front_i < back_i):
                 raise Exception('expected FRONT:, BACK: in order')
         else:
-            if not (front_i < back_i < card_id_i):
-                raise Exception('expected FRONT:, BACK:, CID: in order')
+            if not (front_i < back_i < note_id_i):
+                raise Exception('expected FRONT:, BACK:, NID: in order')
 
         front = ''.join(lines[front_i: back_i])
         assert front.startswith('FRONT: ')
-        front = front[7:]
+        front = front[7:].strip()
 
-        end = card_id_i if card_id_i != None else len(lines)+1
+        end = note_id_i if note_id_i != None else len(lines)+1
         back = ''.join(lines[back_i: end])
         assert back.startswith('BACK: ')
-        back = back[6:]
+        back = back[6:].strip()
 
-        cid = None
-        if card_id_i != None:
-            if card_id_i != len(lines)-1:
-                raise Exception('expected CID: on last line of fenced anki')
-            m = re.match(r'^CID: (\d+)$', lines[card_id_i])
+        nid = None
+        if note_id_i != None:
+            if note_id_i != len(lines)-1:
+                raise Exception('expected NID: on last line of fenced anki')
+            m = re.match(r'^NID: (\d+)$', lines[note_id_i])
             if not m:
                 raise Exception('malformed card id')
-            cid = int(m.group(1))
+            nid = int(m.group(1))
 
-        return {'FRONT':front, 'BACK':back, 'CID':cid}
+        return {'FRONT':front, 'BACK':back, 'NID':nid}
 
     def parse(self):
         with open(self.fpath) as fp:
@@ -156,10 +164,10 @@ class MarkdownWithAnkiFences(object):
                 result.extend(elem)
             elif type(elem) == dict:
                 result.append(f'```anki\n')
-                result.append(f'FRONT: {elem["FRONT"]}')
-                result.append(f'BACK: {elem["BACK"]}')
-                if elem.get('CID'):
-                    result.append(f'CID: {elem["CID"]}\n')
+                result.append(f'FRONT: {elem["FRONT"]}\n')
+                result.append(f'BACK: {elem["BACK"]}\n')
+                if elem.get('NID'):
+                    result.append(f'NID: {elem["NID"]}\n')
                 result.append(f'```\n')
 
         return ''.join(result)
@@ -188,39 +196,38 @@ if __name__ == '__main__':
             qdescr = card['FRONT']
             if len(qdescr) > 64:
                 qdescr = qdescr[0:64] + '...'
-            cid = card.get('CID')
-            if cid:
-                qdescr += f' (ID:{cid})'
+            nid = card.get('NID')
+            if nid:
+                qdescr += f' (ID:{nid})'
 
             # ID ALREADY ASSIGNED? POSSIBLY UPDATE CARD
-            if card.get('CID'):
-                card_id = card['CID']
+            if card.get('NID'):
+                note_id = card['NID']
 
-                cinfo = invoke('cardsInfo', cards=[card_id])
-                cinfo = cinfo[0]
-                if cinfo == {}:
+                ninfo = invoke('notesInfo', notes=[note_id])
+                ninfo = ninfo[0]
+                if ninfo == {}:
                     print(RED + f'{qdescr} not found, something\'s wrong' + NORMAL)
                     sys.exit(-1)
 
                 update = False
 
-                front_ = cinfo['fields']['Front']['value']
-                back_ = cinfo['fields']['Back']['value']
+                front_ = ninfo['fields']['Front']['value']
+                back_ = ninfo['fields']['Back']['value']
                 if front_ != card['FRONT'] or back_ != card['BACK']:
                     #breakpoint()
                     #print(f' local front: {card["FRONT"]}')
                     #print(f'remote front: {front_}')
-                    breakpoint()
                     print(f'{YELLOW}updating {qdescr}{NORMAL}')
 
-                    ndata = {'id': cinfo['note'],
+                    ndata = {'id': ninfo['noteId'],
                              'fields': {
                                     'Front': card['FRONT'],
                                     'Back': card['BACK']
                                 }
                             }
-                    cinfo = invoke('updateNoteFields', note=ndata)
-                    print('result of updating: ' + str(cinfo))
+                    ninfo = invoke('updateNoteFields', note=ndata)
+                    print('result of updating: ' + str(ninfo))
             else:
                 info = { 'deckName': DECK_NAME,
                          'modelName': 'Basic',
@@ -241,11 +248,11 @@ if __name__ == '__main__':
                          }
                        }
 
-                card_id = invoke('addNote', note=info)
+                note_id = invoke('addNote', note=info)
 
-                card['CID'] = card_id
+                card['NID'] = note_id
                 md.update_card(card)
-                print(GREEN + f'adding new card, id={card_id}' + NORMAL)
+                print(GREEN + f'adding new note, id={note_id}' + NORMAL)
 
         md.save()
 

@@ -3,14 +3,11 @@ The dog (Canis familiaris or Canis lupus familiaris) is a domesticated descendan
 ```anki
 FRONT: What is the fancy latin name for dogs?
 BACK: Canis familiaris
-CID: 1668464400354
+NID: 1672505518755
 ```
 
 ```anki
 FRONT: When were dogs domesticated?
 BACK: 15,000 years ago.
-CID: 1668464400382
+NID: 1672505518776
 ```
-
-
-
