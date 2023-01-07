@@ -186,7 +186,7 @@ if __name__ == '__main__':
         contents = open(fname).read()
 
         if not '```anki' in contents:
-            print('no cards, skipping')
+            #print('no cards, skipping')
             continue
 
         md = MarkdownWithAnkiFences(fname)

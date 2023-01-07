@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import base64
 import random
 import urllib.request
 
@@ -42,6 +43,34 @@ if __name__ == '__main__':
             print(' fields: ' + str(result[0]['fields'].keys()))
             print('  Front: ' + result[0]['fields']['Front']['value'])
             print('   Back: ' + result[0]['fields']['Back']['value'])
+
+    if sys.argv[1] == 'notes':
+        deck_name = 'test'
+        result = invoke('findNotes', query='deck:'+deck_name)
+
+        for note_id in result:
+            print(note_id)
+
+            result = invoke('notesInfo', notes=[note_id])
+            assert len(result) == 1
+            for (fname, fdict) in result[0]['fields'].items():
+                print(f'{fname}: {fdict["value"]}')
+
+    if sys.argv[1] in ['listmedia', 'media']:
+        deck_name = 'test'
+        result = invoke('getMediaFilesNames', pattern='*minima*')
+        print('\n'.join(result))
+
+    if sys.argv[1] in ['getmedia', 'retrievemedia']:
+        deck_name = 'test'
+        for fname in invoke('getMediaFilesNames'):
+            fpath = os.path.join('.', 'media', fname)
+
+            print(f'retrieving {fname} -> {fpath}')
+            b64 = invoke('retrieveMediaFile', filename=fname)
+
+            with open(fpath, 'wb') as fp:
+                fp.write(base64.b64decode(b64))
 
     if sys.argv[1] == 'addbasic':
         deck_name = 'test'
