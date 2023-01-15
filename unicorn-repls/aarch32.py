@@ -15,6 +15,11 @@ from termcolor import colored
 
 from helpers import *
 
+CODE_MEM_START = 0
+CODE_MEM_LENGTH = 2**16
+STACK_MEM_START = 0xFFFF0000
+STACK_MEM_LENGTH = 2**16
+
 rname_to_unicorn = {
     'r0': UC_ARM_REG_R0, 'r1': UC_ARM_REG_R1, 'r2': UC_ARM_REG_R2, 'r3': UC_ARM_REG_R3,
     'r4': UC_ARM_REG_R4, 'r5': UC_ARM_REG_R5, 'r6': UC_ARM_REG_R6, 'r7': UC_ARM_REG_R7,
@@ -29,7 +34,11 @@ ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB + KS_MODE_LITTLE_ENDIAN)
 cs_arm = Cs(CS_ARCH_ARM, CS_MODE_ARM + CS_MODE_LITTLE_ENDIAN)
 cs_thumb = Cs(CS_ARCH_ARM, KS_MODE_THUMB + KS_MODE_LITTLE_ENDIAN)
 mu = Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_LITTLE_ENDIAN)
-mu.mem_map(0, 4096)
+
+mu.mem_map(CODE_MEM_START, CODE_MEM_LENGTH)
+mu.mem_map(STACK_MEM_START, STACK_MEM_LENGTH)
+mu.reg_write(rname_to_unicorn['pc'], CODE_MEM_START)
+mu.reg_write(rname_to_unicorn['sp'], STACK_MEM_START + STACK_MEM_LENGTH)
 
 # track context
 
@@ -70,7 +79,7 @@ def show_context():
     disfunc = cs_thumb.disasm if thumb else cs_arm.disasm
     for i in disfunc(data, addr):
         bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
-        print(f'0x{i.address:08X}: {bytes_str} {i.mnemonic} {i.op_str}')
+        print(f'{i.address:08X}: {bytes_str} {i.mnemonic} {i.op_str}')
         break
 
 def step(count=1):
@@ -91,8 +100,11 @@ while 1:
     cmd = input('> ')
 
     try:
+        if cmd.startswith(';') or cmd=='' or cmd.isspace():
+            pass
+
         # show context
-        if cmd == 'r':
+        elif cmd == 'r':
             do_show_context = True
 
         # reg write, example:
@@ -149,7 +161,13 @@ while 1:
 
         # toggle arm/thumb mode
         elif cmd == 'mode':
-            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) ^ (0x20))
+            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) ^ 0x20)
+            do_show_context = True
+        elif cmd == 'mode arm':
+            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) & 0xFFFFFFDF)
+            do_show_context = True
+        elif cmd == 'mode thumb':
+            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) | 0x20)
             do_show_context = True
 
         # assemble, step, example:
