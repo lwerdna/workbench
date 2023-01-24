@@ -1,0 +1,18 @@
+; this is to be pasted in unicorn-repl, demonstrates that LDD works
+
+; set up jump table
+; [hex(int((x - 0x25e)/2)) for x in [0x284, 0x2a6, 0x2c8, 0x2ea, 0x30c, 0x32e, 0x350, 0x372, 0x394]
+eb 0x260 13 24 35 46 57 68 79 8a 9b 00 00 00 00 00 00 00
+eb 0x270 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+eb 0x280 00 00 00 00
+
+; which entry to jump to?
+r3 = 0
+
+; 00000258: ?? ?? ?? ?? ?? ?? ?? ?? 01 a2 d2 e8 03 f0 00 00
+pc = 0x258
+mode thumb
+adr r2, #4
+tbb [r2, r3]
+
+; here you should see PC changed to one of the jump table entries, depending on r3

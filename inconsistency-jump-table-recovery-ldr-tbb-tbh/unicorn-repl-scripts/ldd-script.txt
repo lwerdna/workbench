@@ -1,0 +1,17 @@
+; this is to be pasted in unicorn-repl, demonstrates that LDD works
+
+; set up jump table
+; notice it contains odd addresses
+; entry 0 is 0x00000285 and results in jump to 00000284
+eb 0x260 85 02 00 00 a7 02 00 00 c9 02 00 00 eb 02 00 00 0d 03 00 00 2f 03 00 00 51 03 00 00 73 03 00 00 95 03 00 00
+
+; which entry to jump to?
+r3 = 0
+
+; reference table
+pc = 0x258
+mode thumb
+adr r2, #4
+ldr pc, [r2, r3, lsl #2]
+
+; here you should see PC changed to one of the jump table entries, depending on r3
