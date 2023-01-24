@@ -22,8 +22,7 @@ loc_258:
 	adr     r2, jump_table_260
 	ldr     pc, [r2, r3, lsl #2]
 
-.byte 0
-.byte 0xbf
+.byte 0, 0
 
 jump_table_260:
 .word loc_284+1
