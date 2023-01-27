@@ -1,25 +1,15 @@
-Experiment with AnkiConnect [1]
+Generate ANKI deck from markdown with AnkiConnect [1]
 
-## Experiment #1: listing decks, listing cards, adding cards
+Quickstart:
 
 1. Install AnkiConnect (See "Installation" in [1]).
-2. browse to localhost:8765 and verify that you see "AnkiConnect v.6"
-3. run Anki
-4. run `./experiment1.py decks` and see a list of all decks
-5. create a deck named "test"
-6. run `./experiment1.py addbasic` and see a new card appear in Anki (may have to refresh query "deck:test")
-7. run `./experiment1.py cards` and see the card appear in the list of cards for deck "test"
+2. run Anki
+3. browse to localhost:8765 and verify that you see "AnkiConnect v.6"
+4. create a deck named "test"
 
-## Experiment #2: markdown content updates cards
+Now you can run `./sync.py` to send cards in Information.md to the Anki deck named "test". If there are already note ID's assigned in the markdown, first run `./sync.py reset` to clear them.
 
-Here we'll parse markdown files, adding cards to Anki if they don't exist, and updating them if they do.
-
-Suppose you have some information on dogs (Dogs.md) and cats (Cats.md) and other stuff (Test1.md, Test2.md).
-
-1. If Dogs.md or Cats.md has note id's in them (eg: NID: 1234578), delete those lines
-2. run `./experiment2.py`
-3. verify the cards from the markdown files are now in the deck "test" and the markdown files have note id's assigned within the code fences
-4. change the content of one of the cards in the markdown files and run `./experiment2.py` and verify the Anki deck is updated
+For experimenting, use `./cli.py` for a command-line interface to manipulate the deck.
 
 ## Notes
 

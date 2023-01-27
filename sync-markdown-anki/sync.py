@@ -3,29 +3,13 @@
 import os
 import re
 import sys
-import json
 import random
-import urllib.request
+
+import helpers
 
 DECK_NAME = 'test'
 
 (RED, GREEN, YELLOW, NORMAL) = ('\x1B[31m', '\x1B[32m', '\x1B[33m', '\x1B[0m')
-
-def request(action, **params):
-    return {'action': action, 'params': params, 'version': 6}
-
-def invoke(action, **params):
-    requestJson = json.dumps(request(action, **params)).encode('utf-8')
-    response = json.load(urllib.request.urlopen(urllib.request.Request('http://localhost:8765', requestJson)))
-    if len(response) != 2:
-        raise Exception('response has an unexpected number of fields')
-    if 'error' not in response:
-        raise Exception('response is missing required error field')
-    if 'result' not in response:
-        raise Exception('response is missing required result field')
-    if response['error'] is not None:
-        raise Exception(response['error'])
-    return response['result']
 
 class MarkdownWithAnkiFences(object):
     def __init__(self, fpath):
@@ -177,17 +161,24 @@ class MarkdownWithAnkiFences(object):
             fp.write(str(self))
 
 if __name__ == '__main__':
-    files = [f for f in os.listdir('.') if f.endswith('.md')]
-    if sys.argv[1:]:
-        files = [sys.argv[1]]
+    fname = 'Information.md'
 
-    for fname in files:
+    # get rid of note ID's
+    if sys.argv[1:] and sys.argv[1] in ['reset', 'restart', 'clear']:
+        md = MarkdownWithAnkiFences(fname)
+
+        for card in md.cards():
+            del card['NID']
+            md.update_card(card)
+
+        md.save()
+
+    else:
         #print('opening: ' + fname)
         contents = open(fname).read()
 
         if not '```anki' in contents:
-            #print('no cards, skipping')
-            continue
+            raise Exception('No anki code fences found.')
 
         md = MarkdownWithAnkiFences(fname)
 
@@ -204,7 +195,7 @@ if __name__ == '__main__':
             if card.get('NID'):
                 note_id = card['NID']
 
-                ninfo = invoke('notesInfo', notes=[note_id])
+                ninfo = helpers.ankiconnect_invoke('notesInfo', notes=[note_id])
                 ninfo = ninfo[0]
                 if ninfo == {}:
                     print(RED + f'{qdescr} not found, something\'s wrong' + NORMAL)
@@ -226,30 +217,10 @@ if __name__ == '__main__':
                                     'Back': card['BACK']
                                 }
                             }
-                    ninfo = invoke('updateNoteFields', note=ndata)
+                    ninfo = helpers.ankiconnect_invoke('updateNoteFields', note=ndata)
                     print('result of updating: ' + str(ninfo))
             else:
-                info = { 'deckName': DECK_NAME,
-                         'modelName': 'Basic',
-                         'fields': {
-                           'Front': card['FRONT'],
-                           'Back': card['BACK']
-                         },
-                         "options":
-                         {
-                           "allowDuplicate": True,
-                           "duplicateScope": "deck",
-                           "duplicateScopeOptions":
-                           {
-                             "deckName": DECK_NAME,
-                             "checkChildren": False,
-                             "checkAllModels": False
-                           }
-                         }
-                       }
-
-                note_id = invoke('addNote', note=info)
-
+                note_id = helpers.add_node(DECK_NAME, card['FRONT'], card['BACK'])
                 card['NID'] = note_id
                 md.update_card(card)
                 print(GREEN + f'adding new note, id={note_id}' + NORMAL)
