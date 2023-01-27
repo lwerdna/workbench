@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     if sys.argv[1] in ['listmedia', 'media']:
         deck_name = 'test'
-        result = helpers.ankiconnect_invoke('getMediaFilesNames', pattern='*minima*')
+        result = helpers.ankiconnect_invoke('getMediaFilesNames', pattern='minima maxima calculus.png')
         print('\n'.join(result))
 
     if sys.argv[1] in ['getmedia', 'retrievemedia']:
