@@ -5,17 +5,7 @@ import sys
 
 import commonmark
 
-def collect_children(node):
-    current = node.first_child
-    while current:
-        yield current
-        current = current.nxt
-
-def collect_ancestors(node):
-    current = node.parent
-    while current:
-        yield current
-        current = current.parent
+from helpers import *
 
 def mydump(node, depth=0):
     indent = '  '*depth
@@ -81,26 +71,34 @@ def render_markdown(node):
         result = '**' + render_markdown(node.first_child) + '**'
     elif node.t == 'html_inline':
         result = node.literal
+    elif node.t == 'html_block':
+        result = node.literal
     else:
         print(f'unknown type: {node.t}')
         print(node.pretty())
         breakpoint()
 
     # decide whether to add space after this block
-    block = False
+    end_n = False
     if node.t == 'heading':
-        block = True
-    if node.t == 'code_block':
-        block = True
-    if node.t == 'paragraph':
+        end_n = True
+    elif node.t == 'code_block':
+        end_n = True
+    elif node.t == 'html_block':
+        end_n = True
+    elif node.t == 'paragraph':
         if node.parent.t == 'document':
             if node != node.parent.last_child:
-                block = True
+                end_n = True
         else:
             if not list in [anc.t for anc in collect_ancestors(node)]:
-                block = True
+                end_n = True
 
-    if block:
+    if end_n:
+        while not result.endswith('\n'):
+            result = result + '\n'
+
+    if node.last_line_blank:
         while not result.endswith('\n\n'):
             result = result + '\n'
 

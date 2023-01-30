@@ -5,7 +5,9 @@ import re
 import sys
 import random
 
-import helpers
+import commonmark
+
+from helpers import *
 
 DECK_NAME = 'test'
 
@@ -160,8 +162,77 @@ class MarkdownWithAnkiFences(object):
         with open(self.fpath, 'w') as fp:
             fp.write(str(self))
 
+def update_card(note_id, front_html, back_html):
+    ninfo = helpers.ankiconnect_invoke('notesInfo', notes=[note_id])
+    ninfo = ninfo[0]
+    if ninfo == {}:
+        print(RED + f'{qdescr} not found, something\'s wrong' + NORMAL)
+        sys.exit(-1)
+
+    update = False
+
+    front_ = ninfo['fields']['Front']['value']
+    back_ = ninfo['fields']['Back']['value']
+    if front_ != card['FRONT'] or back_ != card['BACK']:
+        #breakpoint()
+        #print(f' local front: {card["FRONT"]}')
+        #print(f'remote front: {front_}')
+        print(f'{YELLOW}updating {qdescr}{NORMAL}')
+
+        ndata = {'id': ninfo['noteId'],
+                 'fields': {
+                        'Front': card['FRONT'],
+                        'Back': card['BACK']
+                    }
+                }
+        ninfo = helpers.ankiconnect_invoke('updateNoteFields', note=ndata)
+        print('result of updating: ' + str(ninfo))
+
+def add_card(front_html, back_html):
+	note_id = helpers.add_note(DECK_NAME, card['FRONT'], card['BACK'])
+                card['NID'] = note_id
+
+def traverse_looking_for_cards(node):
+    children = list(collect_children(node))
+
+    if node.t == 'html_block':
+        if node.literal.startswith('<!-- ANKI0 '):
+            assert node.nxt
+            front = render_to_anki_html(node.nxt)
+
+            assert node.nxt.nxt
+            assert node.nxt.nxt.literal == '<!-- ANKI1 -->'
+
+            assert node.nxt.nxt.nxt
+            back = render_to_anki_html(node.nxt.nxt.nxt)
+
+            assert node.nxt.nxt.nxt.nxt
+            assert node.nxt.nxt.nxt.nxt.literal == '<!-- ANKI2 -->'
+ 
+        if re.match(r'^<!-- ANKI0 -->', node.literal):
+            print('---- <NEW_CARD> ----')
+            print(front)
+            print('----')
+            print(back)
+            print('---- </NEW_CARD> ----')
+
+            # blank, unassigned card
+            pass
+        elif m := re.match(r'^<!-- ANKI0 NID:(\d+) -->', node.literal):
+            nid = int(m.group(1))
+            # blank, unassigned card
+
+    else:
+        for child in children:
+            traverse_looking_for_cards(child)
+
+    return
+
 if __name__ == '__main__':
     fname = 'Information.md'
+
+    parser = commonmark.Parser()
+    ast = parser.parse(open(fname).read()) 
 
     # get rid of note ID's
     if sys.argv[1:] and sys.argv[1] in ['reset', 'restart', 'clear']:
@@ -174,11 +245,8 @@ if __name__ == '__main__':
         md.save()
 
     else:
-        #print('opening: ' + fname)
-        contents = open(fname).read()
-
-        if not '```anki' in contents:
-            raise Exception('No anki code fences found.')
+        traverse_looking_for_cards(ast)
+        breakpoint()
 
         md = MarkdownWithAnkiFences(fname)
 
@@ -193,34 +261,9 @@ if __name__ == '__main__':
 
             # ID ALREADY ASSIGNED? POSSIBLY UPDATE CARD
             if card.get('NID'):
-                note_id = card['NID']
 
-                ninfo = helpers.ankiconnect_invoke('notesInfo', notes=[note_id])
-                ninfo = ninfo[0]
-                if ninfo == {}:
-                    print(RED + f'{qdescr} not found, something\'s wrong' + NORMAL)
-                    sys.exit(-1)
-
-                update = False
-
-                front_ = ninfo['fields']['Front']['value']
-                back_ = ninfo['fields']['Back']['value']
-                if front_ != card['FRONT'] or back_ != card['BACK']:
-                    #breakpoint()
-                    #print(f' local front: {card["FRONT"]}')
-                    #print(f'remote front: {front_}')
-                    print(f'{YELLOW}updating {qdescr}{NORMAL}')
-
-                    ndata = {'id': ninfo['noteId'],
-                             'fields': {
-                                    'Front': card['FRONT'],
-                                    'Back': card['BACK']
-                                }
-                            }
-                    ninfo = helpers.ankiconnect_invoke('updateNoteFields', note=ndata)
-                    print('result of updating: ' + str(ninfo))
             else:
-                note_id = helpers.add_node(DECK_NAME, card['FRONT'], card['BACK'])
+                note_id = helpers.add_note(DECK_NAME, card['FRONT'], card['BACK'])
                 card['NID'] = note_id
                 md.update_card(card)
                 print(GREEN + f'adding new note, id={note_id}' + NORMAL)
