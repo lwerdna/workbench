@@ -32,7 +32,6 @@ About 60.
 
 ## Test multiline answers
 
-
 <!-- ANKI0 -->
 Ok here's a multiline one. Additional stuff.
 Second line.
