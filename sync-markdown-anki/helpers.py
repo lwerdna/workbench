@@ -1,7 +1,10 @@
+import re
 import json
 import urllib.request
 
 import commonmark
+
+(RED, GREEN, YELLOW, NORMAL) = ('\x1B[31m', '\x1B[32m', '\x1B[33m', '\x1B[0m')
 
 #------------------------------------------------------------------------------
 # ANKICONNECT HELPERS
@@ -33,7 +36,15 @@ def dump(node, depth=0):
     pos_str = ''
     if node.sourcepos:
         pos_str = f'{node.sourcepos[0][0]},{node.sourcepos[0][1]}-{node.sourcepos[1][0]},{node.sourcepos[1][1]}'
-    print(f'{indent}{node.t} {pos_str} llb:{node.last_line_blank}')
+
+    extra = ''
+    if node.t == 'text':
+        extra = node.literal
+        if len(extra) > 32:
+            extra = extra[0:32] + '...'
+        extra = f' "{extra}"'
+
+    print(f'{indent}{node.t} {pos_str}{extra} llb:{node.last_line_blank}')
 
     for child in collect_children(node):
         dump(child, depth+1)
@@ -84,7 +95,7 @@ def render_markdown(node):
         if node.list_data['type'] == 'bullet':
             bullet = node.list_data['bullet_char']
         elif node.list_data['type'] == 'ordered':
-            bullet = node.list_data['start']
+            bullet = str(node.list_data['start']) + '.'
         else:
             breakpoint()
             pass
@@ -93,20 +104,23 @@ def render_markdown(node):
             result += f'{bullet} ' + render_markdown(child)
 
     elif node.t == 'link':
-        assert len(children) == 1
-        result = f'[{node.destination}]({render_markdown(node.first_child)})'
+        link_text = ''.join(render_markdown(c) for c in children)
+        result = f'[{link_text}]({node.destination})'
     elif node.t == 'emph':
-        assert len(children) == 1
-        result = '_' + render_markdown(node.first_child) + '_'
+        result = '_' + ''.join(render_markdown(c) for c in children) + '_'
     elif node.t == 'strong':
-        assert len(children) == 1
-        result = '**' + render_markdown(node.first_child) + '**'
+        result = '**' + ''.join(render_markdown(c) for c in children) + '**'
     elif node.t == 'html_inline':
         result = node.literal
     elif node.t == 'html_block':
         result = node.literal
     elif node.t == 'thematic_break':
         result = '---\n'
+    elif node.t == 'block_quote':
+        for child in children:
+            result += '> ' + render_markdown(child)
+    elif node.t == 'image':
+        return f'![]({node.destination})'
     else:
         print(f'unknown type: {node.t}')
         print(node.pretty())
@@ -125,7 +139,7 @@ def render_markdown(node):
             if node != node.parent.last_child:
                 end_n = True
         else:
-            if not list in [anc.t for anc in collect_ancestors(node)]:
+            if not 'list' in [anc.t for anc in collect_ancestors(node)]:
                 end_n = True
 
     if end_n:
@@ -139,11 +153,9 @@ def render_markdown(node):
     return result
 
 #------------------------------------------------------------------------------
-# CARD GENERATION
+# CARD RENDERING
 #------------------------------------------------------------------------------
 
-#def escape_math(markdown):
-#   
 def process_typora_math(markdown):
     lines = []
     in_block = False
@@ -164,9 +176,22 @@ def process_typora_math(markdown):
             lines.append(''.join(chars))
             continue
 
-        lines.append(l)
+        lines.append(l + '\n')
 
-    return '\n'.join(lines)
+    return ''.join(lines)
+
+def render_anki_html(x):
+    if type(x) == str:
+        ast_node = commonmark.Parser().parse(x)
+    else:
+        ast_node = x
+    renderer = commonmark.HtmlRenderer({'softbreak': '<br />'})
+    html = renderer.render(ast_node).strip()
+    return html
+
+#------------------------------------------------------------------------------
+# CONVENIENCE CARD ADD/UPDATE
+#------------------------------------------------------------------------------
 
 def add_note(deck_name, front, back):
     info = { 'deckName': deck_name,
@@ -191,11 +216,148 @@ def add_note(deck_name, front, back):
     note_id = ankiconnect_invoke('addNote', note=info)
     return note_id
 
-def render_anki_html(x):
-    if type(x) == str:
-        ast_node = commonmark.Parser().parse(x)
+def update_card(note_id, front_html, back_html):
+    ninfo = ankiconnect_invoke('notesInfo', notes=[note_id])
+    ninfo = ninfo[0]
+    if ninfo == {}:
+        print(RED + f'{note_id} not found, something\'s wrong' + NORMAL)
+        sys.exit(-1)
+
+    update = False
+
+    front_ = ninfo['fields']['Front']['value']
+    back_ = ninfo['fields']['Back']['value']
+    if front_ != front_html or back_ != back_html:
+        #breakpoint()
+        #print(f' local front: {card["FRONT"]}')
+        #print(f'remote front: {front_}')
+        print(f'{YELLOW}updating {note_id}{NORMAL}')
+
+        ndata = {'id': ninfo['noteId'],
+                 'fields': {
+                        'Front': front_html,
+                        'Back': back_html
+                    }
+                }
+        ninfo = ankiconnect_invoke('updateNoteFields', note=ndata)
+        if ninfo:
+            print('result of updating: ' + str(ninfo))
+
+#------------------------------------------------------------------------------
+# PARSING
+#------------------------------------------------------------------------------
+
+class MarkdownFileWithCards(object):
+    def __init__(self, fpath):
+        with open(fpath) as fp:
+            self.lines = fp.readlines()
+
+        self.fpath = fpath
+
+        # parse card fences
+        self.cards = []
+        mark0, mark1, mark2, state = 0, 0, 0, 0
+        for i,line in enumerate(self.lines):
+            if line.startswith('<!-- ANKI0 '):
+                assert state == 0
+                mark0, state = i, 1
+            if line.startswith('<!-- ANKI1 '):
+                assert state == 1
+                mark1, state = i, 2
+            if line.startswith('<!-- ANKI2 '):
+                assert state == 2
+                mark2, state = i, 3
+                self.cards.append((mark0, mark1, mark2))
+                mark0 = mark1 = mark2 = state = 0
+
+    def clear_note_ids(self):
+        for a,b,c in self.cards:
+            if m := re.match(r'^<!-- ANKI0 NID:(\d+) -->\n$', self.lines[a]):
+                self.lines[a] = '<!-- ANKI0 -->\n'
+
+    def process_cards(self, destination_deck):
+        changes_made = False
+
+        for a,b,c in self.cards:
+            front_md = ''.join(self.lines[a:b])
+            back_md = ''.join(self.lines[b:c])
+
+            front_html = render_anki_html(process_typora_math(front_md))
+            back_html = render_anki_html(process_typora_math(back_md))
+
+            if self.lines[a] == '<!-- ANKI0 -->\n':
+                note_id = add_note(destination_deck, front_html, back_html)
+                self.lines[a] = f'<!-- ANKI0 NID:{note_id} -->\n'
+                changes_made = True
+            elif m := re.match(r'^<!-- ANKI0 NID:(\d+) -->\n$', self.lines[a]):
+                note_id = int(m.group(1))
+                update_card(note_id, front_html, back_html)
+            else:
+                raise Exception(f'malformed ANKI fence: {self.lines[a]}')
+
+        return changes_made
+
+    def save(self):
+        with open(self.fpath, 'w') as fp:
+            fp.write(''.join(self.lines))
+
+    def __str__(self):
+        lines = []
+        lines.append(f'MarkdownFile "{self.fpath}" with {len(self.cards)} cards:')
+        for i, (a,b,c) in enumerate(self.cards):
+            lines.append(f'card {i} with fences at lines {a+1}, {b+1}, {c+1}')
+        return '\n'.join(lines)
+
+#------------------------------------------------------------------------------
+# MARKDOWN AST TRAVERSERS (obsolete)
+#------------------------------------------------------------------------------
+
+def traverse_looking_for_cards(node, deck_name):
+    children = list(collect_children(node))
+
+    if node.t == 'html_block':
+        if node.literal.startswith('<!-- ANKI0 '):
+            front, back = '', ''
+
+            # search for ANKI1
+            node1 = node.nxt
+            while node1.literal != '<!-- ANKI1 -->':
+                md = render_markdown(node1)
+                md = process_typora_math(md)
+                front += render_anki_html(md)
+                node1 = node1.nxt
+
+            # search for ANKI2
+            node2 = node1.nxt
+            while node2.literal != '<!-- ANKI2 -->':
+                md = render_markdown(node2)
+                md = process_typora_math(md)
+                back += render_anki_html(md)
+                node2 = node2.nxt
+
+        if re.match(r'^<!-- ANKI0 -->', node.literal):
+            print('---- <NEW_CARD> ----')
+            print(front)
+            print('----')
+            print(back)
+            print('---- </NEW_CARD> ----')
+
+            note_id = add_note(deck_name, front, back)
+            node.literal = f'<!-- ANKI0 NID:{note_id} -->'
+
+        elif m := re.match(r'^<!-- ANKI0 NID:(\d+) -->$', node.literal):
+            nid = int(m.group(1))
+            update_card(nid, front, back)
+
     else:
-        ast_node = x
-    renderer = commonmark.HtmlRenderer({'softbreak': '<br />'})
-    html = renderer.render(ast_node).strip()
-    return html
+        for child in children:
+            traverse_looking_for_cards(child, deck_name)
+
+def traverse_clearing_nids(node):
+    if node.t == 'html_block' and re.match(r'^<!-- ANKI0 NID:\d+ -->$', node.literal):
+        print(f'clearing: {node.literal}')
+        node.literal = '<!-- ANKI0 -->'
+    else:
+        for child in collect_children(node):
+            traverse_clearing_nids(child)
+
