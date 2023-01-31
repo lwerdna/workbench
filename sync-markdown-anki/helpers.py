@@ -27,6 +27,17 @@ def ankiconnect_invoke(action, **params):
 # COMMONMARK HELPERS
 #------------------------------------------------------------------------------
 
+def dump(node, depth=0):
+    indent = '  '*depth
+
+    pos_str = ''
+    if node.sourcepos:
+        pos_str = f'{node.sourcepos[0][0]},{node.sourcepos[0][1]}-{node.sourcepos[1][0]},{node.sourcepos[1][1]}'
+    print(f'{indent}{node.t} {pos_str} llb:{node.last_line_blank}')
+
+    for child in collect_children(node):
+        dump(child, depth+1)
+
 def collect_children(node):
     current = node.first_child
     while current:
@@ -131,6 +142,32 @@ def render_markdown(node):
 # CARD GENERATION
 #------------------------------------------------------------------------------
 
+#def escape_math(markdown):
+#   
+def process_typora_math(markdown):
+    lines = []
+    in_block = False
+
+    for l in markdown.split('\n'):
+        if l == '$$':
+            lines.append('</anki-mathjax>' if in_block else '<anki-mathjax block="true">')
+            in_block = not in_block
+            continue
+
+        if '$' in l:
+            chars = list(l)
+            toggle = False
+            for i in range(len(chars)):
+                if chars[i] == '$':
+                    chars[i] = '</anki-mathjax>' if toggle else '<anki-mathjax>'
+                    toggle = not toggle
+            lines.append(''.join(chars))
+            continue
+
+        lines.append(l)
+
+    return '\n'.join(lines)
+
 def add_note(deck_name, front, back):
     info = { 'deckName': deck_name,
              'modelName': 'Basic',
@@ -154,7 +191,11 @@ def add_note(deck_name, front, back):
     note_id = ankiconnect_invoke('addNote', note=info)
     return note_id
 
-def render_to_anki_html(ast_node):
-    renderer = commonmark.HtmlRenderer()
+def render_anki_html(x):
+    if type(x) == str:
+        ast_node = commonmark.Parser().parse(x)
+    else:
+        ast_node = x
+    renderer = commonmark.HtmlRenderer({'softbreak': '<br />'})
     html = renderer.render(ast_node).strip()
     return html

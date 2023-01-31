@@ -17,7 +17,7 @@ def update_card(note_id, front_html, back_html):
     ninfo = ankiconnect_invoke('notesInfo', notes=[note_id])
     ninfo = ninfo[0]
     if ninfo == {}:
-        print(RED + f'{qdescr} not found, something\'s wrong' + NORMAL)
+        print(RED + f'{note_id} not found, something\'s wrong' + NORMAL)
         sys.exit(-1)
 
     update = False
@@ -45,16 +45,23 @@ def traverse_looking_for_cards(node):
     if node.t == 'html_block':
         if node.literal.startswith('<!-- ANKI0 '):
             assert node.nxt
-            front = render_to_anki_html(node.nxt)
+            front_md = render_markdown(node.nxt)
+            front_md = process_typora_math(front_md)
+            front = render_anki_html(front_md)
 
             assert node.nxt.nxt
             assert node.nxt.nxt.literal == '<!-- ANKI1 -->'
 
             assert node.nxt.nxt.nxt
-            back = render_to_anki_html(node.nxt.nxt.nxt)
+            back_md = render_markdown(node.nxt.nxt.nxt)
+            back_md = process_typora_math(back_md)
+            back = render_anki_html(back_md)
 
             assert node.nxt.nxt.nxt.nxt
             assert node.nxt.nxt.nxt.nxt.literal == '<!-- ANKI2 -->'
+
+            #if 'P(H)P(E|H)' in back:
+            #    breakpoint()
 
         if re.match(r'^<!-- ANKI0 -->', node.literal):
             print('---- <NEW_CARD> ----')
@@ -83,17 +90,40 @@ def traverse_clearing_nids(node):
             traverse_clearing_nids(child)
 
 if __name__ == '__main__':
-    fname = 'Information.md'
+    command = None
+    if sys.argv[1:]:
+        command = sys.argv[1]
 
+    fname = 'Information.md'
     parser = commonmark.Parser()
     ast = parser.parse(open(fname).read())
 
     # get rid of note ID's
-    if sys.argv[1:] and sys.argv[1] in ['reset', 'restart', 'clear']:
+    if command in ['reset', 'restart', 'clear']:
         traverse_clearing_nids(ast)
         markdown = render_markdown(ast)
         with open(fname, 'w') as fp:
             fp.write(markdown)
+
+    # render to HTML
+    elif command == 'html':
+        # this is how the ast would be used to generate HTML
+        renderer = commonmark.HtmlRenderer()
+        html = renderer.render(ast)
+        print(html)
+
+    # render back to markdown
+    elif command == 'md':
+        md = render_markdown(ast)
+        print(md)
+
+    # dump contents
+    elif command == 'dump':
+        #print(commonmark.dumpJSON(ast))
+        #print(commonmark.dumpAST(ast))
+        dump(ast)
+
+    # markdown -> anki
     else:
         traverse_looking_for_cards(ast)
         markdown = render_markdown(ast)
