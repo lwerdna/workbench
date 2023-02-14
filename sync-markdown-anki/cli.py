@@ -21,7 +21,9 @@ if __name__ == '__main__':
         result = helpers.ankiconnect_invoke('findCards', query='deck:'+deck_name)
 
         for card_id in result:
+            print('')
             print(card_id)
+            print('----------------')
 
             result = helpers.ankiconnect_invoke('cardsInfo', cards=[card_id])
             print(' fields: ' + str(result[0]['fields'].keys()))

@@ -243,6 +243,9 @@ def update_card(note_id, front_html, back_html):
         if ninfo:
             print('result of updating: ' + str(ninfo))
 
+def get_deck_note_ids(deck_name):
+    return ankiconnect_invoke('findNotes', query='deck:'+deck_name)
+
 #------------------------------------------------------------------------------
 # PARSING
 #------------------------------------------------------------------------------
@@ -275,12 +278,19 @@ class MarkdownFileWithCards(object):
             if m := re.match(r'^<!-- ANKI0 NID:(\d+) -->\n$', self.lines[a]):
                 self.lines[a] = '<!-- ANKI0 -->\n'
 
+    def get_note_ids(self):
+        result = set()
+        for a,b,c in self.cards:
+            if m := re.match(r'^<!-- ANKI0 NID:(\d+) -->\n$', self.lines[a]):
+                result.add(int(m.group(1)))
+        return result
+
     def process_cards(self, destination_deck):
         changes_made = False
 
         for a,b,c in self.cards:
-            front_md = ''.join(self.lines[a:b])
-            back_md = ''.join(self.lines[b:c])
+            front_md = ''.join(self.lines[a+1:b])
+            back_md = ''.join(self.lines[b+1:c])
 
             front_html = render_anki_html(process_typora_math(front_md))
             back_html = render_anki_html(process_typora_math(back_md))
