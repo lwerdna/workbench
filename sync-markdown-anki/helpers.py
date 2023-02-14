@@ -1,4 +1,5 @@
 import re
+import sys
 import json
 import urllib.request
 
@@ -193,13 +194,17 @@ def render_anki_html(x):
 # CONVENIENCE CARD ADD/UPDATE
 #------------------------------------------------------------------------------
 
-def add_note(deck_name, front, back):
+def add_note(deck_name, data0, data1):
+    if '{{c1::' in data0:
+        modelName = 'Cloze'
+        fields = { 'Text': data0, 'Extra': data1 }
+    else:
+        modelName = 'Basic'
+        fields = { 'Front': data0, 'Back': data1 }
+
     info = { 'deckName': deck_name,
-             'modelName': 'Basic',
-             'fields': {
-               'Front': front,
-               'Back': back
-             },
+             'modelName': modelName,
+             'fields': fields,
              "options":
              {
                "allowDuplicate": True,
@@ -216,28 +221,31 @@ def add_note(deck_name, front, back):
     note_id = ankiconnect_invoke('addNote', note=info)
     return note_id
 
-def update_card(note_id, front_html, back_html):
+def update_note(note_id, info0_html, info1_html):
     ninfo = ankiconnect_invoke('notesInfo', notes=[note_id])
+
+    assert len(ninfo) == 1
     ninfo = ninfo[0]
     if ninfo == {}:
-        print(RED + f'{note_id} not found, something\'s wrong' + NORMAL)
+        print(RED + f'NOTE ID: {note_id} not found, something\'s wrong' + NORMAL)
         sys.exit(-1)
 
-    update = False
+    match ninfo['modelName']:
+        case 'Basic':
+            field0, field1 = 'Front', 'Back'
+        case 'Cloze':
+            field0, field1 = 'Text', 'Extra'
+        case _:
+            raise Exception(f'unknown note model: {_}')
 
-    front_ = ninfo['fields']['Front']['value']
-    back_ = ninfo['fields']['Back']['value']
-    if front_ != front_html or back_ != back_html:
-        #breakpoint()
-        #print(f' local front: {card["FRONT"]}')
-        #print(f'remote front: {front_}')
+    info0 = ninfo['fields'][field0]['value']
+    info1 = ninfo['fields'][field1]['value']
+
+    if info0 != info0_html or info1 != info1_html:
         print(f'{YELLOW}updating {note_id}{NORMAL}')
 
         ndata = {'id': ninfo['noteId'],
-                 'fields': {
-                        'Front': front_html,
-                        'Back': back_html
-                    }
+                 'fields': {field0: info0_html, field1: info1_html}
                 }
         ninfo = ankiconnect_invoke('updateNoteFields', note=ndata)
         if ninfo:
@@ -250,7 +258,7 @@ def get_deck_note_ids(deck_name):
 # PARSING
 #------------------------------------------------------------------------------
 
-class MarkdownFileWithCards(object):
+class MarkdownFileWithAnki(object):
     def __init__(self, fpath):
         with open(fpath) as fp:
             self.lines = fp.readlines()
@@ -285,23 +293,23 @@ class MarkdownFileWithCards(object):
                 result.add(int(m.group(1)))
         return result
 
-    def process_cards(self, destination_deck):
+    def process_notes(self, destination_deck):
         changes_made = False
 
         for a,b,c in self.cards:
-            front_md = ''.join(self.lines[a+1:b])
-            back_md = ''.join(self.lines[b+1:c])
+            info0_md = ''.join(self.lines[a+1:b])
+            info1_md = ''.join(self.lines[b+1:c])
 
-            front_html = render_anki_html(process_typora_math(front_md))
-            back_html = render_anki_html(process_typora_math(back_md))
+            info0_html = render_anki_html(process_typora_math(info0_md))
+            info1_html = render_anki_html(process_typora_math(info1_md))
 
             if self.lines[a] == '<!-- ANKI0 -->\n':
-                note_id = add_note(destination_deck, front_html, back_html)
+                note_id = add_note(destination_deck, info0_html, info1_html)
                 self.lines[a] = f'<!-- ANKI0 NID:{note_id} -->\n'
                 changes_made = True
             elif m := re.match(r'^<!-- ANKI0 NID:(\d+) -->\n$', self.lines[a]):
                 note_id = int(m.group(1))
-                update_card(note_id, front_html, back_html)
+                update_note(note_id, info0_html, info1_html)
             else:
                 raise Exception(f'malformed ANKI fence: {self.lines[a]}')
 
@@ -357,7 +365,7 @@ def traverse_looking_for_cards(node, deck_name):
 
         elif m := re.match(r'^<!-- ANKI0 NID:(\d+) -->$', node.literal):
             nid = int(m.group(1))
-            update_card(nid, front, back)
+            update_note(nid, front, back)
 
     else:
         for child in children:

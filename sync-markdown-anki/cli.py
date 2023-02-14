@@ -4,6 +4,7 @@ import os
 import sys
 import base64
 import random
+import pprint
 
 import helpers
 
@@ -26,21 +27,21 @@ if __name__ == '__main__':
             print('----------------')
 
             result = helpers.ankiconnect_invoke('cardsInfo', cards=[card_id])
-            print(' fields: ' + str(result[0]['fields'].keys()))
-            print('  Front: ' + result[0]['fields']['Front']['value'])
-            print('   Back: ' + result[0]['fields']['Back']['value'])
+            assert len(result) == 1
+            pprint.pprint(result[0])
 
     if sys.argv[1] == 'notes':
         deck_name = 'test'
         result = helpers.ankiconnect_invoke('findNotes', query='deck:'+deck_name)
 
         for note_id in result:
+            print('')
             print(note_id)
+            print('----------------')
 
             result = helpers.ankiconnect_invoke('notesInfo', notes=[note_id])
             assert len(result) == 1
-            for (fname, fdict) in result[0]['fields'].items():
-                print(f'{fname}: {fdict["value"]}')
+            pprint.pprint(result[0])
 
     if sys.argv[1] in ['listmedia', 'media']:
         deck_name = 'test'

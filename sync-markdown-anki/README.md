@@ -21,4 +21,5 @@ This is important. Usually when you create a note of type Basic, the resulting c
 
 1. https://foosoft.net/projects/anki-connect/index.html
 2. https://docs.ankiweb.net/getting-started.html#notes--fields
-
+3. https://github.com/ankidroid/Anki-Android/wiki/Database-Structure
+4. https://github.com/FooSoft/anki-connect/blob/master/plugin/__init__.py
