@@ -157,13 +157,14 @@ def render_markdown(node):
 # CARD RENDERING
 #------------------------------------------------------------------------------
 
-def process_typora_math(markdown):
+def process_math_stage0(markdown):
     lines = []
     in_block = False
 
     for l in markdown.split('\n'):
+        # handle double dollar separately
         if l == '$$':
-            lines.append('</anki-mathjax>' if in_block else '<anki-mathjax block="true">')
+            lines.append('</math_block>' if in_block else '<math_block>')
             in_block = not in_block
             continue
 
@@ -172,7 +173,7 @@ def process_typora_math(markdown):
             toggle = False
             for i in range(len(chars)):
                 if chars[i] == '$':
-                    chars[i] = '</anki-mathjax>' if toggle else '<anki-mathjax>'
+                    chars[i] = '</math_inline>' if toggle else '<math_inline>'
                     toggle = not toggle
             lines.append(''.join(chars))
             continue
@@ -180,6 +181,13 @@ def process_typora_math(markdown):
         lines.append(l + '\n')
 
     return ''.join(lines)
+
+def process_math_stage1(html):
+    html = html.replace('&lt;math_block&gt;', r'\[')
+    html = html.replace('&lt;/math_block&gt;', r'\]')
+    html = html.replace('&lt;math_inline&gt;', r'\(')
+    html = html.replace('&lt;/math_inline&gt;', r'\)')
+    return html
 
 def render_anki_html(x):
     if type(x) == str:
@@ -300,8 +308,13 @@ class MarkdownFileWithAnki(object):
             info0_md = ''.join(self.lines[a+1:b])
             info1_md = ''.join(self.lines[b+1:c])
 
-            info0_html = render_anki_html(process_typora_math(info0_md))
-            info1_html = render_anki_html(process_typora_math(info1_md))
+            info0_md = process_math_stage0(info0_md)
+            info0_html = render_anki_html(info0_md)
+            info0_html = process_math_stage1(info0_html)
+
+            info1_md = process_math_stage0(info1_md)
+            info1_html = render_anki_html(info1_md)
+            info1_html = process_math_stage1(info1_html)
 
             if self.lines[a] == '<!-- ANKI0 -->\n':
                 note_id = add_note(destination_deck, info0_html, info1_html)
@@ -341,7 +354,7 @@ def traverse_looking_for_cards(node, deck_name):
             node1 = node.nxt
             while node1.literal != '<!-- ANKI1 -->':
                 md = render_markdown(node1)
-                md = process_typora_math(md)
+                md = process_math_stage0(md)
                 front += render_anki_html(md)
                 node1 = node1.nxt
 
@@ -349,7 +362,7 @@ def traverse_looking_for_cards(node, deck_name):
             node2 = node1.nxt
             while node2.literal != '<!-- ANKI2 -->':
                 md = render_markdown(node2)
-                md = process_typora_math(md)
+                md = process_math_stage0(md)
                 back += render_anki_html(md)
                 node2 = node2.nxt
 
