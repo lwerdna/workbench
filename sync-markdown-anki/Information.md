@@ -79,3 +79,24 @@ Finish this sequence: one, {{c1::two}}, three, four.
 <!-- ANKI1 -->
 Some extra stuff. Ok. A.
 <!-- ANKI2 -->
+
+## Try An Image
+
+<!-- ANKI0 NID:1677621183872 -->
+What is the name of this animal?
+
+![](./images/cat.png)
+<!-- ANKI1 -->
+It's a cat!
+<!-- ANKI2 -->
+
+<!-- ANKI0 NID:1677621877170 -->
+Name a few emojis!
+<!-- ANKI1 -->
+Some text here.
+![](./images/cold-face_1f976.png)
+![](./images/zany-face_1f92a.png)
+Some text in the middle.
+![](./images/smiling-face-with-hearts_1f970.png)
+Some text after.
+<!-- ANKI2 -->

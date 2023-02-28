@@ -1,6 +1,8 @@
+import os
 import re
 import sys
 import json
+import base64
 import urllib.request
 
 import commonmark
@@ -262,6 +264,50 @@ def update_note(note_id, info0_html, info1_html):
 def get_deck_note_ids(deck_name):
     return ankiconnect_invoke('findNotes', query='deck:'+deck_name)
 
+# upload images referenced in markdown
+# change the image path
+def process_images(md):
+    # images
+    replacements = []
+    for m in re.finditer(r'!\[\]\((.*?)\)', md):
+        fpath = m.group(1)
+        fname = os.path.basename(fpath)
+
+        # does this file already exist?
+        names = ankiconnect_invoke('getMediaFilesNames', pattern=fname)
+        if not names:
+            # no, upload it to collection's media
+            with open(fpath, 'rb') as fp:
+                fdata64 = base64.b64encode(fp.read()).decode('utf-8')
+            stored_name = ankiconnect_invoke('storeMediaFile', filename=fname, data=fdata64)
+            if stored_name != fname:
+                raise Exception(f'couldn\'t upload file {fpath} to ANKI {fname}')
+
+        # store the needed markdown replacement
+        before = m.group(0)
+        after = f'![]({fname})'
+        replacements.append((before, after))
+
+    # do replacements
+    for (before, after) in replacements:
+        md = md.replace(before, after)
+
+    # return modified markdown
+    return md
+
+# given markdown, return
+def process_note_markdown(md):
+    # images
+    if '![](' in md:
+        md = process_images(md)
+
+    # math
+    md = process_math_stage0(md)
+    html = render_anki_html(md)
+    html = process_math_stage1(html)
+
+    return html
+
 #------------------------------------------------------------------------------
 # PARSING
 #------------------------------------------------------------------------------
@@ -308,13 +354,8 @@ class MarkdownFileWithAnki(object):
             info0_md = ''.join(self.lines[a+1:b])
             info1_md = ''.join(self.lines[b+1:c])
 
-            info0_md = process_math_stage0(info0_md)
-            info0_html = render_anki_html(info0_md)
-            info0_html = process_math_stage1(info0_html)
-
-            info1_md = process_math_stage0(info1_md)
-            info1_html = render_anki_html(info1_md)
-            info1_html = process_math_stage1(info1_html)
+            info0_html = process_note_markdown(info0_md)
+            info1_html = process_note_markdown(info1_md)
 
             if self.lines[a] == '<!-- ANKI0 -->\n':
                 note_id = add_note(destination_deck, info0_html, info1_html)
