@@ -228,6 +228,7 @@ def add_note(deck_name, data0, data1):
              }
            }
 
+    print(f'{GREEN}adding note{NORMAL}')
     note_id = ankiconnect_invoke('addNote', note=info)
     return note_id
 
@@ -269,7 +270,7 @@ def get_deck_note_ids(deck_name):
 def process_images(md):
     # images
     replacements = []
-    for m in re.finditer(r'!\[\]\((.*?)\)', md):
+    for m in re.finditer(r'!\[.*?\]\((.*)\)', md):
         fpath = m.group(1)
         fname = os.path.basename(fpath)
 
@@ -279,6 +280,7 @@ def process_images(md):
             # no, upload it to collection's media
             with open(fpath, 'rb') as fp:
                 fdata64 = base64.b64encode(fp.read()).decode('utf-8')
+            print(f'{GREEN}uploading {fpath} to collection/media/{fname}{NORMAL}')
             stored_name = ankiconnect_invoke('storeMediaFile', filename=fname, data=fdata64)
             if stored_name != fname:
                 raise Exception(f'couldn\'t upload file {fpath} to ANKI {fname}')
@@ -295,11 +297,45 @@ def process_images(md):
     # return modified markdown
     return md
 
+# upload video referenced in markdown
+# change the video path
+def process_video(md):
+    # images
+    replacements = []
+    for m in re.finditer(r'<video src="(.*)"></video>', md):
+        fpath = m.group(1)
+        fname = os.path.basename(fpath)
+
+        # does this file already exist?
+        names = ankiconnect_invoke('getMediaFilesNames', pattern=fname)
+        if not names:
+            # no, upload it to collection's media
+            with open(fpath, 'rb') as fp:
+                fdata64 = base64.b64encode(fp.read()).decode('utf-8')
+            print(f'  {GREEN}uploading {fpath} to collection/media/{fname}{NORMAL}')
+            stored_name = ankiconnect_invoke('storeMediaFile', filename=fname, data=fdata64)
+            if stored_name != fname:
+                raise Exception(f'couldn\'t upload file {fpath} to ANKI {fname}')
+
+        # store the needed markdown replacement
+        before = m.group(0)
+        after = f'[sound:{fname}]'
+        replacements.append((before, after))
+
+    # do replacements
+    for (before, after) in replacements:
+        md = md.replace(before, after)
+
+    # return modified markdown
+    return md
+
 # given markdown, return
 def process_note_markdown(md):
     # images
-    if '![](' in md:
-        md = process_images(md)
+    md = process_images(md)
+
+    # video
+    md = process_video(md)
 
     # math
     md = process_math_stage0(md)

@@ -100,3 +100,13 @@ Some text in the middle.
 ![](./images/smiling-face-with-hearts_1f970.png)
 Some text after.
 <!-- ANKI2 -->
+
+## Try A Video
+
+<!-- ANKI0 NID:1677699412377 -->
+How is a function's graph affected by multiplying its output by a constant?
+<!-- ANKI1 -->
+For constant $a$, when $|a| < 1$ the graph is shrunk vertically, and $|a| > 1$ it is expanded vertically. When $a < 0$ the graph is flipped vertically:
+
+<video src="images/function-affected-multiplier.mp4"></video>
+<!-- ANKI2 -->
