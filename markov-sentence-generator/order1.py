@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import time
 import random
 import os, sys, re, pprint
 
@@ -26,31 +27,42 @@ def choose(options):
     assert False
 
 def generate_sentence(lookup):
-    sentence = []
+    words = []
 
     state = '(start)'
-    while state != '.':
+    while True:
         state = choose(lookup[state])
-        sentence.append(state)
+        if state in ['.', '!', '?']: break
+        words.append(state)
 
-    return ' '.join(sentence)
+    return ' '.join(words) + state
 
 if __name__ == '__main__':
-    print('opening book')
+    print('reading book')
+    t0 = time.perf_counter()
     with open('1984.txt') as fp:
         raw = fp.read()
-        # remove anything not a word character, space character, or period
-        raw = re.sub(r'[^\w\s\.]+', '', raw)
+        # multiple dashes become one space
+        # ...stretch out over a long, indefinite time--weeks, possibly--and the...
+        raw = re.sub(r'\-+', ' ', raw)
+        # remove anything not a word character, space character, or sentence terminator: . ! ?
+        raw = re.sub(r'[^\w\s\.\!\?]+', '', raw)
         # multiple spaces become one space
         raw = re.sub(r'\s+', ' ', raw)
+    t1 = time.perf_counter()
+    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
     print('tokenizing words (nltk)')
+    t0 = time.perf_counter()
     words = nltk.word_tokenize(raw)
+    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
     print('filtering words')
+    t0 = time.perf_counter()
     def check(w):
         return re.match(r'^\w+$', w) or w == '.'
     words = [w for w in words if check(w)]
+    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
     # build state machine lookup table, looks like:
     # ...
@@ -62,7 +74,8 @@ if __name__ == '__main__':
     # ...
     lookup = {}
 
-    # count bigrams
+    print(f'processing bigrams')
+    t0 = time.perf_counter()
     counts = {w:{} for w in set(words)}
     for a,b in [(words[i], words[i+1]) for i in range(len(words)-1)]:
         subdict = counts[a]
@@ -72,8 +85,10 @@ if __name__ == '__main__':
     for (a, subdict) in counts.items():
         total = sum(subdict.values())
         lookup[a] = tuple((b, count/total) for (b, count) in subdict.items())
+    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
-    print('finding probability of starter words of sentences')
+    print('processing sentence-starting words')
+    t0 = time.perf_counter()
     counts = {}
     for sentence in nltk.sent_tokenize(raw):
         i = sentence.find(' ')
@@ -83,6 +98,9 @@ if __name__ == '__main__':
 
     total = sum(counts.values())
     lookup['(start)'] = tuple((w, count/total) for (w, count) in counts.items())
+    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
+
+    print('generating...')
 
     # generate sentence
     for i in range(20):

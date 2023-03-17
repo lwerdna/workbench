@@ -3,21 +3,17 @@ Get 1984 in txt format: http://gutenberg.net.au/ebooks01/0100021.txt
 ### Example output with 1st-order Markov property (looking at only the current state)
 
 ```
-The orator of about dying people commented on where two words such people swarmed with their way while you felt sharp glance.
+It might arrive presently some coffee was paradise in counter attack against drinking gin made one meaning that hinted at most horrible with his papers of facial expressions gestures and several seconds later committed but somehow curiously comforted by promises of cry out she woke first.
 
-There I consider any other side naked.
+There are thinking not relief it touched it together without saying.
 
-Below that disgusting running without being alone with proletarian tolerates presentday society those completely spiritless.
+A curious lack of scarcity the price of seizing this guess indeed already appeared very skilfully done can exist said finally so added inconsequently.
 
-Then goodbye my feet of Loveand yes she appeared meant only read but to manipulate public trial had happened over two dollars you with fanaticismis one or a girls.
+The speech of crust there then swelled its structure remains roughly even before except stand gazing into two colours magenta and vanished.
 
-In his thigh and moreover in Oceania is suffering it fitted a stump the chess.
+The Lottery.
 
-The refugee woman it together invisible audience somewhere in subjection like jagged splinters of guarding against an uneasy feeling.
+Not in industrial age that morning if Tom is Yes she dodged the Hate interrupted him gravely.
 
-Apart from writing by his private motorcar or is indifferent.
-
-By what most of emotions and Rutherfordin the existing by becoming truths.
-
-Winston was constricted.
+He used scent when they spooned the balminess of wrong and flogged with the woman dare move because all In fact he in alf give a damned soul.
 ```
