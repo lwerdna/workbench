@@ -26,13 +26,16 @@ def choose(options):
 def generate_sentence(lookup):
     words = []
 
-    state = '(start)'
+    context = (None, '(start)')
     while True:
-        state = choose(lookup[state])
-        if state in ['.', '!', '?']: break
-        words.append(state)
+        word = choose(lookup[context])
 
-    return ' '.join(words) + state
+        if word in ['.', '!', '?']: break
+        words.append(word)
+
+        context = (context[1], word)
+
+    return ' '.join(words) + word
 
 if __name__ == '__main__':
     print('reading book')
@@ -62,39 +65,57 @@ if __name__ == '__main__':
     print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
     # build state machine lookup table, looks like:
-    # ...
-    # 'younger': (('child', 0.25),
-    #             ('generation', 0.25),
-    #             ('made', 0.25),
-    #             ('than', 0.25)),
-    # 'youngish': {('woman', 1.0)),
-    # ...
     lookup = {}
 
-    print(f'processing bigrams')
-    t0 = time.perf_counter()
-    counts = {w:{} for w in set(words)}
-    for a,b in [(words[i], words[i+1]) for i in range(len(words)-1)]:
-        subdict = counts[a]
-        subdict[b] = subdict.get('b',0) + 1
-
-    # add bigrams to lookup
-    for (a, subdict) in counts.items():
-        total = sum(subdict.values())
-        lookup[a] = tuple((b, count/total) for (b, count) in subdict.items())
-    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
-
-    print('processing sentence-starting words')
+    print(f'processing trigrams')
     t0 = time.perf_counter()
     counts = {}
-    for sentence in nltk.sent_tokenize(raw):
-        i = sentence.find(' ')
-        if i == -1: continue
-        first_word = sentence[0:i]
-        counts[first_word] = counts.get(first_word, 0) + 1
+    for a,b,c in [(words[i], words[i+1], words[i+2]) for i in range(len(words)-2)]:
+        bigram = (a,b)
+        counts.setdefault(bigram, {})
+        counts[bigram][c] = counts[bigram].get(c, 0) + 1 
 
-    total = sum(counts.values())
-    lookup['(start)'] = tuple((w, count/total) for (w, count) in counts.items())
+    # add bigrams to lookup
+    for (bigram, subdict) in counts.items():
+        total = sum(subdict.values())
+        lookup[bigram] = tuple((word, count/total) for (word, count) in subdict.items())
+    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
+
+    # (None, '(start)') -> ???
+    print('processing initial state transition')
+    t0 = time.perf_counter()
+
+    # like: { 'Foo': <how many times Foo is the first word of a sentence>,
+    #         'Bar': <how many times Bar is the first word of a sentence>,
+    #         ... }
+    counts1 = {}
+
+    # like: { 'Foo': {'a':<how many times a is second word after Foo>, 'b':<how many times b is second word after Foo>, ...},
+    #         'Bar': {'c':<how many times a is second word after Bar>, 'd':<how many times b is second word after Bar>, ...},
+    counts2 = {}
+    for sentence in nltk.sent_tokenize(raw):
+        words = nltk.word_tokenize(sentence)
+
+        if len(words) > 0:
+            counts1[words[0]] = counts1.get(words[0], 0) + 1
+
+        if len(words) > 1:
+            first, second = words[0], words[1]
+            counts2.setdefault(first, {})
+            counts2[first].setdefault(second, 0)
+            counts2[first][second] += 1
+
+    # (None, '(start)') -> ( (<FirstWordA>, <P_FirstWordA>),
+    #                        (<FirstWordB>, <P_FirstWordB>), ... )
+    total = sum(counts1.values())
+    lookup[(None, '(start)')] = tuple((w, count/total) for (w, count) in counts1.items())
+
+    # ('(start)', <FirstWord>) -> ( (<SecondWordA>, <P_SecondWordA>),
+    #                               (<SecondWordB>, <P_SecondWordB>), ... )
+    for (first, subdict) in counts2.items():
+        total = sum(subdict.values())
+        lookup[('(start)', first)] = tuple((second, count/total) for (second, count) in subdict.items())
+
     print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
     print('generating...')
