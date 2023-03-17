@@ -52,14 +52,14 @@ if __name__ == '__main__':
     print('tokenizing words (nltk)')
     t0 = time.perf_counter()
     words = nltk.word_tokenize(raw)
-    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
+    print(f'  ({len(words)} words took {round(time.perf_counter() - t0, 4)}s)')
 
     print('filtering words')
     t0 = time.perf_counter()
     def check(w):
         return re.match(r'^\w+$', w) or w == '.'
     words = [w for w in words if check(w)]
-    print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
+    print(f'  ({len(words)} words took {round(time.perf_counter() - t0, 4)}s)')
 
     # build state machine lookup table, looks like:
     # ...
@@ -95,6 +95,53 @@ if __name__ == '__main__':
 
     total = sum(counts.values())
     lookup['(start)'] = tuple((w, count/total) for (w, count) in counts.items())
+    print(f'  ({len(counts)} took {round(time.perf_counter() - t0, 4)}s)')
+
+    print(f'total states: {len(lookup)}')
+    num_edges = sum(len(subdict) for subdict in lookup.values())
+    print(f'total edges: {num_edges}')
+
+    print('generating graph drawing to /tmp/tmp.dot')
+
+    if 0:
+        # TRY TO DO THE WHOLE GRAPH
+        with open('/tmp/tmp.dot', 'w') as fp:
+            fp.write('digraph g {\n')
+            for src, arrows in lookup.items():
+                src = '"' + src + '"'
+                for dst, p in arrows:
+                    p = str(round(p, 4))
+                    dst = '"' + dst + '"'
+                    fp.write(f'\t{src} -> {dst} [label="{p}"];\n')
+            fp.write('}\n')
+
+    if 1:
+        # DO FIRST N LEVELS FROM STARTING WORD "THE"
+        seen = set()
+        queue = ['eyes']
+        depth_countdown = 10
+        with open('/tmp/tmp.dot', 'w') as fp:
+            fp.write('digraph g {\n')
+
+            while queue:
+                src = queue.pop(0)
+                if src in seen: continue
+                seen.add(src)
+
+                src_node_name = '"' + src + '"'
+
+                for (dst, p) in lookup[src]:
+                    queue.append(dst)
+                    label = str(round(p, 4))
+                    dst_node_name = '"' + dst + '"'
+                    fp.write(f'\t{src_node_name} -> {dst_node_name} [label="{label}"];\n')
+
+                depth_countdown -= 1
+                if depth_countdown == 0:
+                    break
+
+            fp.write('}\n')
+
     print(f'  (took {round(time.perf_counter() - t0, 4)}s)')
 
     print('generating...')

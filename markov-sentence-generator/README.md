@@ -4,7 +4,10 @@ In 1st-order model, context is only the current state (current word). In 2nd-ord
 
 ![image-20230317122241308](assets/image-20230317122241308.png)
 
-* Test input is 1984 in txt format: http://gutenberg.net.au/ebooks01/0100021.txt
+The test input is 1984 in txt format: http://gutenberg.net.au/ebooks01/0100021.txt. There are about 110k words, roughly 10k unique tokens (currently case-sensitive) or states in the 1st-order model, and about 55k edges in the 1st-order model. Here's a glimpse into a portion of the state transition diagram:
+
+![image-20230317142918560](assets/image-20230317142918560.png)
+
 * https://en.wikipedia.org/wiki/Markov_chain
 
 ### Example 1st-order output:
