@@ -57,4 +57,3 @@ See [./demo.py](./demo.py) for the proof of concept, which outputs:
 ![](./assets/output.svg)
 
 Or `2x - 1/x` in string form.
-

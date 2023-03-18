@@ -2,8 +2,6 @@
 
 CLANG = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/clang
 LD_LLD = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/ld.lld
-LLD_LINK = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/lld-link
-LD64 = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/ld64.lld
 
 puzzle: msquare.o main.o
 	$(LD_LLD) msquare.o main.o -o puzzle

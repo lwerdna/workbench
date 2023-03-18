@@ -1,4 +1,4 @@
-tools/scripts/notes for BinaryNinja issue: [Inconsistency in jump table recovery depending on LDR, TBB/TBH #77](https://github.com/Vector35/arch-armv7/issues/77)
+These are tools/scripts/notes for BinaryNinja issue: [Inconsistency in jump table recovery depending on LDR, TBB/TBH #77](https://github.com/Vector35/arch-armv7/issues/77)
 
 A jump table with load register instruction `LDR` used for dispatching a case produces bad case indices in HLIL:
 
