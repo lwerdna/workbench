@@ -64,12 +64,24 @@ another
 ## Try A List
 
 <!-- ANKI0 NID:1676671732525 -->
-What are three tiers of AI?
+(NUMBERED LIST TEST) What are three tiers of AI?
 <!-- ANKI1 -->
 narrow (ANI), general (AGI), super (ASI)
 1. artificial superintelligence (ASI), more capable than a human
 2. artificial general intelligence (AGI), similar to a human on general tasks (AKA: strong or general)
 3. artificial narrow intelligence (ANI), better than a human on specific task, eg: Stockfish (AKA: weak or narrow)
+<!-- ANKI2 -->
+
+## Try A Bulleted List
+
+<!-- ANKI0 NID:1677707317748 -->
+(BULLETED LIST TEST) Name some sodas!
+<!-- ANKI1 -->
+Here they are:
+
+* Coke
+* 7UP
+* Mountain Dew
 <!-- ANKI2 -->
 
 ## Try A Cloze Deletion
@@ -106,7 +118,12 @@ Some text after.
 <!-- ANKI0 NID:1677699412377 -->
 How is a function's graph affected by multiplying its output by a constant?
 <!-- ANKI1 -->
-For constant $a$, when $|a| < 1$ the graph is shrunk vertically, and $|a| > 1$ it is expanded vertically. When $a < 0$ the graph is flipped vertically:
+For constant $a$:
+
+* if $a > 1$ the the graph expands vertically
+* if $0 < a < 1$ the graph contracts vertically
+* if $-1 < a < 0$ the graph flips and contract vertically
+* if $a < -1$ the graph flips and expands vertically
 
 <video src="images/function-affected-multiplier.mp4"></video>
 <!-- ANKI2 -->

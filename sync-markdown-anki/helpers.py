@@ -159,11 +159,12 @@ def render_markdown(node):
 # CARD RENDERING
 #------------------------------------------------------------------------------
 
-def process_math_stage0(markdown):
+def process_math_stage0(md):
     lines = []
     in_block = False
 
-    for l in markdown.split('\n'):
+    tmp = md.split('\n')
+    for l in tmp:
         # handle double dollar separately
         if l == '$$':
             lines.append('</math_block>' if in_block else '<math_block>')
@@ -177,7 +178,7 @@ def process_math_stage0(markdown):
                 if chars[i] == '$':
                     chars[i] = '</math_inline>' if toggle else '<math_inline>'
                     toggle = not toggle
-            lines.append(''.join(chars))
+            lines.append(''.join(chars) + '\n')
             continue
 
         lines.append(l + '\n')
