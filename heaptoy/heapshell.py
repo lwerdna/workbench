@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 return next(x for x in range(1000000) if not x in G.nodes)
 
             def gen_tree(G, root, depth):
-                if depth >= 2:
+                if depth >= 3:
                     return
 
                 for num_children in range(random.randint(1,3)):
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                         action_type = 'alloc'
                     if action_type == 'alloc':
                         # alloc one of 7k, 14k, 21k, ..., 240k
-                        amount = random.choice([7*i*1024 for i in range(1,21)])
+                        amount = random.choice([51*i*1024 for i in range(8,24)])
                         #action = f'alloc({amount:X})'
                         action = f'A{amount:X}'
                     else:
@@ -114,70 +114,6 @@ if __name__ == '__main__':
 
             nx.write_gml(G, 'input.gml')
             nxt.draw(G, '/tmp/input.svg', f_edge_attrs=edge_label_action)
-
-        elif inp == 'movie':
-            import networkx as nx
-            import curiousbits.graphs.nxtools as nxt
-            G = nx.read_gml('input.gml')
-
-            def traverse_pre(G, root):
-                result = [root]
-                for c in G.successors(root):
-                    result.extend(traverse_pre(G, c))
-                return result
-
-            nodes = traverse_pre(G, 'root')
-            for n in nodes:
-                print(f'ADD_NODE({n})')
-
-                mvm = MemVM()
-
-                if n == 'root':
-                    print(f'ADD_NODE({n})')
-                    print(f'SET_NODE_LABEL({n}, " ")')
-                    print(f'NEXT_FRAME()')
-
-                    print(f'SET_NODE_PROPERTY({n}, "image", "/tmp/image_root.png")')
-                    mvm.snap('/tmp/image_root.png', 128, 128)
-                    print(f'NEXT_FRAME()')
-
-                    continue
-
-                assert len(G.in_edges(n)) == 1
-                predecessor = list(G.in_edges(n))[0][0]
-
-                print(f'HIGHLIGHT_NODE({predecessor})')
-                print(f'NEXT_FRAME()')
-
-                print(f'ADD_EDGE({predecessor}, {n})')
-                print(f'HIGHLIGHT_EDGE({predecessor}, {n})')
-                print(f'NEXT_FRAME()')
-
-                # actions
-                paths = list(nx.all_simple_paths(G, 'root', n))
-                assert len(paths) == 1
-                path = paths[0]
-                actions = [G.edges[a,b]['action'] for a,b in zip(path, path[1:])]
-                print(f'// performing actions: {actions}')
-                for action in actions:
-                    print(f'// performing action: {action}')
-                    if m := re.match(r'^A(.*)$', action):
-                        amount = int(m.group(1), 16)
-                        mvm.malloc(amount)
-                    elif m := re.match(r'^F(.*)$', action):
-                        pass
-                    else:
-                        print(f'WTF: {action}')
-
-                fpath = f'/tmp/image_{n}.png'
-                mvm.snap(fpath, 128, 128)
-                print(f'SET_NODE_PROPERTY({n}, "image", "{fpath}")')
-                print(f'NEXT_FRAME()')
-
-                #print(actions)
-                #print(f'{edge[0]}->{edge[1]} uses actions {actions}')
-
-                del mvm
 
             #print(traverse_pre(G, 'root'))
 

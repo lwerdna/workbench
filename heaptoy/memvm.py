@@ -84,6 +84,13 @@ class MemVM(object):
         addr = random.choice(list(self.active_buffers.keys()))
         self.free(addr)
 
+    def free_index(self, i):
+        if not self.active_buffers:
+            return
+        addrs = list(self.active_buffers.keys())
+        if i < len(addrs):
+            self.free(addrs[i])
+
     def snap(self, fpath, width=None, height=None, verbose=False):
         palette = [
             0x00007F, 0x000084, 0x000088, 0x00008D, 0x000091, 0x000096, 0x00009A,
