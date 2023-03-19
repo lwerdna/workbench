@@ -67,6 +67,20 @@ class Game():
 
         return self.rewards.get(position, -1)
 
+    def available_actions(self, position=None):
+        if position == None:
+            position = self.agent_position
+
+        return {(0,0): ('right', 'up'),
+                (0,1): ('right', 'up', 'down'),
+                (0,2): ('right', 'down'),
+                (1,0): ('right', 'left', 'up'),
+                (1,1): ('left', 'right', 'up', 'down'),
+                (1,2): ('left', 'right', 'down'),
+                (2,0): ('left', 'up'),
+                (2,1): ('left', 'up', 'down'),
+                (2,2): ('left', 'down')}[position]
+
     def state(self):
         return str(self.agent_position)
 
@@ -102,7 +116,7 @@ if __name__ == '__main__':
     game = Game()
     states_n = game.dimensions[0] * game.dimensions[1]
 
-    q_table = {(x,y): {'left':0, 'right':0, 'up':0, 'down':0} for x in range(game.dimensions[0]) for y in range(game.dimensions[1])}
+    q_table = {(x,y): {a:0 for a in game.available_actions((x,y))} for x in range(game.dimensions[0]) for y in range(game.dimensions[1])}
 
     for episode in range(num_episodes):
         g = Game()
@@ -114,10 +128,12 @@ if __name__ == '__main__':
         for step in range(max_steps_per_episode):
             print('---- getting move ----')
             action = get_action_from_user()
-            if not action in ['left', 'right', 'up', 'down']:
-                sys.exit(-1)
 
-            q_current = q_table[g.agent_position][action]
+            if not action in g.available_actions():
+                print('INVALID ACTION')
+                continue
+
+            q_current = q_table[g.agent_position].get(action, 0)
 
             position_current = g.agent_position
             g.move(action)
