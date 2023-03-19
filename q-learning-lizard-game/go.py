@@ -25,7 +25,15 @@ class Game():
                         (0,2): 'crickets(1)'
                     }
 
-        self.lizard_loc = (0, 0)
+        self.rewards = {  (2,0): 10,
+                          (1,1): -10,
+                          (0,2): 2
+                    }
+
+        self.agent_position = (0, 0)
+
+        self.width = max(x for (x,y) in self.cells)+1
+        self.height = max(y for (x,y) in self.cells)+1
 
     def move(self, move):
         dx, dy = 0, 0
@@ -39,34 +47,40 @@ class Game():
             case 'down':
                 dy = -1
 
-        new_loc = (self.lizard_loc[0]+dx, self.lizard_loc[1]+dy)
+        new_loc = (self.agent_position[0]+dx, self.agent_position[1]+dy)
 
         if new_loc[0] >= 0 and new_loc[0] < 3 and \
            new_loc[1] >= 0 and new_loc[1] < 3:
-            self.lizard_loc = new_loc 
+            self.agent_position = new_loc
+
+    def contents_of(self, position):
+        result = []
+        if position in self.cells:
+            result.append(self.cells[position])
+        if position == self.agent_position:
+            result.append('lizard')
+        return result
 
     def reward(self, position=None):
         if position == None:
-            position = self.lizard_loc
+            position = self.agent_position
 
-        if position in self.cells:
-            item = self.cells[position]
+        return self.rewards.get(position, -1)
 
-            if item == 'bird':
-                return -10
-            elif m := re.match(r'^crickets\((\d+)\)$', item):
-                crickets_n = int(m.group(1))
-                return 2 * crickets_n
-            else:
-                assert False, f'unknown item: {item}'
-        else:
-            return -1
-            
     def state(self):
-        return str(self.lizard_loc) 
+        return str(self.agent_position)
 
     def __str__(self):
-        return 'lizard at: ' + self.state() + ' which rewards ' + str(self.reward())
+        lines = []
+        lines.append('+------------------+------------------+------------------+')
+        for y in range(self.height-1, 0-1, -1): # height-1, height-2, ..., 0
+            tokens = []
+            for x in range(0, self.width): # 0, 1, ..., width-1
+                contents = self.contents_of((x,y))
+                tokens.append(','.join(contents).rjust(18))
+            lines.append('|' + '|'.join(tokens) + '|')
+            lines.append('+------------------+------------------+------------------+')
+        return '\n'.join(lines)
 
 def get_action_from_user():
     import getch
@@ -103,18 +117,18 @@ if __name__ == '__main__':
             if not action in ['left', 'right', 'up', 'down']:
                 sys.exit(-1)
 
-            q_current = q_table[g.lizard_loc][action]
+            q_current = q_table[g.agent_position][action]
 
-            position_current = g.lizard_loc
+            position_current = g.agent_position
             g.move(action)
             reward = g.reward()
 
-            q_new = reward + discount_rate * max(q_table[g.lizard_loc].values())
+            q_new = reward + discount_rate * max(q_table[g.agent_position].values())
 
             update = (1-learning_rate)*q_current + learning_rate*q_new
             q_table[position_current][action] = update
 
-            print(f'   action: {action} moves agent {position_current} -> {g.lizard_loc} for reward {reward}')
+            print(f'   action: {action} moves agent {position_current} -> {g.agent_position} for reward {reward}')
             print(f'q_current: {q_current}')
             print(f'    q_new: {q_new}')
             print(f'  updated: {update}')
