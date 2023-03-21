@@ -29,5 +29,7 @@ axes.set_title('Q-value vs step')
 axes.set_ylabel("Q-value ")
 axes.set_xlabel("step ")
 
+figure.set_figwidth(12.8)
+figure.set_figheight(4.8)
 figure.legend(labels)
 figure.savefig('plot.svg', format='svg', dpi=1200, bbox_inches='tight')
