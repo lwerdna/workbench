@@ -11,11 +11,6 @@ max_steps_per_episode = 100
 learning_rate = .7 # "alpha", how quickly adopts new q-value (factor of weighted sum)
 discount_rate = .99 # "gamma", importance of future rewards (0 means only consider current rewards)
 
-exploration_rate = 1 # "epsilon"
-max_exploration_rate = 1
-min_exploration_rate = .01
-exploration_decay_rate = .01
-
 if __name__ == '__main__':
     # dynamically load game
     module_name = 'LizardGame'
@@ -49,7 +44,8 @@ if __name__ == '__main__':
 
         for step in range(max_steps_per_episode):
             print('---- getting action ----')
-            action = action_select_module.get_action(q_table, state)
+            progress = episode / num_episodes
+            action = action_select_module.get_action(q_table, state, progress)
 
             if not action in game.actions(state):
                 print('INVALID ACTION')

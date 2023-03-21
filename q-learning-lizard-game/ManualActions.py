@@ -1,6 +1,6 @@
 # gets action from the user
 
-def get_action(q_table, state):
+def get_action(q_table, state, progress):
     import getch
 
     print(f'available actions: ' + str(list(q_table[state].keys())))
