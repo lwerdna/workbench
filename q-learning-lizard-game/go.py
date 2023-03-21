@@ -15,82 +15,61 @@ max_exploration_rate = 1
 min_exploration_rate = .01
 exploration_decay_rate = .01
 
+#    +------------------+------------------+------------------+
+# 2  |       crickets(1)|                  |                  |
+#    +------------------+------------------+------------------+
+# 1  |                  |              bird|                  |
+#    +------------------+------------------+------------------+
+# 0  |            lizard|                  |       crickets(5)|
+#    +------------------+------------------+------------------+
+#              0                  1                  2
 class Game():
     def __init__(self):
-        self.dimensions = (3, 3)
+        pass
 
-        # Cartesian view
-        self.cells = {  (2,0): 'crickets(5)',
-                        (1,1): 'bird',
-                        (0,2): 'crickets(1)'
-                    }
+    # return possible states, the first is the start state
+    def states(self):
+        return [(x,y) for x in range(3) for y in range(3)]
 
-        self.rewards = {  (2,0): 10,
-                          (1,1): -10,
-                          (0,2): 2
-                    }
+    def actions(self, state):
+        return {(0,0): {'right', 'up'},
+                (0,1): {'right', 'up', 'down'},
+                (0,2): {'right', 'down'},
+                (1,0): {'right', 'left', 'up'},
+                (1,1): {'left', 'right', 'up', 'down'},
+                (1,2): {'left', 'right', 'down'},
+                (2,0): {'left', 'up'},
+                (2,1): {'left', 'up', 'down'},
+                (2,2): {'left', 'down'}}[state]
 
-        self.agent_position = (0, 0)
+    def reward(self, state):
+        lookup = {(2,0): 10, (1,1): -10, (0,2): 2}
+        return lookup.get(state, -1)
 
-        self.width = max(x for (x,y) in self.cells)+1
-        self.height = max(y for (x,y) in self.cells)+1
+    def transition(self, state, action):
+        dx, dy = {'left':(-1, 0), 'right':(1,0), 'up':(0,1), 'down':(0,-1)}[action]
 
-    def move(self, move):
-        dx, dy = 0, 0
-        match move:
-            case 'left':
-                dx = -1
-            case 'right':
-                dx = 1
-            case 'up':
-                dy = 1
-            case 'down':
-                dy = -1
+        result = (state[0]+dx, state[1]+dy)
 
-        new_loc = (self.agent_position[0]+dx, self.agent_position[1]+dy)
+        # assume caller used only legal actions
+        assert result[0] >= 0 and result[0] < 3 and result[1] >= 0 and result[1] < 3
 
-        if new_loc[0] >= 0 and new_loc[0] < 3 and \
-           new_loc[1] >= 0 and new_loc[1] < 3:
-            self.agent_position = new_loc
-
-    def contents_of(self, position):
-        result = []
-        if position in self.cells:
-            result.append(self.cells[position])
-        if position == self.agent_position:
-            result.append('lizard')
         return result
 
-    def reward(self, position=None):
-        if position == None:
-            position = self.agent_position
+    def ends(self, state):
+        return state == (1,1) or state == (2,0) # position of bird or the 10 crickets
 
-        return self.rewards.get(position, -1)
-
-    def available_actions(self, position=None):
-        if position == None:
-            position = self.agent_position
-
-        return {(0,0): ('right', 'up'),
-                (0,1): ('right', 'up', 'down'),
-                (0,2): ('right', 'down'),
-                (1,0): ('right', 'left', 'up'),
-                (1,1): ('left', 'right', 'up', 'down'),
-                (1,2): ('left', 'right', 'down'),
-                (2,0): ('left', 'up'),
-                (2,1): ('left', 'up', 'down'),
-                (2,2): ('left', 'down')}[position]
-
-    def state(self):
-        return str(self.agent_position)
-
-    def __str__(self):
+    def draw(self, state):
         lines = []
         lines.append('+------------------+------------------+------------------+')
-        for y in range(self.height-1, 0-1, -1): # height-1, height-2, ..., 0
+        for y in range(3-1, 0-1, -1): # height-1, height-2, ..., 0
             tokens = []
-            for x in range(0, self.width): # 0, 1, ..., width-1
-                contents = self.contents_of((x,y))
+            for x in range(0, 3): # 0, 1, ..., width-1
+                contents = []
+                if (x,y)==(0,2): contents.append('crickets(1)')
+                if (x,y)==(1,1): contents.append('bird')
+                if (x,y)==(2,0): contents.append('crickets(5)')
+                if (x,y)==state: contents.append('lizard')
                 tokens.append(','.join(contents).rjust(18))
             lines.append('|' + '|'.join(tokens) + '|')
             lines.append('+------------------+------------------+------------------+')
@@ -112,47 +91,51 @@ def get_action_from_user():
         return ch0
 
 if __name__ == '__main__':
-
     game = Game()
-    states_n = game.dimensions[0] * game.dimensions[1]
 
-    q_table = {(x,y): {a:0 for a in game.available_actions((x,y))} for x in range(game.dimensions[0]) for y in range(game.dimensions[1])}
+    states_possible = game.states()
+    state_init = states_possible[0]
+
+    q_table = {s: {a:0 for a in game.actions(s)} for s in game.states()}
+    pprint.pprint(q_table)
 
     for episode in range(num_episodes):
-        g = Game()
+        state = state_init
 
         print(f'---- episode {episode} start ----')
         pprint.pprint(q_table)
-        print(g)
+        print(game.draw(state))
 
         for step in range(max_steps_per_episode):
-            print('---- getting move ----')
+            print('---- getting action ----')
             action = get_action_from_user()
 
-            if not action in g.available_actions():
+            if not action in game.actions(state):
                 print('INVALID ACTION')
                 continue
 
-            q_current = q_table[g.agent_position].get(action, 0)
+            q_current = q_table[state].get(action, 0)
 
-            position_current = g.agent_position
-            g.move(action)
-            reward = g.reward()
+            state_next = game.transition(state, action)
+            reward = game.reward(state_next)
 
-            q_new = reward + discount_rate * max(q_table[g.agent_position].values())
+            q_new = reward + discount_rate * max(q_table[state_next].values())
 
             update = (1-learning_rate)*q_current + learning_rate*q_new
-            q_table[position_current][action] = update
+            q_table[state][action] = update
 
-            print(f'   action: {action} moves agent {position_current} -> {g.agent_position} for reward {reward}')
+            print(f'   action: {action} moves agent {state} -> {state_next} for reward {reward}')
             print(f'q_current: {q_current}')
             print(f'    q_new: {q_new}')
             print(f'  updated: {update}')
 
             pprint.pprint(q_table)
-            print(g)
 
-            if abs(reward) >= 10:
-                print('EXITING EPISODE')
+            print(game.draw(state_next))
+
+            if game.ends(state_next):
+                print('ENDING EPISODE')
                 break
+
+            state = state_next
 
