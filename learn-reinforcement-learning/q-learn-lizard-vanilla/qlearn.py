@@ -65,7 +65,7 @@ if __name__ == '__main__':
             (state_next, reward) = game.transition(action)
 
             # calculate Bellman
-            q_current = q_table[state].get(action, 0)
+            q_current = q_table[state][action]
 
             values = q_table[state_next].values()
             q_future = max(values) if values else 0
@@ -75,10 +75,13 @@ if __name__ == '__main__':
             q_table[state][action] = update
 
             # output
-            print(f'   action: {action} moves agent {state} -> {state_next} for reward {reward}')
-            print(f'q_current: {q_current}')
-            print(f'    q_new: {q_new}')
-            print(f'  updated: {update}')
+            print('')
+            print(f'   action: {action}, state transition {state} -> {state_next} rewards {reward}')
+            print(f'q_current: {q_current} (for this transition)')
+            print(f' q_future: max({list(values)}) = {q_future}')
+            print(f'    q_new: {reward} + {discount_rate}*{q_future} = {q_new}')
+            print(f'   update: ({1-learning_rate}*{q_current} + {learning_rate}*{q_new} = {update}')
+            print('')
 
             pprint.pprint(q_table)
 

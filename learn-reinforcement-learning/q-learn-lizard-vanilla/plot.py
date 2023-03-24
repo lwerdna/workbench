@@ -23,11 +23,14 @@ figure, axes = plt.subplots(1)
 x_values = list(range(steps))
 for (column, label) in enumerate(labels):
     y_values = [row[column] for row in rows]
+    #print(f'{label} has values: {y_values}')
     axes.plot(x_values, y_values)
     
 axes.set_title('Q-value vs step')
 axes.set_ylabel("Q-value ")
 axes.set_xlabel("step ")
+axes.xaxis.grid()
+axes.yaxis.grid()
 
 figure.set_figwidth(12.8)
 figure.set_figheight(4.8)
