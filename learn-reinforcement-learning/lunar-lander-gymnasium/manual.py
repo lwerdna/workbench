@@ -22,7 +22,6 @@ def pump_new():
     global pump_old, action
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
-            lookup = {pygame.K_LEFT: 1, pygame.K_RIGHT: 3, pygame.K_UP: 2}
             keys_pressed = pygame.key.get_pressed()
 
             action = 0
