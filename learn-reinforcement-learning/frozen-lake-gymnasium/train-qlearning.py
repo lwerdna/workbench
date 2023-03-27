@@ -36,13 +36,13 @@ class QLearner():
         return result
 
     def reset(self):
-        self.qtable = [[0.0] * self.actions_n] * self.states_n
+        self.qtable = [[0.0] * self.actions_n for i in range(self.states_n)]
 
     def __str__(self):
         lines = []
 
         for row in self.qtable:
-            svalues = [str(round(v, 4)).rjust(6) for v in row]
+            svalues = [str(round(v, 4)).rjust(7) for v in row]
             line = ','.join(svalues)
             lines.append(line)
 
@@ -54,6 +54,7 @@ class DecayedEpsilonGreedy():
         self.epsilon_max = epsilon_max
 
     def choose_action(self, qtable, state, progress):
+        # reminder: 0,1,2,3 is left,down,right,up
         epsilon = self.epsilon_max - progress*(self.epsilon_max - self.epsilon_min)
 
         actions = list(range(len(qtable[0])))
@@ -62,9 +63,10 @@ class DecayedEpsilonGreedy():
             result = random.choice(actions)
             print(f'choosing random action returns {result}')
         else:
-            actions = sorted(actions, key=lambda a: qtable[state][a], reverse=True)
-            result = actions[0]
-            print(f'choosing best action returns {result}')
+            qbest = max(qtable[state])
+            actions = [i for (i,q) in enumerate(qtable[state]) if q==qbest]
+            result = random.choice(actions)
+            print(f'choosing best action from {actions} which have q={qbest} returns {result}')
 
         return result
 
@@ -72,7 +74,7 @@ if __name__ == '__main__':
     ql = QLearner(.7, .99, 16, 4)
     deg = DecayedEpsilonGreedy(.01, 1)
 
-    env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=False)
+    env = gym.make('FrozenLake-v1', map_name="4x4", is_slippery=False, render_mode='human')
 
     # convert an observation to a state id (here they're 1:1)
     def obs_to_state(obs):
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     observation, info = env.reset()
     state = obs_to_state(observation)
 
-    max_steps = 1000
+    max_steps = 10000
     for step in range(max_steps):
         print('')
         print('--- step ---')
@@ -94,7 +96,8 @@ if __name__ == '__main__':
         ql.update(state, action, reward, state_next)
         print(ql)
 
-        print(f'{state} --{action}--> {state_next} is rewarded {reward}')
+        lookup = ['left', 'down', 'right', 'up']
+        print(f'{state} --{lookup[action]}--> {state_next} is rewarded {reward}')
         print(f'terminated: {terminated}')
         print(f'truncated: {truncated}')
         print(info)
