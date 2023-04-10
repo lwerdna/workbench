@@ -5,10 +5,13 @@ import random
 
 import gymnasium as gym
 
-#  0  1  2  3  4  5  6  7  8  9 10 11
-# 12 13 14 15 16 17 18 19 20 21 22 23
-# 24 25 26 27 28 29 30 31 32 33 34 35
-# 36
+# hyperparameters:
+# episodes                               = 500
+# step size / alpha                      = 0.5 (move 50% towards new
+# discount factor / gamma                = 1.0 (undiscounted)
+# epsilon / probability of random action = 0.1
+
+# this is exactly how the gridworld is laid out:
 states = [   0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,
             12,13,14,15,16,17,18,19,20,21,22,23,
             24,25,26,27,28,29,30,31,32,33,34,35,
@@ -117,7 +120,8 @@ if __name__ == '__main__':
         behavior_policy = EpsilonGreedy(epsilon=.1)
 
     actions = [0,1,2,3]
-    slearner = SARSALearner(alpha=.5, gamma=.99, states=states, actions=actions)
+    # gamma=1 because the description says undiscounted task
+    slearner = SARSALearner(alpha=.5, gamma=1, states=states, actions=actions)
 
     if '--manual' in sys.argv[1:] or '--human' in sys.argv[1:]:
         env = gym.make('CliffWalking-v0', render_mode='human')
@@ -176,3 +180,4 @@ if __name__ == '__main__':
     print(json.dumps(result, indent=4))
 
     env.close()
+
