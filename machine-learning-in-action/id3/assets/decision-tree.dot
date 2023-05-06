@@ -1,0 +1,33 @@
+digraph G {
+// nodes
+4444835456 [shape="diamond" label="tear_rate"];
+4447312704 [shape="diamond" label="astigmatic"];
+4447364544 [shape="diamond" label="age"];
+4447363136 [label="soft"];
+4447365056 [shape="diamond" label="prescr"];
+4447364992 [label="soft"];
+4447365248 [label="no lenses"];
+4447364736 [label="soft"];
+4447363968 [shape="diamond" label="prescr"];
+4447364096 [shape="diamond" label="age"];
+4447365440 [label="no lenses"];
+4447365696 [label="no lenses"];
+4447365760 [label="hard"];
+4447364032 [label="hard"];
+4447312576 [label="no lenses"];
+// edges
+4444835456 -> 4447312704 [label="normal"];
+4447312704 -> 4447364544 [label="no"];
+4447364544 -> 4447363136 [label="pre"];
+4447364544 -> 4447365056 [label="presbyopic"];
+4447365056 -> 4447364992 [label="hyper"];
+4447365056 -> 4447365248 [label="myope"];
+4447364544 -> 4447364736 [label="young"];
+4447312704 -> 4447363968 [label="yes"];
+4447363968 -> 4447364096 [label="hyper"];
+4447364096 -> 4447365440 [label="pre"];
+4447364096 -> 4447365696 [label="presbyopic"];
+4447364096 -> 4447365760 [label="young"];
+4447363968 -> 4447364032 [label="myope"];
+4444835456 -> 4447312576 [label="reduced"];
+}
