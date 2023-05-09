@@ -48,6 +48,20 @@ If you want the address after the final byte which comprises the function, use `
 
 see binaryninja-api discussion: <https://github.com/Vector35/binaryninja-api/discussions/2189>
 
+## How can I test for blocks that return?
+
+**Quick answer:** by testing if its last instruction lifts to an LLIL_RET:
+
+```python
+def does_block_return(bb):
+    bb._buildStartCache()
+    last_addr = bb._instStarts[-1]
+    llils = bb.function.get_llils_at(last_addr)
+    if not llils or len(llils) != 1:
+        return False
+    return llils[0].instr.operation == LowLevelILOperation.LLIL_RET
+```
+
 ## How does Binja think of functions?
 
 **Quick answer**: as a directed [graph](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)) of [basic blocks](https://en.wikipedia.org/wiki/Basic_block) where one block is specified as the entry.
