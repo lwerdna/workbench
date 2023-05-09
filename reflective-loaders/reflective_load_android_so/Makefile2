@@ -1,0 +1,45 @@
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    $(info ******** host platform: MACOS! ********)
+	TOOLCHAIN_SYSTEM := darwin-x86_64
+endif
+ifeq ($(UNAME_S),Linux)
+    $(info ******** host platform: LINUX! ********)
+	TOOLCHAIN_SYSTEM := linux-x86_64
+endif
+
+ifeq (TOOLCHAIN_SYSTEM,"")
+    $(error unable to detect OS!)
+endif
+
+TOOLCHAIN_NAME := arm-linux-androideabi-4.9
+TOOLCHAIN_PREFIX := arm-linux-androideabi-
+SYSROOT := $(NDK)/platforms/android-21/arch-arm
+
+LIB_SWITCHES := -L$(HOME)/$(TOOLCHAIN_NAME)/platforms/android-21/arch-arm/usr/lib
+
+CC = $(NDK)/toolchains/$(TOOLCHAIN_NAME)/prebuilt/$(TOOLCHAIN_SYSTEM)/bin/$(TOOLCHAIN_PREFIX)gcc --sysroot=$(SYSROOT)
+CPP = $(NDK)/toolchains/$(TOOLCHAIN_NAME)/prebuilt/$(TOOLCHAIN_SYSTEM)/bin/$(TOOLCHAIN_PREFIX)c++ --sysroot=$(SYSROOT)
+AS = $(NDK)/toolchains/$(TOOLCHAIN_NAME)/prebuilt/$(TOOLCHAIN_SYSTEM)/bin/$(TOOLCHAIN_PREFIX)as
+LD = $(NDK)/toolchains/$(TOOLCHAIN_NAME)/prebuilt/$(TOOLCHAIN_SYSTEM)/bin/$(TOOLCHAIN_PREFIX)ld
+
+all: refload libfake.so
+
+refload.o: refload.c
+	$(CC) -c -g -O0 -march=armv7-a -fPIE refload.c
+
+detour.o: detour.c
+	$(CC) -c -g -O0 -march=armv7-a -mthumb -fPIE detour.c
+
+refload: refload.o detour.o
+	$(CC) -g -O0 refload.o detour.o -o refload -Wl,-pie
+
+libfake.so: libfake.c
+	$(CC) -g -O0 -fPIE -shared libfake.c -o libfake.so
+
+clean:
+	if [ -e refload ]; then rm refload; fi;
+	if [ -e refload.o ]; then rm refload.o; fi;
+	if [ -e detour.o ]; then rm detour.o; fi;
+	if [ -e libfake.so ]; then rm libfake.so; fi;
