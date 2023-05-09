@@ -1,4 +1,8 @@
-Read-evaluate-print loop (REPL) utilities utilizing unicorn and keystone.
+Read-evaluate-print loop (REPL) utilities utilizing unicorn and keystone:
 
-# pip install keystone-engine
-# pip install unicorn
+![](./assets/screenshot.png)
+
+```
+pip install keystone-engine
+pip install unicorn
+```
