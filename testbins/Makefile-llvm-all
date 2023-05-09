@@ -1,0 +1,55 @@
+.PHONY: all clean
+
+CLANG = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/clang
+LD_LLD = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/ld.lld
+LLD_LINK = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/lld-link
+LD64 = $(HOME)/Downloads/clang+llvm-13.0.0-x86_64-apple-darwin/bin/ld64.lld
+
+all: tests-linux-x86.so tests-linux-x64.so tests-linux-arm.so tests-win-x86.dll tests-win-x64.dll tests-macos-x64.dylib
+
+tests-macos-x64.dylib: tests-macos-x64.o
+	$(LD64) -arch x86_64 -platform_version "macos" "11.0.0" "11.0" -dylib tests-macos-x64.o -o tests-macos-x64.dylib
+
+tests-macos-x64.o: tests.c
+	$(CLANG) -fpic -target x86_64-apple-darwin -c tests.c -o tests-macos-x64.o
+
+tests-win-x64.dll: tests-win-x64.o
+	$(LLD_LINK) tests-win-x64.o /dll /subsystem:console /nodefaultlib /noentry /out:tests-win-x64.dll
+
+tests-win-x64.o: tests.c
+	$(CLANG) -target x86_64-pc-win32 -c tests.c -o tests-win-x64.o
+
+tests-win-x86.dll: tests-win-x86.o
+	$(LLD_LINK) tests-win-x86.o /dll /subsystem:console /nodefaultlib /noentry /out:tests-win-x86.dll
+
+tests-win-x86.o: tests.c
+	$(CLANG) -target i686-pc-win32 -c tests.c -o tests-win-x86.o
+
+tests-linux-x64.so: tests-linux-x64.o
+	#$(LD_LLD) -o tests-linux-x64.so --dynamic-linker=/lib64/ld-linux-x86-64.so.2 tests-linux-x64.o
+	$(LD_LLD) --shared tests-linux-x64.o -o tests-linux-x64.so
+
+tests-linux-x64.o: tests.c
+	$(CLANG) -g -fpic -target x86_64-none-linux-elf -c tests.c -o tests-linux-x64.o
+
+tests-linux-x86.so: tests-linux-x86.o
+	$(LD_LLD) --shared tests-linux-x86.o -o tests-linux-x86.so
+
+tests-linux-x86.o: tests.c
+	$(CLANG) -fpic -target i686-none-linux-elf -c tests.c -o tests-linux-x86.o
+
+tests-linux-arm.so: tests-linux-arm.o
+	$(LD_LLD) --shared tests-linux-arm.o -o tests-linux-arm.so
+
+tests-linux-arm.o: tests.c
+	$(CLANG) -fpic -target armv7-none-eabi -c tests.c -o tests-linux-arm.o
+
+clean:
+	rm -f \
+	tests-linux-x64.o tests-linux-x64.so \
+	tests-linux-arm.o tests-linux-arm.so \
+	tests-linux-x86.o tests-linux-x86.so \
+	tests-win-x86.o tests-win-x86.lib tests-win-x86.dll \
+	tests-win-x64.o tests-win-x64.lib tests-win-x64.dll \
+	tests-macos-x64.o tests-macos-x64.dylib
+
