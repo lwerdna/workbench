@@ -1,12 +1,10 @@
-This is an exercise from Chapter 2 of the book Machine Learning in Action.
-
 https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm
 
 The algorithm is pretty simple: Just find the k closest points in the space and look for a [plurality](https://en.wikipedia.org/wiki/Plurality_(voting)).
 
 Be careful to normalize, otherwise sets with different ranges of values get an undue amount of influence.
 
-Here's video game time vs. liters of ice cream consumed (see [./plot.py](./plot.py)):
+Here's video game time vs. liters of ice cream consumed (see [./plot.py](./plot.py)), a dataset from the book <u>Machine Learning in Action</u>.
 
 ![](./assets/miles-games-icecream.png)
 

@@ -1,10 +1,6 @@
----
-typora-copy-images-to: ./assets
----
+This is an algorithm for generating decision trees called ID3: https://en.wikipedia.org/wiki/ID3_algorithm
 
-This is an exercise from Chapter 3 of the book Machine Learning in Action. It's an algorithm for generating decision trees called ID3: https://en.wikipedia.org/wiki/ID3_algorithm
-
-Here's the generated decision tree generated from [./gen-decision-tree.py](./gen-decision-tree.py):
+Here's the generated decision tree generated from [./gen-decision-tree.py](./gen-decision-tree.py). The dataset is from the book <u>Machine Learning in Action</u>.
 
 ![](./assets/decision-tree.svg)
 
