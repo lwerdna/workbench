@@ -1,4 +1,4 @@
-Calculate where all paths from a CFG node converge.
+Calculate where all paths from a CFG node converge. At these points, reaching conditions can be simplified.
 
 (these results have been integrated into [curiousbits](https://github.com/lwerdna/curiousbits) library)
 
@@ -8,7 +8,7 @@ It's equivalent to asking "What's the most immediate post dominator?".
 
 ### Example 0
 
-![](./generated0.svg)
+![](./assets/generated0.svg)
 
 The path from `3` converges at `7`. The path from `8` converges at `11`. All other splits wait until node `12` to converge.
 
@@ -22,7 +22,7 @@ paths from 3 converge at 7
 
 ### Example 1
 
-![](./generated1.svg)
+![](./assets/generated1.svg)
 
 ```
 $ ./test.py ./generated1.graph
@@ -41,25 +41,25 @@ Then the node `dst` where all paths from `src` converge can completely disregard
 
 ### Example 0
 
-![](./generated0-logic.svg)
+![](./assets/generated0-logic.svg)
 
 After reduction just at the converge points we get:
 
-![](./generated0-reduced-converge.svg)
+![](./assets/generated0-reduced-converge.svg)
 
 After reduction at the converge points AND DESCENDANTS we get:
 
-![](./generated0-reduced.svg)
+![](./assets/generated0-reduced.svg)
 
 ### Example 1
 
-![](./generated1-logic.svg)
+![](./assets/generated1-logic.svg)
 
 After reduction just at the converge points we get:
 
-![](./generated1-reduced-converge.svg)
+![](./assets/generated1-reduced-converge.svg)
 
 After reduction at the converge points AND DESCENDANTS we get:
 
-![](./generated1-reduced.svg)
+![](./assets/generated1-reduced.svg)
 
