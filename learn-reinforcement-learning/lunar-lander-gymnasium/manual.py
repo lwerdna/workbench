@@ -50,4 +50,14 @@ while(True):
     if terminated or truncated:
         observation, info = env.reset()
 
+    print(f' lander location: ({observation[0]}, {observation[1]})')
+    print(f' linear velocity: ({observation[2]}, {observation[3]})')
+    print(f'           angle: ({observation[4]}')
+    print(f'angular velocity: ({observation[5]}')
+    print(f'    left contact: ({observation[6]}')
+    print(f'   right contact: ({observation[7]}')
+
+    print('observation:', observation)
+    print('info:', info)
+
 env.close()

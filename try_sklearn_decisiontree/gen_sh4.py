@@ -2,9 +2,10 @@
 
 import os
 import sys
-sys.path.append(os.getcwd() + '/../sh4_disassembler')
-from sh4 import disasm
 import struct
+
+# pip install sh4dis
+from sh4dis import sh4
 
 opc2id = {
 'add': 0, 'addc': 1, 'addv': 2, 'and': 3, 'and.b': 4, 'bf': 5, 'bf.s': 6,
@@ -27,7 +28,7 @@ opc2id = {
 'shlr16': 105, 'shlr2': 106, 'shlr8': 107, 'sleep': 108, 'stc': 109, 'stc.l':
 110, 'sts': 111, 'sts.l': 112, 'sub': 113, 'subc': 114, 'subv': 115, 'swap.b':
 116, 'swap.w': 117, 'tas.b': 118, 'trapa': 119, 'tst': 120, 'tst.b': 121,
-'undef': 122, 'xor': 123, 'xor.b': 124, 'xtrct': 125
+'undef': 122, 'xor': 123, 'xor.b': 124, 'xtrct': 125, 'error': 126
 }
 
 def input_bit_vars(insword):
@@ -53,13 +54,16 @@ if __name__ == '__main__':
 	for insword in range(65536):
 		data = struct.pack('>H', insword)
 
-		b = disasm(insword, 0)
+		b = sh4.disasm(insword, 0)
 		if not b or b.startswith('.word'):
 			opc = 'undef'
 		else:
 			opc = b.split(' ')[0]
 
 		allopcs.add(opc)
+
+		if not opc in opc2id:
+		    breakpoint()
 		output_data.append(opc2id[opc])
 
 		inp_repr_func = input_bits_nybbles_vars
