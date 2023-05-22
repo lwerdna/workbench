@@ -1,3 +1,7 @@
+Welcome to my collection of BinaryNinja questions. I also recommend you look through Jordan's snippets at: https://gist.github.com/psifertex/6fbc7532f536775194edd26290892ef7
+
+Now for the questions!
+
 ## How do I open a file?
 
 **Quick answer:** `binaryninja.open_view(path)`
