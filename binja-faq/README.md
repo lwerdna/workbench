@@ -209,6 +209,34 @@ See [./code/feature-map.py](./code/feature-map.py) for an example using PIL to p
 
 ![](./assets/feature-map.png)
 
+## How can I programmatically access pseudo-C?
+
+**Quick answer:** By using a LinearViewObject. See the example code below.
+
+There's currently no convenient API to just say "give me some pseudo-C of a function" or "give me some pseudo-C at an address". But there's a kind of hackish way to go about it using a LinearViewObject.
+
+See: [./code/access-pseudoc.py](./code/access-pseudoc.py)
+
+And by matching addresses, you can get a coarse mapping between, say, HLIL and corresponding pseudo-C:
+
+```
+// HLIL: void* r8 = arg1
+1000039d7      void* r8 = arg1;
+// HLIL: void* rdx = *(arg2 + 0x60)
+1000039da      void* rdx = *(int64_t*)((char*)arg2 + 0x60);
+// HLIL: void* rdi = *(arg1 + 0x60)
+1000039de      void* rdi = *(int64_t*)((char*)arg1 + 0x60);
+// HLIL: int64_t rcx = *(rdi + 0x30)
+1000039e2      int64_t rcx = *(int64_t*)((char*)rdi + 0x30);
+// HLIL: int64_t rax = 1
+1000039e6      int64_t rax = 1;
+// HLIL: int64_t temp0 = *(rdx + 0x30)
+1000039eb      int64_t temp0 = *(int64_t*)((char*)rdx + 0x30);
+1000039eb      bool cond:0 = temp0 >= rcx;
+1000039eb      {
+// ...
+```
+
 ## Does the index of a block indicate the order of execution of the blocks?
 
 **Quick answer:** No.
