@@ -1,4 +1,3 @@
-/* from https://peterdn.com/post/2019/02/03/hello-world-in-arm-assembly/ */
 .thumb
 .syntax unified
 
@@ -33,8 +32,8 @@ test_it:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	it		eq
-	moveq	%r0, #1
+	it		lt
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -44,9 +43,9 @@ test_itt:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itt		eq
-	moveq	%r0, #1
-	moveq	%r0, #1
+	itt		lt
+	movlt	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -55,9 +54,9 @@ test_ite:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	ite		eq
-	moveq	%r0, #1
-	movne	%r0, #1
+	ite		lt
+	movlt	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -67,10 +66,10 @@ test_ittt:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	ittt	eq
-	moveq	%r0, #1
-	moveq	%r0, #1
-	moveq	%r0, #1
+	ittt	lt
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -79,10 +78,10 @@ test_itte:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itte	eq
-	moveq	%r0, #1
-	moveq	%r0, #1
-	movne	%r0, #1
+	itte	lt
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -91,10 +90,10 @@ test_itet:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itet	eq
-	moveq	%r0, #1
-	movne	%r0, #1
-	moveq	%r0, #1
+	itet	lt
+	movlt	%r0, #1
+	movge	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -103,10 +102,10 @@ test_itee:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itee	eq
-	moveq	%r0, #1
-	movne	%r0, #1
-	movne	%r0, #1
+	itee	lt
+	movlt	%r0, #1
+	movge	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -116,11 +115,11 @@ test_itttt:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itttt	eq
-	moveq	%r0, #1
-	moveq	%r0, #1
-	moveq	%r0, #1
-	moveq	%r0, #1
+	itttt	lt
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -129,11 +128,11 @@ test_ittte:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	ittte	eq
-	moveq	%r0, #1
-	moveq	%r0, #1
-	moveq	%r0, #1
-	movne	%r0, #1
+	ittte	lt
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -142,11 +141,11 @@ test_ittet:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	ittet	eq
-	moveq	%r0, #1
-	moveq	%r0, #1
-	movne	%r0, #1
-	moveq	%r0, #1
+	ittet	lt
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movge	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -155,11 +154,11 @@ test_ittee:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	ittee	eq
-	moveq	%r0, #1
-	moveq	%r0, #1
-	movne	%r0, #1
-	movne	%r0, #1
+	ittee	lt
+	movlt	%r0, #1
+	movlt	%r0, #1
+	movge	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -168,11 +167,11 @@ test_itett:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itett	eq
-	moveq	%r0, #1
-	movne	%r0, #1
-	moveq	%r0, #1
-	moveq	%r0, #1
+	itett	lt
+	movlt	%r0, #1
+	movge	%r0, #1
+	movlt	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -181,11 +180,11 @@ test_itete:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	itete	eq
-	moveq	%r0, #1
-	movne	%r0, #1
-	moveq	%r0, #1
-	movne	%r0, #1
+	itete	lt
+	movlt	%r0, #1
+	movge	%r0, #1
+	movlt	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -194,11 +193,11 @@ test_iteet:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	iteet	eq
-	moveq	%r0, #1
-	movne	%r0, #1
-	movne	%r0, #1
-	moveq	%r0, #1
+	iteet	lt
+	movlt	%r0, #1
+	movge	%r0, #1
+	movge	%r0, #1
+	movlt	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -207,11 +206,11 @@ test_iteee:
 	push	{r7, lr}
 	add		r7, sp, #0
 	cmp		%r0, #0
-	iteee	eq
-	moveq	%r0, #1
-	movne	%r0, #1
-	movne	%r0, #1
-	movne	%r0, #1
+	iteee	lt
+	movlt	%r0, #1
+	movge	%r0, #1
+	movge	%r0, #1
+	movge	%r0, #1
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -221,9 +220,9 @@ lost_dataflow_return_value:
 	add		r7, sp, #0
 
 	cmp		%r0, #0
-	ite		eq
-	moveq	%r8, #1
-	movne	%r8, #2
+	ite		lt
+	movlt	%r8, #1
+	movge	%r8, #2
 
 	mov		%r0, %r8
 
