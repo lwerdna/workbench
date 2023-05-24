@@ -139,6 +139,8 @@ So you can still get conditional execution by generating conditional jumps that 
 
 Another approach is setting some internal state, and having instructions _potentially_ affect the cpu state while the program counter increments like fall-thru execution and the pipeline remains full. This is called instruction [predication](https://en.wikipedia.org/wiki/Predication_(computer_architecture)).
 
+See [../test-itxxx](../test-itxxx) for an exhaustive test/demo of all if-then variants.
+
 ### Can an instruction in an if-then block change the flags and change the potential execution of its siblings in the block?
 
 I tested this in the [Unicorn emulator](https://www.unicorn-engine.org/) and it did not.
