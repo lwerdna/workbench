@@ -1,4 +1,4 @@
-This is just a collection of questions I've come up with while working with ARM architecture.
+This is just a collection of questions and answer I've come up with while working with ARM architecture. I'm not an authority on this subject, so please treat all answers with healthy skepticism.
 
 ### What is the difference between Armv{7,8,9}, Aarch{32,64}, and A32, T32, A64?
 
@@ -84,3 +84,65 @@ And `strex/stl`:
 ARMv7   strex: cond.4|0001|1000|xxxx|        xxxx|(1)(1)(1)(1)|1001|xxxx
   A32     stl: cond.4|0001|1000|xxxx|(1)(1)(1)(1)|(1)(1) 0  0 |1001|xxxx
 ```
+
+### What does the 'S' suffix do in instructions?
+
+They select a version of the instruction that sets the flags, when normally they wouldn't have.
+
+For example, `mov` and `add` do not set flags by default, but `movs` and `adds` do.
+
+I think the **S** is short for **S**et flags.
+
+### What does the '.N' suffix do in instructions?
+
+It selects the 16-bit encoding when there is an option of encoding the instruction in 16 or 32 bits.
+
+It is called an **instruction width specifier**. The **N** is short for **N**arrow.
+
+### What does the '.W' suffix do in instructions?
+
+It selects the 32-bit encoding when there is an option of encoding the instruction in 16 or 32 bits.
+
+It is called an **instruction width specifier**. The **W** is short for **W**ide.
+
+### What is the difference between mov and movt?
+
+The `movt` instruction just moves the 16-bit operand into the top 16 bits (bits 31...16).
+
+The t is short for **t**op.
+
+### What is the difference between mov and movw?
+
+The `movw` instruction takes a 16 bit operand and only affects the lower 16-bit of the destination.
+
+I don't know what the **w** stands for.
+
+### What is the difference between movw and mov.w?
+
+The first is a variant of `mov` that writes a 16-bit immediate to the low 16-bits of a destination register.
+
+The second is the wide (32-bit) encoding when a narrow (16-bit) encoding is also possible.
+
+### What does the "&lt;c&gt;" mean in the assembler syntax?
+
+That a **c**ondition code can be taken.
+
+### What does the "&lt;q&gt;" mean in the assembler syntax?
+
+That a **assembler qualifier** can be taken. That's usually `.N` or `.W`.
+
+### Why is there an if-then instruction?
+
+In thumb, the encoding bits reserved for condition codes in arm instructions are removed to save encoding space and increase code density. An exception is thumb's conditional branches.
+
+So you can still get conditional execution by generating conditional jumps that arrive at or bypass instructions. But jumping about has its costs (branch prediction, pipeline clearing, etc.).
+
+Another approach is setting some internal state, and having instructions _potentially_ affect the cpu state while the program counter increments like fall-thru execution and the pipeline remains full. This is called instruction [predication](https://en.wikipedia.org/wiki/Predication_(computer_architecture)).
+
+### Can an instruction in an if-then block change the flags and change the potential execution of its siblings in the block?
+
+I tested this in the [Unicorn emulator](https://www.unicorn-engine.org/) and it did not.
+
+However, some have tested on actual hardware and said yes, it does:
+* https://stackoverflow.com/questions/52681110/questions-about-it-conditional-codes-in-assembly/61717514
+* https://stackoverflow.com/questions/52681110/questions-about-it-conditional-codes-in-assembly/52681178#52681178
