@@ -45,7 +45,7 @@ test_itt:
 	cmp		%r0, #0
 	itt		lt
 	movlt	%r0, #1
-	movlt	%r0, #1
+	movlt	%r0, #2
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -56,7 +56,7 @@ test_ite:
 	cmp		%r0, #0
 	ite		lt
 	movlt	%r0, #1
-	movge	%r0, #1
+	movge	%r0, #2
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -68,8 +68,8 @@ test_ittt:
 	cmp		%r0, #0
 	ittt	lt
 	movlt	%r0, #1
-	movlt	%r0, #1
-	movlt	%r0, #1
+	movlt	%r0, #2
+	movlt	%r0, #3
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -80,8 +80,8 @@ test_itte:
 	cmp		%r0, #0
 	itte	lt
 	movlt	%r0, #1
-	movlt	%r0, #1
-	movge	%r0, #1
+	movlt	%r0, #2
+	movge	%r0, #3
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -92,8 +92,8 @@ test_itet:
 	cmp		%r0, #0
 	itet	lt
 	movlt	%r0, #1
-	movge	%r0, #1
-	movlt	%r0, #1
+	movge	%r0, #2
+	movlt	%r0, #3
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -104,8 +104,8 @@ test_itee:
 	cmp		%r0, #0
 	itee	lt
 	movlt	%r0, #1
-	movge	%r0, #1
-	movge	%r0, #1
+	movge	%r0, #2
+	movge	%r0, #3
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -117,9 +117,9 @@ test_itttt:
 	cmp		%r0, #0
 	itttt	lt
 	movlt	%r0, #1
-	movlt	%r0, #1
-	movlt	%r0, #1
-	movlt	%r0, #1
+	movlt	%r0, #2
+	movlt	%r0, #3
+	movlt	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -130,9 +130,9 @@ test_ittte:
 	cmp		%r0, #0
 	ittte	lt
 	movlt	%r0, #1
-	movlt	%r0, #1
-	movlt	%r0, #1
-	movge	%r0, #1
+	movlt	%r0, #2
+	movlt	%r0, #3
+	movge	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -143,9 +143,9 @@ test_ittet:
 	cmp		%r0, #0
 	ittet	lt
 	movlt	%r0, #1
-	movlt	%r0, #1
-	movge	%r0, #1
-	movlt	%r0, #1
+	movlt	%r0, #2
+	movge	%r0, #3
+	movlt	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -156,9 +156,9 @@ test_ittee:
 	cmp		%r0, #0
 	ittee	lt
 	movlt	%r0, #1
-	movlt	%r0, #1
-	movge	%r0, #1
-	movge	%r0, #1
+	movlt	%r0, #2
+	movge	%r0, #3
+	movge	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -169,9 +169,9 @@ test_itett:
 	cmp		%r0, #0
 	itett	lt
 	movlt	%r0, #1
-	movge	%r0, #1
-	movlt	%r0, #1
-	movlt	%r0, #1
+	movge	%r0, #2
+	movlt	%r0, #3
+	movlt	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -182,9 +182,9 @@ test_itete:
 	cmp		%r0, #0
 	itete	lt
 	movlt	%r0, #1
-	movge	%r0, #1
-	movlt	%r0, #1
-	movge	%r0, #1
+	movge	%r0, #2
+	movlt	%r0, #3
+	movge	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -195,9 +195,9 @@ test_iteet:
 	cmp		%r0, #0
 	iteet	lt
 	movlt	%r0, #1
-	movge	%r0, #1
-	movge	%r0, #1
-	movlt	%r0, #1
+	movge	%r0, #2
+	movge	%r0, #3
+	movlt	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 
@@ -208,9 +208,9 @@ test_iteee:
 	cmp		%r0, #0
 	iteee	lt
 	movlt	%r0, #1
-	movge	%r0, #1
-	movge	%r0, #1
-	movge	%r0, #1
+	movge	%r0, #2
+	movge	%r0, #3
+	movge	%r0, #4
 	mov		sp, r7
 	pop		{r7, pc}
 

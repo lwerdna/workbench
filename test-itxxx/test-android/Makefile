@@ -20,7 +20,7 @@ demo-lt.o: demo-lt.s
 	 $(AS) -mthumb demo-lt.s -o demo-lt.o
 
 disasm:
-	$(OBJDUMP) -d demo-eq.o
+	#$(OBJDUMP) -d demo-eq.o
 	$(OBJDUMP) -d demo-lt.o
 
 clean:
