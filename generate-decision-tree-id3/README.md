@@ -1,10 +1,14 @@
 This is an algorithm for generating decision trees called ID3: https://en.wikipedia.org/wiki/ID3_algorithm
 
-Here's the generated decision tree generated from [./gen-decision-tree.py](./gen-decision-tree.py). The dataset is from the book <u>Machine Learning in Action</u>.
+Here's the generated decision tree generated from [./gen-decision-tree.py](./gen-decision-tree.py). The dataset is from the book <u>Machine Learning in Action</u>. A manually worked example of at least the first step is given in [./worked-example.md](./worked-example.md).
 
 ![](./assets/decision-tree.svg)
 
 While the algorithm is pretty straightforward, actually understanding what is meant by "reducing entropy" and "information gain" isn't easy to wrap one's head around.
+
+But, high level, you're choosing the attribute/feature which is **most likely** to reduce entropy / increase predictability / maximize information gain in the resulting subtrees:
+
+![](./assets/information-gain-formula.png)
 
 ## Entropy Notes
 

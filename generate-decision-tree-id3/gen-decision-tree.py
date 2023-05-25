@@ -36,7 +36,8 @@ def info_gain(data, column):
         proportion = len(subset) / len(data)
         after += proportion * entropy_of_data_set(subset)
 
-    return before - after
+    result = before - after
+    return result
 
 def build_decision(data):
     assert len(data) > 0
