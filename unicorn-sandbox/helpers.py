@@ -2,9 +2,10 @@ import struct
 
 from unicorn import *
 from unicorn.x86_const import *
+from unicorn.arm_const import *
 
 # https://gist.github.com/mzpqnxow/a368c6cd9fae97b87ef25f475112c84c
-def hexdump(src, addr=0, length=16, sep='.'):
+def hexdump_data(src, addr=0, length=16, sep='.'):
     FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
     lines = []
     for c in range(0, len(src), length):
@@ -15,6 +16,14 @@ def hexdump(src, addr=0, length=16, sep='.'):
         printable = ''.join(['{}'.format((x <= 127 and FILTER[x]) or sep) for x in chars])
         lines.append('{0:08x}: {1:{2}s} {3:{4}s}'.format(addr+c, hex_, length * 3, printable, length))
     return '\n'.join(lines)
+
+def hexdump(src, addr=0, length=16, sep='.'):
+    if type(src) == unicorn.Uc:
+        data = src.mem_read(addr, length)
+    else:
+        data = src
+
+    return hexdump_data(data, addr, length, sep)
 
 def align_down_4k(addr):
     return addr & 0xFFFFFFFFFFFFF000 # lose the bottom 12 bits (4k)
@@ -37,3 +46,19 @@ def x64_alloc_stack(uc, amount):
 
 def x64_free_stack(uc, amount):
     uc.reg_write(UC_X86_REG_RSP, uc.reg_read(UC_X86_REG_RSP) + amount)
+
+#------------------------------------------------------------------------------
+# arm helpers
+#------------------------------------------------------------------------------
+def arm_push_dword(uc, value):
+    addr = uc.reg_read(UC_ARM_REG_SP) - 4
+    uc.reg_write(UC_ARM_REG_SP, addr)
+    uc.mem_write(addr, struct.pack('<I', value))
+
+def arm_alloc_stack(uc, amount):
+    addr = uc.reg_read(UC_ARM_REG_SP) - amount
+    uc.reg_write(UC_ARM_REG_SP, addr)
+    return addr
+
+def arm_free_stack(uc, amount):
+    uc.reg_write(UC_ARM_REG_SP, uc.reg_read(UC_ARM_REG_SP) + amount)
