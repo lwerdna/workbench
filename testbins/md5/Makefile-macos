@@ -1,4 +1,7 @@
 all: md5_x64-macos
 
 md5_x64-macos: md5driver.c md5c.c global.h md5.h
-	gcc -DMD=5 md5driver.c md5c.c -o md5_x64-macos
+	gcc -fno-stack-protector -DMD=5 md5driver.c md5c.c -o md5_x64-macos
+
+clean:
+	rm -f md5_x64-macos
