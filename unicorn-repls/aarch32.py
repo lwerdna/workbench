@@ -1,26 +1,19 @@
 #!/usr/bin/env python
-# an assembly REPL for aarch32 execution environment (A32/T32 instruction sets)
 
-import re
+# support lib for aarch32
+
 import struct
-import readline
 
 from unicorn import *
 from unicorn.arm_const import *
 
-from keystone import *
 from capstone import *
 
 from termcolor import colored
 
-from helpers import *
+from helpers import get_bits
 
-CODE_MEM_START = 0
-CODE_MEM_LENGTH = 2**16
-STACK_MEM_START = 0xFFFF0000
-STACK_MEM_LENGTH = 2**16
-
-rname_to_unicorn = {
+reg_name_to_uc_id = {
     'r0': UC_ARM_REG_R0, 'r1': UC_ARM_REG_R1, 'r2': UC_ARM_REG_R2, 'r3': UC_ARM_REG_R3,
     'r4': UC_ARM_REG_R4, 'r5': UC_ARM_REG_R5, 'r6': UC_ARM_REG_R6, 'r7': UC_ARM_REG_R7,
     'r8': UC_ARM_REG_R8, 'r9': UC_ARM_REG_R9, 'r10': UC_ARM_REG_R10, 'r11': UC_ARM_REG_R11,
@@ -28,176 +21,180 @@ rname_to_unicorn = {
     'cpsr': UC_ARM_REG_CPSR,
 }
 
-# set up emulator, assembler
-ks_arm = Ks(KS_ARCH_ARM, KS_MODE_ARM + KS_MODE_LITTLE_ENDIAN)
-ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB + KS_MODE_LITTLE_ENDIAN)
-cs_arm = Cs(CS_ARCH_ARM, CS_MODE_ARM + CS_MODE_LITTLE_ENDIAN)
-cs_thumb = Cs(CS_ARCH_ARM, KS_MODE_THUMB + KS_MODE_LITTLE_ENDIAN)
-mu = Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_LITTLE_ENDIAN)
+def decompose_cpsr(cpsr):
+    N = get_bits(cpsr, 31)
+    Z = get_bits(cpsr, 30)
+    C = get_bits(cpsr, 29)
+    V = get_bits(cpsr, 28)
 
-mu.mem_map(CODE_MEM_START, CODE_MEM_LENGTH)
-mu.mem_map(STACK_MEM_START, STACK_MEM_LENGTH)
-mu.reg_write(rname_to_unicorn['pc'], CODE_MEM_START)
-mu.reg_write(rname_to_unicorn['sp'], STACK_MEM_START + STACK_MEM_LENGTH)
+    IT = (get_bits(cpsr, 15, 10) << 2) | get_bits(cpsr, 26, 25)
+    J = get_bits(cpsr, 24)
+    reserved = get_bits(cpsr, 23, 20)
+    GE = get_bits(cpsr, 19, 16)
 
-# track context
+    E = get_bits(cpsr, 9)
+    A = get_bits(cpsr, 8)
+    I = get_bits(cpsr, 7)
+    F = get_bits(cpsr, 6)
+    T = get_bits(cpsr, 5)
+    M = get_bits(cpsr, 4, 0)
 
-regs_old = [-1]*len(rname_to_unicorn)
-def show_context():
-    global mu
-    global regs_old
+    return {'N':N, 'Z':Z, 'C':C, 'V':V, 'IT':IT, 'J':J, 'reserved':reserved, 'GE':GE,
+            'E':E, 'A':A, 'I':I, 'F':F, 'T':T, 'M':M}
 
-    reg_ids = [
-        UC_ARM_REG_R0, UC_ARM_REG_R1, UC_ARM_REG_R2, UC_ARM_REG_R3,
-        UC_ARM_REG_R4, UC_ARM_REG_R5, UC_ARM_REG_R6, UC_ARM_REG_R7,
-        UC_ARM_REG_R8, UC_ARM_REG_R9, UC_ARM_REG_R10, UC_ARM_REG_R11,
-        UC_ARM_REG_R12, UC_ARM_REG_SP, UC_ARM_REG_LR, UC_ARM_REG_PC,
-        UC_ARM_REG_CPSR,
-    ]
+def is_cond_met(cond, apsr):
+    N = apsr & 0x80000000
+    Z = apsr & 0x40000000
+    C = apsr & 0x20000000
+    V = apsr & 0x10000000
 
-    regs = [mu.reg_read(x) for x in reg_ids]
-    regs_str = ['%08X' % x for x in regs]
-    regs_str = [x if regs[i]==regs_old[i] else colored(x, 'red') for (i,x) in enumerate(regs_str)]
+    match cond:
+        case 0b0000: # EQ    equal
+            return Z
+        case 0b0001: # NE    not equal
+            return not Z
+        case 0b0010: # CS/HS unsigned higher or same
+            return C
+        case 0b0011: # CC/LO unsigned lower
+            return not C
+        case 0b0100: # MI    negative
+            return N
+        case 0b0101: # PL    positive or zero
+            return not N
+        case 0b0110: # VS    overflow
+            return V
+        case 0b0111: # VC    no overflow
+            return not V
+        case 0b1000: # HI    unsigned higher
+            return C and not Z
+        case 0b1001: # LS    unsigned lower or same
+            return not C and Z
+        case 0b1010: # GE    greater or equal
+            return N == V
+        case 0b1011: # LT    less than
+            return N != V
+        case 0b1100: # GT    greater than
+            return not Z and N == V
+        case 0b1101: # LE    less than or equal
+            return Z or (N != V)
+        case 0b1110: # AL    always
+            return True
+        case 0b1111: # ?
+            return None
 
-    # special handling of nzcv
-    cpsr = regs[16]
-    (n,z,c,v,q,t) = (bool(cpsr & 0x80000000), bool(cpsr & 0x40000000),
-        bool(cpsr & 0x20000000), bool(cpsr & 0x10000000), bool(cpsr & 0x8000000),
-        bool(cpsr & 0x20))
+#----------------------------------------------------------------------
+# instructions
+#----------------------------------------------------------------------
 
-    # show context
-    print(' r0=%s  r1=%s  r2=%s  r3=%s' % (regs_str[0], regs_str[1], regs_str[2], regs_str[3]))
-    print(' r4=%s  r5=%s  r6=%s  r7=%s' % (regs_str[4], regs_str[5], regs_str[6], regs_str[7]))
-    print(' r8=%s  r9=%s r10=%s r11=%s' % (regs_str[8], regs_str[9], regs_str[10], regs_str[11]))
-    print(' ip=%s  sp=%s  lr=%s  pc=%s' % (regs_str[12], regs_str[13], regs_str[14], regs_str[15]))
-    print(' cpsr=%s (N=%d Z=%d C=%d V=%d T=%d)' % (regs_str[16], n, z, c, v, t))
+def is_call(uc, i):
+    return i.id in [ARM_INS_BL, ARM_INS_BLX]
 
-    regs_old = regs
+def is_return(uc, i):
+    apsr = uc.reg_read(UC_ARM_REG_CPSR)
 
-    addr = regs[15]
-    data = mu.mem_read(addr, 4)
-    disfunc = cs_thumb.disasm if thumb else cs_arm.disasm
-    for i in disfunc(data, addr):
-        bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
-        print(f'{i.address:08X}: {bytes_str} {i.mnemonic} {i.op_str}')
-        break
+    if len(i.bytes) == 2:
+        sz = 2
+        insword, = struct.unpack('<H', i.bytes)
+    else:
+        sz = 4
+        if is_thumb(uc):
+            h0, h1 = struct.unpack('<HH', i.bytes)
+            insword = (h0 << 16) | h1
+        else:
+            insword, = struct.unpack('<I', i.bytes)
 
-def step(count=1):
-    global mu
-    thumb = bool(mu.reg_read(UC_ARM_REG_CPSR) & 0x20)
-    pointer = mu.reg_read(UC_ARM_REG_PC)
-    if thumb and (pointer & 1) == 0:
-        pointer += 1
-    print('starting emulation at pointer: 0x%08X' % pointer)
-    mu.emu_start(pointer, 0x100000000, timeout=0, count=1)
-
-while 1:
-    do_show_context = False
-
-    pc = mu.reg_read(UC_ARM_REG_PC)
-    thumb = bool(mu.reg_read(UC_ARM_REG_CPSR) & 0x20)
-
-    cmd = input('> ')
-
-    try:
-        if cmd.startswith(';') or cmd=='' or cmd.isspace():
-            pass
-
-        # show context
-        elif cmd == 'r':
-            do_show_context = True
-
-        # reg write, example:
-        # r3 = 0xDEADBEEF
-        elif m := re.match(r'([^\s]+)\s*=\s*(.+)', cmd):
-            (rname, rval) = m.group(1, 2)
-            if rname in rname_to_unicorn:
-                mu.reg_write(rname_to_unicorn[rname], int(rval, 16))
-
-                # unicorn initialized to arm will fall back to arm automatically after
-                # register set, so compensate for this
-                if thumb:
-                    mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) | 0x20)
-
-                do_show_context = True
+    # RETURN METHOD: POP TO PC
+    #
+    # (pdb) i
+    # <CsInsn 0xfabc [10bd]: pop {r4, pc}>
+    # (pdb) i.regs_write()
+    # *** capstone.CsError: Details are unavailable (CS_ERR_DETAIL)
+    # (pdb) i.reg_write(ARM_REG_PC)
+    # *** capstone.CsError: Details are unavailable (CS_ERR_DETAIL)
+    # so we have to do this manually...
+    if i.id == ARM_INS_POP:
+        # 16-bit encodings
+        if sz == 2:
+            # encoding T1
+            if (insword & 0xFE00) == 0xBC00:
+                return insword & 0x0100
             else:
-                print('ERROR: unknown register %s' % rname)
+                breakpoint()
+                pass
+        # 32-bit encodings
+        else:
+            # encoding A1
+            if (insword & 0x0FFF0000) == 0x08BD0000:
+                cond = insword >> 28
+                if is_cond_met(cond, apsr):
+                    return insword & 0x8000
+                return False
+            # encoding T2 (looks the same to me)
+            if (insword & 0xFFFF0000) == 0xE8BD0000:
+                return insword & 0x8000
 
-        # dump bytes, example:
-        # db 0
-        elif m := re.match(r'db (.*)', cmd):
-            addr = int(m.group(1),16)
-            data = mu.mem_read(addr, 64)
-            print(get_hex_dump(data, addr))
+            return False
 
-        # disassemble bytes, example:
-        # u 0
-        elif m := re.match(r'u (.*)', cmd):
-            addr = int(m.group(1),16)
-            data = mu.mem_read(addr, 64)
-            disfunc = cs_thumb.disasm if thumb else cs_arm.disasm
-            for i in disfunc(data, addr):
-                addr_str = '0x%08X' % i.address
-                bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
-                print(f'{addr_str}: {bytes_str} {i.mnemonic} {i.op_str}')
+    elif i.id == ARM_INS_BX:
+        # 16-bit encodings
+        if sz == 2:
+            # T1
+            assert insword & 0xFF80 == 0x4700, breakpoint()
+            Rm = (insword & 0x78) >> 3
+            return Rm == 14 # LR
+        else:
+            # A1
+            assert insword & 0x0FFFFFF0 == 0x012FFF10, breakpoint()
+            Rm = insword & 0xF
+            return Rm == 14 # Lr
 
-        # enter bytes, example:
-        # eb 0 AA BB CC DD
-        elif m := re.match(r'eb ([a-fA-F0-9x]+) (.*)', cmd):
-            (addr, bytestr) = m.group(1, 2)
-            addr = int(addr, 16)
-            data = b''.join([int(x, 16).to_bytes(1,'big') for x in bytestr.split()])
-            print('writing:', colored(data.hex(), 'green'))
-            mu.mem_write(addr, data)
+    return False
 
-        elif m := re.match(r'go?(\d+)', cmd):
-            mu.emu_start(pc, 0x100000000, timeout=0, count=int(m.group(1)))
+#----------------------------------------------------------------------
+# execution state
+#----------------------------------------------------------------------
 
-        # step into, example:
-        # t
-        elif cmd == 't':
-            step()
-            do_show_context = True
+def is_thumb(uc):
+    return bool(uc.reg_read(UC_ARM_REG_CPSR) & 0x20)
 
-        # toggle arm/thumb mode
-        elif cmd == 'mode':
-            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) ^ 0x20)
-            do_show_context = True
-        elif cmd == 'mode arm':
-            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) & 0xFFFFFFDF)
-            do_show_context = True
-        elif cmd == 'mode thumb':
-            mu.reg_write(UC_ARM_REG_CPSR, mu.reg_read(UC_ARM_REG_CPSR) | 0x20)
-            do_show_context = True
+def set_thumb(uc):
+    uc.reg_write(UC_ARM_REG_CPSR, uc.reg_read(UC_ARM_REG_CPSR) | 0x20) # set T bit
 
-        # assemble, step, example:
-        # mov r0, 0xDEAD
-        elif cmd:
-            # assume the input is assembler and place it at current PC
-            asmstr = cmd
-            encoding, count = None, None
+def is_arm(uc):
+    return not bool(uc.reg_read(UC_ARM_REG_CPSR) & 0x20)
 
-            if thumb:
-                encoding, count = ks_thumb.asm(asmstr, addr=pc)
-            else:
-                encoding, count = ks_arm.asm(asmstr, addr=pc)
+def set_arm(uc):
+    uc.reg_write(UC_ARM_REG_CPSR, uc.reg_read(UC_ARM_REG_CPSR) & 0xFFFFFFDF) # clear T bit
 
-            data = b''.join([x.to_bytes(1, 'big') for x in encoding])
+def get_pc(uc):
+    return uc.reg_read(UC_ARM_REG_PC)
 
-            print('%s-assembled %08X:' % ('thumb' if thumb else 'arm', pc), colored(data.hex(), 'green'), ' (%d bytes)'%len(encoding))
-            mu.mem_write(pc, data)
-            step()
-            do_show_context = True
+def set_pc(uc, addr):
+    # pc isn't actually odd in thumb state, this is a unicorn convention that keeps the
+    # processor in thumb mode
+    addr = addr | 1 if is_thumb(uc) else addr & 0xFFFFFFFE
+    uc.reg_write(UC_ARM_REG_PC, addr)
+    return addr
 
-    except KsError as e:
-        print('keystone error:', e)
+#----------------------------------------------------------------------
+# memory functions
+#----------------------------------------------------------------------
 
-    except UcError as e:
-        #print(e)
-        #print(type(e))
-        #print(dir(e))
-        #print(e.args)
-        print('unicorn error:', e)
+def push_dword(uc, value):
+    sp = uc.reg_read(UC_ARM_REG_SP)
+    uc.reg_write(UC_ARM_REG_SP, sp-4)
+    uc.mem_write(sp-4, struct.pack('<I', value))
+    return sp-4
 
-    if do_show_context:
-        show_context()
+def read_string(uc, addr, limit=2048):
+    result = ''
+
+    for i in range(limit):
+        tmp = uc.mem_read(addr, 1)
+        if tmp[0] == 0:
+            break
+        result += chr(tmp[0])
+        addr += 1
+
+    return result
+

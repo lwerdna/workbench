@@ -65,26 +65,6 @@ def callback_jit_mapping(uc, access, addr, size, value, context):
     # if False, it will continue throwing unicorn.unicorn.UcError: Invalid memory read (UC_ERR_READ_UNMAPPED)
     return True
 
-# in this callback, we skip the instruction and simulate the 
-def callback_jit_mapping(uc, access, addr, size, value, context):
-    if access == UC_MEM_READ_UNMAPPED:
-        descr = 'read from'
-    elif access == UC_MEM_WRITE_UNMAPPED:
-        descr = 'write to'
-    else:
-        breakpoint()
-
-    print(f'unmapped {size}-byte {descr} 0x{addr:X}')
-    seg_start = align_down_4k(addr)
-    seg_end = align_up_4k(addr + 8)
-    print(f'mapping in [0x{seg_start:X}, 0x{seg_end:X})')
-    uc.mem_map(seg_start, seg_end-seg_start)
-    uc.mem_write(addr, b'\xef\xbe\xad\xde\x00\x00\x00\x00')
-
-    # if True, unicorn will try again (assuming you fixed the execution environment)
-    # if False, it will continue throwing unicorn.unicorn.UcError: Invalid memory read (UC_ERR_READ_UNMAPPED)
-    return True
-
 if __name__ == '__main__':
     setup_machine()
     uc = setup_machine()
