@@ -10,7 +10,7 @@ It's equivalent to asking "What's the most immediate post dominator?".
 
 ![](./assets/generated0.svg)
 
-The path from `3` converges at `7`. The path from `8` converges at `11`. All other splits wait until node `12` to converge.
+The paths from `3` converge at `7`. The paths from `8` converge at `11`. All other splits wait until node `12` to converge.
 
 ```
 $ ./test.py ./generated0.graph
