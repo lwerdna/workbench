@@ -1,9 +1,11 @@
 Sort items into a hierarchy given an arbitrary "is ancestor of" relation.
 
 ### 2023-01-24 UPDATE
-The general situation is that elements are either a [partially ordered set](https://en.wikipedia.org/wiki/Partially_ordered_set) or they're a fully ordered set and we first take its [transitive closure](https://en.wikipedia.org/wiki/Transitive_reduction). A graph of the result, with elements as vertices and relations as edges, is a [Hasse diagram](https://en.wikipedia.org/wiki/Hasse_diagram). This is a special case where the graph qualifies as a tree, which allows efficient computation by simply starting empty and inserting one element at a time. The relation only has to be queried for the elements down the insertion path, with depth `log n`. There are `n` insertions so I think this whole algorithm is `O(n log n)`.
+The general situation is that elements are either a [partially ordered set](https://en.wikipedia.org/wiki/Partially_ordered_set) or they're a fully ordered set and we first take its [transitive reduction](https://en.wikipedia.org/wiki/Transitive_reduction). A layman's way to think of the transitive closure is the removal of all edges that could be rederived by transitivity. A graph of the result, with elements as vertices and relations as edges, is a [Hasse diagram](https://en.wikipedia.org/wiki/Hasse_diagram).
 
-This same feat can be achieved less efficiently by graph libraries like [NetworkX](https://networkx.org/) by first building the graph from the elements and relations, taking the [transitive reduction](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.dag.transitive_reduction.html), then testing if the result is a tree. If it's not, you can verify the data, or be tolerant and perhaps every incoming edge after each vertex's first. Finally, traverse the tree pre-order. See [./test-intervals-networkx.py](./test-intervals-networkx.py) for a demonstration.
+Sorting by "is ancestor of" is a special case where the graph qualifies as a tree, which allows efficient computation by simply starting empty and inserting one element at a time. During insertion, you have to test the relation against elements down the depth of the tree, which is `log n`. There are `n` insertions so I think this whole algorithm is `O(n log n)`.
+
+A pedagogical implementation demonstrating the general case starts by building the graph from the elements and relations, then taking the [transitive reduction](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.dag.transitive_reduction.html), then testing if the result is a tree. If it's not, you can re-examine the data, or be tolerant and perhaps ignore every incoming edge after each vertex's first. Finally, traverse the tree pre-order. See [./test-intervals-networkx.py](./test-intervals-networkx.py) for a demonstration utilizing the graph library [NetworkX](https://networkx.org/).
 
 ### Example: strings with relation "a starts b"
 
@@ -117,6 +119,3 @@ root
   ...
 ```
 
-What about multiple inheritance? The algorithm stops after it finds the FIRST insertion point. Should it keep going? See test\_family.py.
-
-I think the multiple inheritance problem should build a graph instead of a hierarchy/tree and is equivalent to having a list of "is downstream of" facts and building a directed graph from it.
