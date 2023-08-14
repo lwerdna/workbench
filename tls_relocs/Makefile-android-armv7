@@ -4,6 +4,7 @@
 
 BUILT_TOOLCHAIN = $(HOME)/android_a64_api21_toolchain
 GCC = $(BUILT_TOOLCHAIN)/bin/armv7a-linux-androideabi19-clang
+READELF = $(BUILT_TOOLCHAIN)/bin/arm-linux-androideabi-readelf
 
 all: test
 
@@ -17,8 +18,8 @@ libbbb.so: bbb.c
 	$(GCC) -O0 bbb.c -shared -fPIC -o libbbb.so
 
 relocs:
-	readelf --relocs libaaa.so
-	readelf --relocs libbbb.so
+	$(READELF) --relocs libaaa.so
+	$(READELF) --relocs libbbb.so
 
 clean:
 	rm -f test *.so *.out
