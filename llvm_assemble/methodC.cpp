@@ -2,7 +2,10 @@
 
 #define _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 
-/* c++ includes */
+/* C includes */
+#include <string.h>
+
+/* C++ includes */
 #include <map>
 #include <string>
 #include <vector>
@@ -97,28 +100,6 @@ using namespace llvm;
 /*****************************************************************************/
 /* MISCELLANY */
 /*****************************************************************************/
-
-void BNLlvmServicesInit(void)
-{
-	llvm::InitializeAllTargetInfos();
-	llvm::InitializeAllTargetMCs();
-	llvm::InitializeAllAsmParsers();
-	llvm::InitializeAllDisassemblers();
-}
-
-/* map LLVM services reloc mode to LLVM reloc mode
-	(so API users don't have to include LLVM headers) */
-static Reloc::Model map_reloc_mode(int relocMode)
-{
-	/* SEE: NOT the values in include/llvm-c/TargetMachine.h
-		but llvm/Support/CodeGen.h */
-	switch(relocMode) {
-		case LLVM_SVCS_RM_STATIC: return Reloc::Static;
-		case LLVM_SVCS_RM_PIC: return Reloc::PIC_;
-		case LLVM_SVCS_RM_DYNAMIC_NO_PIC: return Reloc::DynamicNoPIC;
-		default: return Reloc::Static;
-	}
-}
 
 static uint32_t bswap32(uint32_t x)
 {
@@ -339,17 +320,13 @@ int BNLlvmServicesAssemble(
 
 	/* out parameters */
 	char **outBytes, int *outBytesLen,
-	char **err, int *errLen)
+	char *err)
 {
 	(void)codeModel;
-	(void)errLen;
 	int rc = -1;
 
 	*outBytes = NULL;
 	*outBytesLen = 0;
-
-	*err = NULL;
-	*errLen = 0;
 
 	/* output for asm->obj */
 	SmallString<1024> smallString;
@@ -375,7 +352,8 @@ int BNLlvmServicesAssemble(
 		if arch is blank, the triple is consulted */
 	const Target *target = TargetRegistry::lookupTarget(/*arch*/"", TheTriple, strErr);
 	if (!target) {
-		strErr = "TargetRegistry::lookupTarget() failed\n" + strErr;
+		strcpy(err, "TargetRegistry::lookupTarget() failed\n");
+		strcat(err, strErr.c_str());
 		return -1;
 	}
 
@@ -385,7 +363,7 @@ int BNLlvmServicesAssemble(
 
 	/* target opts */
 	MCTargetOptions targetOpts;
-	targetOpts.MCUseDwarfDirectory = false;
+	targetOpts.MCUseDwarfDirectory = llvm::MCTargetOptions::DisableDwarfDirectory;
 	/* how is this different than the last field of the triplet? */
 	//targetOpts.ABIName = abi;
 
@@ -424,7 +402,7 @@ int BNLlvmServicesAssemble(
 	/* also see initMachOMCObjectFileInfo(), initELFMCObjectFileInfo(),
 		initCOFFMCObjectFileInfo() ... will ask TT.getObjectFormat() if not
 		specified */
-	objFileInfo.initMCObjectFileInfo(context, /* LargeCodeModel */ false);
+	objFileInfo.initMCObjectFileInfo(context, /* PIC */ true, /* LargeCodeModel */ false);
 	context.setObjectFileInfo(&objFileInfo);
 
 	/* code emitter llvm/MC/MCCodeEmitter.h
@@ -432,7 +410,7 @@ int BNLlvmServicesAssemble(
 
 		target returns with X86MCCodeEmitter, ARMMCCodeEmitter, etc.
 	*/
-	std::unique_ptr<MCCodeEmitter> codeEmitter(target->createMCCodeEmitter(*instrInfo, *regInfo, context));
+	std::unique_ptr<MCCodeEmitter> codeEmitter(target->createMCCodeEmitter(*instrInfo, context));
 
 	/*************************************************************************/
 	/* assemble to object */
@@ -446,7 +424,7 @@ int BNLlvmServicesAssemble(
 		std::move(objWriter),
 		std::move(codeEmitter),
 		*subTargetInfo,
-		true, /* relax all fixups */
+		false, /* relax all fixups */
 		true, /* incremental linker compatible */
 		false /* DWARFMustBeAtTheEnd */
 	));
@@ -462,7 +440,7 @@ int BNLlvmServicesAssemble(
 	}
 
 	/* dump to file for debugging */
-	if(0)
+	if(1)
 	{
 		FILE *fp;
 		fp = fopen("out.bin", "wb");
@@ -492,237 +470,41 @@ int BNLlvmServicesAssemble(
 	cleanup:
 	if(strErr.size()) {
 		//*err = BNAllocString(strErr.c_str());
-		//*errLen = strErr.size();
 	}
 	return rc;
 }
 
 
-void BNLlvmServicesAssembleFree(char *outBytes, char *err)
-{
-	if(outBytes) {
-		delete[] outBytes;
-	}
-
-	if(err) {
-		//BNFreeString(err);
-	}
-}
-
-/*****************************************************************************/
-/* DISASSEMBLE related functions */
-/*****************************************************************************/
-
-/* a dummy function for the disasm context, else aarch64 crashes on
-	FF 43 00 D1
-
-	see llvm-c/Disassembler.h
-*/
-const char *
-symbol_lookup_cb(void *DisInfo, uint64_t ReferenceValue, uint64_t *ReferenceType,
-	uint64_t ReferencePC, const char **ReferenceName)
-{
-	(void)DisInfo;
-	(void)ReferenceValue;
-	(void)ReferenceType;
-	(void)ReferencePC;
-	(void)ReferenceName;
-
-#if 0
-	const char *strRefType = "unknown";
-
-	switch(*ReferenceType) {
-		/* No input reference type or no output reference type. */
-		case LLVMDisassembler_ReferenceType_InOut_None:
-			strRefType = "none"; break;
-		/* The input reference is from a branch instruction. */
-		case LLVMDisassembler_ReferenceType_In_Branch:
-			strRefType = "branch"; break;
-		/* The input reference is from a PC relative load instruction. */
-		case LLVMDisassembler_ReferenceType_In_PCrel_Load:
-			strRefType = "pcref_load"; break;
-
-		/* The input reference is from an ARM64::ADRP instruction. */
-		case LLVMDisassembler_ReferenceType_In_ARM64_ADRP:
-			strRefType = "arm64_adrp"; break;
-		/* The input reference is from an ARM64::ADDXri instruction. */
-		case LLVMDisassembler_ReferenceType_In_ARM64_ADDXri:
-			strRefType = "arm64_addxri"; break;
-		/* The input reference is from an ARM64::LDRXui instruction. */
-		case LLVMDisassembler_ReferenceType_In_ARM64_LDRXui:
-			strRefType = "arm64_ldrxui"; break;
-		/* The input reference is from an ARM64::LDRXl instruction. */
-		case LLVMDisassembler_ReferenceType_In_ARM64_LDRXl:
-			strRefType = "arm64_ldrxl"; break;
-		/* The input reference is from an ARM64::ADR instruction. */
-		case LLVMDisassembler_ReferenceType_In_ARM64_ADR:
-			strRefType = "arm64_adr"; break;
-	}
-#endif
-
-	//printf("%s(refval:%llx reftype:%s)\n", __func__, ReferenceValue,
-	//	strRefType);
-
-	*ReferenceType = LLVMDisassembler_ReferenceType_InOut_None;
-	return NULL;
-}
-
-int disasm_single(
-	/* in parameters */
-	uint8_t *src, int src_len,
-	uint64_t addr,
-	/* out parameters */
-	string &result, int &instrLen,
-	/* internal */
-	LLVMDisasmContextRef context)
-{
-	int rc = -1;
-
-	char buf[1024] = {0};
-
-	instrLen = LLVMDisasmInstruction(
-		context, /* disasm context */
-		src, /* source data */
-		src_len, /* length of source data */
-		addr, /* address */
-		buf, /* output buf */
-		sizeof(buf) /* size of output buf */
-	);
-
-	if(instrLen <= 0)
-	{
-		//printf("%04X: undefined?\n", offs);
-		goto cleanup;
-	}
-
-	result = buf;
-
-	rc = 0;
-	cleanup:
-	return rc;
-}
-
-/* disassemble a single instruction from the start of an input buffer */
-int BNLlvmServicesDisassembleSingle(
-	/* in parameters */
-	const char *triplet,
-	uint8_t *src, int src_len,
-	uint64_t addr,
-	/* out parameters */
-	string &result, int &instrLen)
-{
-	int rc = -1;
-	LLVMDisasmContextRef context = NULL;
-
-	/* see /lib/MC/MCDisassembler/Disassembler.h */
-	context = LLVMCreateDisasm (
-		triplet, /* triple */
-		NULL, /* void *DisInfo */
-		0, /* TagType */
-		NULL, /* LLVMOpInfoCallback GetOpInfo */
-		symbol_lookup_cb /* LLVMSymbolLookupCallback SymbolLookUp */
-	);
-
-	if(context == NULL) {
-		//printf("ERROR: LLVMCreateDisasm()\n");
-		goto cleanup;
-	}
-
-	if(0 != disasm_single(src, src_len, addr, result, instrLen, context))
-	{
-		//printf("ERROR: disasm_single()\n");
-		goto cleanup;
-	}
-
-	rc = 0;
-	cleanup:
-	if(context) {
-		LLVMDisasmDispose(context);
-		context = NULL;
-	}
-	return rc;
-}
-
-int BNLlvmServicesDisassembleLengths(
-	/* in parameters */
-	const char *triplet,
-	uint8_t *src, int src_len,
-	uint64_t addr,
-	/* out parameters */
-	vector<int> &lengths)
-{
-	int rc = -1;
-	int length;
-	string result;
-	LLVMDisasmContextRef context = NULL;
-
-	/* see /lib/MC/MCDisassembler/Disassembler.h */
-	context = LLVMCreateDisasm (
-		triplet, /* triple */
-		NULL, /* void *DisInfo */
-		0, /* TagType */
-		NULL, /* LLVMOpInfoCallback GetOpInfo */
-		symbol_lookup_cb /* LLVMSymbolLookupCallback SymbolLookUp */
-	);
-
-	if(!context)
-	{
-		//printf("ERROR: LLVMCreateDisasm()\n");
-		goto cleanup;
-	}
-
-	lengths.clear();
-	for(int i=0; i<src_len; )
-	{
-		if(disasm_single(src+i, src_len-i, addr+i, result, length, context))
-		{
-			if(0)
-			{
-				//printf("ERROR: disasm_single()\n");
-				goto cleanup;
-			}
-			else
-			{
-				/* make it best effort */
-				break;
-			}
-		}
-
-		//printf("%s(): %s has length %d\n", __func__, result.c_str(), length);
-
-		lengths.push_back(length);
-		i += length;
-	}
-
-	rc = 0;
-	cleanup:
-	if(context) {
-		LLVMDisasmDispose(context);
-		context = NULL;
-	}
-	return rc;
-}
+static const char *source =
+".global myfunc\n"
+"myfunc:\n"
+"bl 0x1000\n";
 
 int main(int ac, char **av)
 {
 	char *output;
 	int out_len = 0;
-	char *error = NULL;
-	int err_len = 0;
+	char error[1024] = {'\0'};
 
 	int rc;
 
+	llvm::InitializeAllTargetInfos();
+	llvm::InitializeAllTargetMCs();
+	llvm::InitializeAllAsmParsers();
+	llvm::InitializeAllDisassemblers();
+
 	rc = BNLlvmServicesAssemble(
-		"mov x0, x0",
+		/* "mov x0, x0", */
+		source,
 		LLVM_SVCS_DIALECT_UNSPEC, 
 		"aarch64-none-none",
 		LLVM_SVCS_CM_DEFAULT, /* code model */
-		LLVM_SVCS_RM_STATIC, /* reloc model */
+		LLVM_SVCS_RM_PIC, /* reloc model */
 		&output, &out_len,
-		&error, &err_len
+		error
 	);
 
-	if(rc || err_len) {
+	if(rc || error[0]) {
 		printf("ERROR %d: %s\n", rc, error);
 		return -1;
 	}
