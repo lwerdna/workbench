@@ -47,33 +47,41 @@ if back:
     log(f'collecting {back} commits back from each branch')
     HEAD = None
     branches = []
-    #pipe = subprocess.Popen('git branch --all --list', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
-    pipe = subprocess.Popen('git branch --list', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+    pipe = subprocess.Popen('git branch --all --list --verbose', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     (out, err) = pipe.communicate()
     for line in out.split('\n'):
-        is_head = False
-
-        line = line.strip()
-
-        # "* master" -> "master"
-        # "* (HEAD detached from b2b5b84)" -> "(HEAD detached from b2b5b84)"
-        if line.startswith('* '):
-            line = line[2:]
-            is_head = True
-
-        # "(HEAD detached from b2b5b84)" -> "b2b5b84"
-        if line.startswith('(HEAD detached '):
-            m = re.match(r'^\(HEAD detached (?:at|from) (.*)\)', line)
-            line = m.group(1)
-
-        if not line:
+        if not line or line.isspace():
             continue
-        if is_head:
-            HEAD = line
-        branches.append(line)
 
-    #print('found HEAD:', HEAD)
+        # HEAD is detached *AT* a particular commit, get that commit
+        #
+        if m := re.match(r'^\* \(HEAD detached at (.*)\)', line):
+            HEAD = m.group(1)
+            branches.append(m.group(1))
+            continue
+
+        # HEAD is detached *FROM* a particular commit, ignore commit and find where it's at, eg: get 4c1edc0 from:
+        # "* (HEAD detached from 115d72f)                       4c1edc0 Lift ENC_LD2_ASISDLSE_R2"
+        if m := re.match(r'^\* \(HEAD detached from .*\)\s+([a-fA-F0-9]+)', line):
+            HEAD = m.group(1)
+            branches.append(m.group(1))
+            continue
+
+        # HEAD is at a named branch, eg:
+        # "* hehe                                               4c1edc0 Lift ENC_LD2_ASISDLSE_R2"
+        if m := re.match(r'^\* ([^ ]+) ', line):
+            HEAD = m.group(1)
+            branches.append(m.group(1))
+            continue
+
+        m = re.match(r'^  ([^ ]+) ', line)
+        assert m, breakpoint()
+        branches.append(m.group(1))
+
+    assert HEAD
+    log('found HEAD: ' + HEAD)
     log('found branches:\n' + '\n'.join(branches))
+    #breakpoint()
     #sys.exit(-1)
     for branch in branches:
         log('collecting commits from %s' % branch)
@@ -82,7 +90,6 @@ if back:
         pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
         (out, err) = pipe.communicate()
         lines.update(out.split("\n"))
-    assert HEAD
 else:
     gitLogCommand = 'git log --pretty=format:"[%ct||%cn||%s||%d] %h %p" --all '
     log('Git log command: ' + gitLogCommand)
