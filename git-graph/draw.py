@@ -44,23 +44,36 @@ def log(message):
 lines = set()
 
 if back:
+    log(f'collecting {back} commits back from each branch')
     HEAD = None
     branches = []
     #pipe = subprocess.Popen('git branch --all --list', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     pipe = subprocess.Popen('git branch --list', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
     (out, err) = pipe.communicate()
     for line in out.split('\n'):
+        is_head = False
+
         line = line.strip()
+
+        # "* master" -> "master"
+        # "* (HEAD detached from b2b5b84)" -> "(HEAD detached from b2b5b84)"
         if line.startswith('* '):
             line = line[2:]
-            HEAD = line
-        if line.startswith('(HEAD detached at'):
-            m = re.match(r'^\(HEAD detached at (.*)\)', line)
+            is_head = True
+
+        # "(HEAD detached from b2b5b84)" -> "b2b5b84"
+        if line.startswith('(HEAD detached '):
+            m = re.match(r'^\(HEAD detached (?:at|from) (.*)\)', line)
             line = m.group(1)
-        if not line: continue
+
+        if not line:
+            continue
+        if is_head:
+            HEAD = line
         branches.append(line)
+
     #print('found HEAD:', HEAD)
-    #print('found branches:\n' + '\n'.join(branches))
+    log('found branches:\n' + '\n'.join(branches))
     #sys.exit(-1)
     for branch in branches:
         log('collecting commits from %s' % branch)
