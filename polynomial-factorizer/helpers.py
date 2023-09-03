@@ -1,9 +1,19 @@
 #!/usr/bin/env python
 
+# implementation of univariate polynomials
+#
+# uses [c0, c1, ..., c<degree>] internal representation, eg:
+#     133x^6 + 214x^5 + 233x^4 + 212x^3 + 111x^2 + 46x + 11
+# has representation:
+#     [11, 46, 111, 212, 233, 214, 133]
+
 import re
 
-# parse strings to [c0, c1, ..., c<degree>] representation, eg:
-# "133x^6 + 214x^5 + 233x^4 + 212x^3 + 111x^2 + 46x + 11" -> [11, 46, 111, 212, 233, 214, 133]
+#------------------------------------------------------------------------------
+# PARSE / STRING CONVERSION
+#------------------------------------------------------------------------------
+
+# parse strings to internal representation
 def parse(pstr):
     lookup = {}
     for term in pstr.split(' + '):
@@ -40,6 +50,7 @@ def parse(pstr):
 
     return result
 
+# internal representation to readable string
 def unparse(poly):
     terms = []
     for (deg, coeff) in enumerate(poly):
@@ -52,15 +63,24 @@ def unparse(poly):
         terms.append(f'{c_str}{e_str}')
     return ' + '.join(reversed(terms))
 
-# return the degree of a polynomial in [c0, c1, ..., c<degree>] representation
+#------------------------------------------------------------------------------
+# OPERATIONS
+#------------------------------------------------------------------------------
+
+def evaluate(poly, x):
+    result = 0
+    for e,c in enumerate(poly):
+        result += c*(x**e)
+    return result
+
 def degree(poly):
     return len(poly)-1
 
-def normalize(p):
-    while p and p[-1] == 0:
-        p = p[0:-1]
-    p = [int(x) for x in p]
-    return p
+def normalize(poly):
+    while poly and poly[-1] == 0:
+        poly = poly[0:-1]
+    #poly = [int(x) for x in poly]
+    return poly
 
 def add(a, b):
     width = max(len(a), len(b))
@@ -74,7 +94,6 @@ def sub(a, b):
     b = b + [0] * (width - len(b))
     return normalize([a[i]-b[i] for i in range(width)])
 
-# multiply two polynomials in [c0, c1, ..., c<degree>] representation
 def mult(poly_a, poly_b):
     result = [0]*(degree(poly_a) + degree(poly_b) + 1)
 
@@ -102,6 +121,23 @@ def divide(a, b):
     q, r = divide(r, b)
     return (add(quotient, q), r)
 
+# Lagrange interpolation
+def interpolate(points):
+    result = []
+
+    for i,p in enumerate(points):
+        # form a polynomial that is 0 at all points _OTHER THAN_ p
+        basis = [1]
+        for x,_ in [points[j] for j in range(len(points)) if j != i]:
+            basis = mult(basis, [-x, 1])
+        # make the polynomial the correct value at p
+        basis = mult(basis, [p[1]/evaluate(basis, p[0])])
+
+        # add this into the result
+        result = add(result, basis)
+
+    return result
+
 if __name__ == '__main__':
     print('TEST MODE!')
 
@@ -110,6 +146,9 @@ if __name__ == '__main__':
     assert add(a, b) == parse('x^2 + 6x + 8')
     assert sub(a, b) == parse('x^2 + -2x + -2')
     c = parse('4x^3 + 13x^2 + 22x + 15')
+    assert evaluate(c, -1) == 2
+    assert evaluate(c, 0) == 15
+    assert evaluate(c, 1) == 54
     assert mult(a, b) == c
     assert divide(c, a)[0] == b
     assert divide(c, b)[0] == a
@@ -119,6 +158,9 @@ if __name__ == '__main__':
     assert add(a, b) == parse('x^2 + x + 2')
     assert sub(a, b) == parse('x^2 + -x')
     c = parse('x^3 + x^2 + x + 1')
+    assert evaluate(c, -1) == 0
+    assert evaluate(c, 0) == 1
+    assert evaluate(c, 1) == 4
     assert mult(a, b) == c
     assert divide(c, a)[0] == b
     assert divide(c, b)[0] == a
@@ -128,6 +170,16 @@ if __name__ == '__main__':
     assert add(a, b) == parse('26x^3 + 22x^2 + 16x + 12')
     assert sub(a, b) == parse('-12x^3 + -12x^2 + -10x + -10')
     c = parse('133x^6 + 214x^5 + 233x^4 + 212x^3 + 111x^2 + 46x + 11')
+    assert evaluate(c, -1) == 16
+    assert evaluate(c, 0) == 11
+    assert evaluate(c, 1) == 960
     assert mult(a, b) == c
     assert divide(c, a)[0] == b
     assert divide(c, b)[0] == a
+
+    a = interpolate([(-1,2), (0,3), (1,6)])
+    assert a == parse('x^2 + 2x + 3')
+
+    breakpoint()
+    a = interpolate([(1,1), (2,2), (3,3), (4,4), (5,5), (6,6)])
+    print(a)
