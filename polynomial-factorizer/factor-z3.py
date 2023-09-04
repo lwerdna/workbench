@@ -29,7 +29,7 @@ def factor_deg(target, degA, degB):
             else:
                 expressions[da+db] += var_a * var_b
     
-    assert len(expressions) == len(target)
+    assert len(expressions) == target.degree()+1
     if 1:
         print(f'generated expressions for a {degA}-degree x {degB}-degree:')
         for expr in expressions:
@@ -37,7 +37,11 @@ def factor_deg(target, degA, degB):
 
     equations = []
     for i in range(len(expressions)):
-        equations.append(expressions[i] == target[i])
+        # the coefficient on the polynomial is type Fraction (rational number)... ensure it
+        # represents an integer so we can convert it to Z3 integer
+        frac = target.coeff(i)
+        assert frac.denominator == 1
+        equations.append(expressions[i] == frac.numerator)
     if 1:
         print('generated equations:')
         for equ in equations:
@@ -65,14 +69,14 @@ def factor_deg(target, degA, degB):
             if 1:
                 print ("%s = %s" % (d.name(), m[d]))
 
-        return a, b
+        return Polynomial(a), Polynomial(b)
     else:
         return None, None
 
 def factor(poly):
-    deg = degree(poly)
+    deg = poly.degree()
 
-    for dA in range(1, degree(poly)//2+1):
+    for dA in range(1, deg//2+1):
         dB = deg - dA
 
         A, B = factor_deg(poly, dA, dB)
@@ -84,64 +88,64 @@ def factor(poly):
 
 if __name__ == '__main__':
     if sys.argv[1:]:
-        c = parse(sys.argv[1])
+        c = Polynomial(sys.argv[1])
         a, b = factor(c)
         if (a, b) == (None, None):
             print('prime')
         else:
-            print('(' + unparse(a) + ')(' + unparse(b) + ')')
+            print(f'({a})({b})')
         
     else:
         print('TEST MODE!')
 
         expr = 'x^2 + -1'
         print(f'factor {expr}')
-        c = parse(expr)
+        c = Polynomial(expr)
         assert c == [-1, 0, 1]
         a, b = factor(c)
         print(f'a = {a}')
         print(f'b = {b}')
-        print(mult(a, b))
-        assert mult(a, b) == c
+        print(a * b)
+        assert a * b == c
 
         expr = 'x^3 + x^2 + x + 1'
         print(f'factor {expr}')
-        c = parse(expr)
+        c = Polynomial(expr)
         assert c == [1, 1, 1, 1]
         a, b = factor(c)
         print(f'a = {a}')
         print(f'b = {b}')
-        print(mult(a, b))
-        assert mult(a, b) == c
+        print(a * b)
+        assert a * b == c
 
         expr = '7x^3 + 5x^2 + 3x + 1'
         print(f'factor {expr}')
-        c = parse(expr)
+        c = Polynomial(expr)
         assert c == [1, 3, 5, 7]
         a, b = factor(c)
         print(f'a = {a}')
         print(f'b = {b}')
         if a or b:
-            print(mult(a, b))
-            assert mult(a, b) == c
+            print(a * b)
+            assert a * b == c
 
         expr = '19x^3 + 17x^2 + 13x + 11'
         print(f'factor {expr}')
-        c = parse(expr)
+        c = Polynomial(expr)
         assert c == [11, 13, 17, 19]
         a, b = factor(c)
         print(f'a = {a}')
         print(f'b = {b}')
         if a or b:
-            print(mult(a, b))
-            assert mult(a, b) == c
+            print(a * b)
+            assert a * b == c
 
         expr = '133x^6 + 214x^5 + 233x^4 + 212x^3 + 111x^2 + 46x + 11'
         print(f'factor {expr}')
-        c = parse(expr)
+        c = Polynomial(expr)
         a, b = factor(c)
         print(f'a = {a}')
         print(f'b = {b}')
         if a or b:
-            print(mult(a, b))
-            assert mult(a, b) == c        
+            print(a * b)
+            assert a * b == c        
