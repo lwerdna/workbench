@@ -8,6 +8,7 @@
 #     [11, 46, 111, 212, 233, 214, 133]
 
 import re
+import math
 
 from fractions import Fraction
 
@@ -168,8 +169,31 @@ def interpolate(points):
 
     return result
 
+# TODO: put a real method in here
+def divisors(n):
+    assert type(n) == int
+    result = []
+
+    for k in range(1, math.floor(math.sqrt(abs(n)))+1):
+        if n % k == 0:
+            a, b = k, n//k
+            result.extend([a, b, -a, -b])
+
+    return result
+
 if __name__ == '__main__':
     print('TEST MODE!')
+
+    assert divisors(10) == [1, 10, -1, -10, 2, 5, -2, -5]
+    assert divisors(11) == [1, 11, -1, -11]
+    assert divisors(12) == [1, 12, -1, -12, 2, 6, -2, -6, 3, 4, -3, -4]
+    assert divisors(60) == [1, 60, -1, -60, 2, 30, -2, -30, 3, 20, -3, -20, 4, 15, -4, -15, 5, 12, -5, -12, 6, 10, -6, -10]
+    assert divisors(-60) == [1, -60, -1, 60, 2, -30, -2, 30, 3, -20, -3, 20, 4, -15, -4, 15, 5, -12, -5, 12, 6, -10, -6, 10]
+
+    a = Polynomial('1')
+    c = Polynomial('x^2 + 6x + 8')
+    q, r = c / a
+    breakpoint()
 
     a = Polynomial('x^2 + 2x + 3')
     b = Polynomial('4x + 5')
@@ -222,4 +246,7 @@ if __name__ == '__main__':
     assert a.evaluate(17) == 19
     assert a.evaluate(23) == 29
     assert a.evaluate(31) == 41
+
+    a = interpolate(((0, 1), (1, 1), (2, 1)))
+    assert a == Polynomial('1')
 
