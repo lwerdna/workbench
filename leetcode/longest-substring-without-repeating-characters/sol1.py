@@ -4,7 +4,7 @@ from collections import Counter
 
 class Solution:
     def compute(self, s):
-        debug = 0
+        debug = 1
         if not s: return 0
         if len(s)==1: return 1
         
@@ -37,7 +37,8 @@ class Solution:
 
             # move L
             while L<=R and s[R+1] in lookup:
-                #print('removing %s' % s[L])
+                if debug:
+                    print('removing %s' % s[L])
                 lookup.remove(s[L])
                 L += 1
             R += 1
@@ -52,13 +53,13 @@ class Solution:
 
         return len(ans)
 
-#a = "abcabcbb" #abc
-#a = 'bbbbb' #b
-#a = 'pwwkew' #pwwkew
-#a = "abcabcbb"
-a = 'au'
+if __name__ == '__main__':
+    sol = Solution()
 
-sol = Solution()
-ans = sol.compute(a)
+    assert(sol.compute('')==0)
+    assert(sol.compute('z')==1)
+    assert(sol.compute('au')==2)
+    assert(sol.compute('abcabcbb')==3)
+    assert(sol.compute('abba')==2)
 
-print(ans)
+    print('PASS')

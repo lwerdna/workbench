@@ -10,32 +10,24 @@ class Solution:
         
         L = 0
         for R,char in enumerate(s):
+            # if we've seen this char before, advance L just past the last sighting
             if char in lookup:
                 L = max(lookup[char]+1, L)
-            
+           
+            # store the latest sighting
             lookup[char] = R
+
             record = max(record, R-L+1)
             
         return record
 
+if __name__ == '__main__':
+    sol = Solution()
 
-sol = Solution()
+    assert(sol.compute('')==0)
+    assert(sol.compute('z')==1)
+    assert(sol.compute('au')==2)
+    assert(sol.compute('abcabcbb')==3)
+    assert(sol.compute('abba')==2)
 
-#a = "abcabcbb" #abc
-#a = 'bbbbb' #b
-#a = 'pwwkew' #pwwkew
-#a = "abcabcbb"
-#a = 'au' # or 2
-#a = '' # 0
-
-
-assert(sol.compute('')==0)
-assert(sol.compute('z')==1)
-assert(sol.compute('au')==2)
-assert(sol.compute('abcabcbb')==3)
-assert(sol.compute('abba')==2)
-
-
-ans = sol.compute('abcabcbb')
-
-print(ans)
+    print('PASS')
