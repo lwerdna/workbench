@@ -342,3 +342,21 @@ If BinaryNinja is built from source on a developer machine, it has no build numb
 >>> binaryninja.core_version_info()
 CoreVersionInfo(major=3, minor=1, build=0, channel='Local')
 ```
+
+There's also a confusing hash that is sometimes called a build id, for example:
+
+```
+Version 3.5.4526 Personal, Build ID ec37d737
+```
+
+This is the last git commit hash to BinaryNinja core repo (not the API repo!) before this release, and is typically tagged, for example:
+
+```
+commit ec37d73742bbd3b8e93bdfda4fc4983bd4de6f86 (tag: v3.5.4526-stable, origin/test_fix_analysis_hang)
+```
+
+## What's the difference between "auto" and "user"? Why do some functions have "\_user\_" in their name?
+
+"Auto" refers to actions performed by BinaryNinja's auto analysis. Most of these can be recomputed quickly and so their result is not stored in saved databases.
+
+"User" refers to actions the performed by the user, like `create_user_var()`, `set_user_type()`. They are stored in the database so they can be displayed.
