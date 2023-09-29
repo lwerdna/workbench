@@ -1,4 +1,4 @@
-all: demo-eq demo-lt
+all: demo-eq demo-lt demo-cc
 
 NDK = $(HOME)/android-ndk-r21d-built
 NDK_BIN_PATH = $(NDK)/bin/arm-linux-androideabi-
@@ -19,10 +19,15 @@ demo-lt: demo-lt.o
 demo-lt.o: demo-lt.s
 	 $(AS) -mthumb demo-lt.s -o demo-lt.o
 
+demo-cc: demo-cc.o
+	$(LD) demo-cc.o -o demo-cc
+
+demo-cc.o: demo-cc.s
+	 $(AS) -mthumb demo-cc.s -o demo-cc.o
+
 disasm:
 	#$(OBJDUMP) -d demo-eq.o
 	$(OBJDUMP) -d demo-lt.o
 
 clean:
-	rm -f demo-eq demo-eq.o a.out
-	rm -f demo-lt demo-lt.o a.out
+	rm -f demo-eq demo-eq.o demo-lt demo-lt.o demo-eq demo-eq.o a.out

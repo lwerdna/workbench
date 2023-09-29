@@ -4,7 +4,11 @@ This is a collection of information I often reference about the ARM architecture
 
 [./assets/arm-registers-architecture.png](./assets/arm-registers-architecture.png) - a wonderful diagram showing registers and calling conventions of A32 and A64 from [https://www.processon.com/view/link/6295e1b80791294815547608](https://www.processon.com/view/link/6295e1b80791294815547608)
 
-[./2022-03-10-arm-thumb-exchange-tests.md](./2022-03-10-arm-thumb-exchange-tests.md) - an exhaustive test of branch vs. branch-and-exchange behavior
+[./test-exchange/README.md](./test-exchange/README.md) - an exhaustive test of branch vs. branch-and-exchange behavior
+
+[./test-itxxx/README.txt](./test-itxxx/README.txt) - notes/tests on itxxx instructions
+
+[./pac-pointer-auth/README.md](./pac-pointer-auth/README.md) - notes on pointer authentication (PAC)
 
 [./arm-adv-simd.md](./arm-adv-simd.md) - notes on ARM advanced SIMD
 
