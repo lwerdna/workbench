@@ -1,4 +1,7 @@
-// naive solution, times out on a test case with 67552 prices in it
+// Algorithm:
+// 1. For every pair of numbers a,b where a occurs before b, calculate the maximum difference between sell and buy.
+//
+// naive O(n^2) solution, times out on a test case with 67552 prices in it
 //
 class Solution0
 {

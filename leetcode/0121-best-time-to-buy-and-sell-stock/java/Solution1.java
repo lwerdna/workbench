@@ -1,4 +1,9 @@
-// better solution!
+// Algorithm:
+// 1. Create lookup table containing the best (highest) price is available in the future.
+//    ie: lookup[i] is the highest price available in prices[k], k>=i
+// 2. Scan left to right, tracking the maximum distance between current buy prices and maximum future sell price.
+//
+// This is too concrete a way of thinking, imagining past and present, when really we have an array of numbers.
 //
 class Solution1
 {

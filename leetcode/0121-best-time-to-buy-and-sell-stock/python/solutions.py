@@ -44,7 +44,23 @@ class Solution2:
 
         return max_profit
 
+# Algorithm:
+# Create lookup table of best buy price.
+# Scan right, subtracting current price (sell) from best buy price, recording best difference (profit).
+class Solution3:
+    def maxProfit(self, prices):
+        max_profit = 0
+
+        # [7,1,5,3,6,4] ->
+        # [7,1,1,1,1,1]
+        lookup = list(itertools.accumulate(prices, min))
+
+        for i,p in enumerate(prices):
+            max_profit = max(max_profit, p - lookup[i])
+
+        return max_profit
+
 if __name__ == '__main__':
-    for sol in [Solution0(), Solution1(), Solution2()]:
+    for sol in [Solution0(), Solution1(), Solution2(), Solution3()]:
         assert sol.maxProfit([7,1,5,3,6,4]) == 5
         assert sol.maxProfit([7,6,4,3,1]) == 0

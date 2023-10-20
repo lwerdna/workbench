@@ -52,9 +52,21 @@ class Solution2:
 
         return table[i] or -1
 
-for sol in [Solution0(), Solution1(), Solution2()]:
+class Solution3:
+    def coinChange(self, coins, amount):
+        memo = [0] + [-1] * amount
+
+        for amt in range(1, amount+1):
+            subresults = [memo[amt-c]+1 for c in coins if amt-c >= 0 and memo[amt-c] != -1]
+            memo[amt] = min(subresults) if subresults else -1
+
+        return memo[amount]
+
+for sol in [Solution0(), Solution1(), Solution2(), Solution3()]:
     assert(sol.coinChange([1,2,5], 11) == 3)
     assert(sol.coinChange([2147483647], 2) == -1)
     assert(sol.coinChange([2], 3) == -1)
     assert(sol.coinChange([1], 0) == 0)
 
+    assert sol.coinChange([1, 10, 17], 30) == 3
+    assert sol.coinChange([1, 10, 17], 20) == 2
