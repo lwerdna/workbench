@@ -1,4 +1,5 @@
 *.o
 *.so
+*.class
 .DS_Store
 __pycache__/
