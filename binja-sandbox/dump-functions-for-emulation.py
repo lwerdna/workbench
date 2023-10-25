@@ -26,7 +26,9 @@ if __name__ == '__main__':
                 instxt = ''.join(t.text for t in tokens)
                 print('        ' + (stringify(data) + ',').ljust(48) + '# ' + instxt)
                 addr += length
-        print(f'    ]')
+        print(f'    ],')
+        print(f'    \'length\': 0x{addr - function.start:X}')
         print('},')
 
+    print(']')
 

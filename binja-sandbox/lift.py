@@ -8,6 +8,8 @@ import binascii
 
 from helpers import *
 
+import llil_smt
+
 import binaryninja
 from binaryninja import core
 from binaryninja import binaryview
@@ -16,57 +18,6 @@ from binaryninja.enums import LowLevelILOperation
 
 RED = '\x1B[31m'
 NORMAL = '\x1B[0m'
-
-# old style, prints tabs to indicate tree structure
-# example:
-# LLIL_SET_REG
-#     sp
-#     LLIL_SUB
-#         LLIL_REG
-#             sp
-#         LLIL_CONST
-#             20
-def traverse_IL(il, depth):
-    indent = '\t'*depth
-
-    # is an instruction
-    if isinstance(il, lowlevelil.LowLevelILInstruction):
-        size_suffix = sz_lookup.get(il.size, '?') if il.size else ''
-        # handle consts specially
-        if il.operation in [LowLevelILOperation.LLIL_CONST, LowLevelILOperation.LLIL_CONST_PTR] and il.size:
-            tmp = il.operands[0]
-            if tmp < 0: # if neg, convert to pos
-                tmp = (1<<(il.size*8))+tmp
-            tmp = '0x%X' % tmp if il.size else '%d' % il.size
-            print(f'{indent}LLIL_CONST{size_suffix}({tmp})')
-        else:
-            print(f'{indent}{il.operation.name}{size_suffix}')
-
-        for o in il.operands:
-            traverse_IL(o, depth+1)
-
-        return
-
-    # not an instruction
-    print(indent + str(il))
-
-# new style
-def il2str(il):
-    if isinstance(il, lowlevelil.LowLevelILInstruction):
-        size_suffix = sz_lookup.get(il.size, '?') if il.size else ''
-        # print size-specified IL constants in hex
-        if il.operation in [LowLevelILOperation.LLIL_CONST, LowLevelILOperation.LLIL_CONST_PTR] and il.size:
-            tmp = il.operands[0]
-            if tmp < 0: # if neg, convert to pos
-                tmp = (1<<(il.size*8))+tmp
-            tmp = '0x%X' % tmp if il.size else '%d' % il.size
-            return 'LLIL_CONST%s(%s)' % (size_suffix, tmp)
-        else:
-            return '%s%s(%s)' % (il.operation.name, size_suffix, ','.join([il2str(o) for o in il.operands]))
-    elif isinstance(il, list):
-        return '[' + ','.join([il2str(x) for x in il]) + ']'
-    else:
-        return str(il)
 
 def usage():
     print('usage: %s <platform> <bytes>' % sys.argv[0])
@@ -78,8 +29,7 @@ def usage():
     print('    %s ~/fdumps/filesamples/hello-linux-x64.elf' % sys.argv[0])
     print('    %s ~/fdumps/filesamples/hello-linux-x64.elf _start' % sys.argv[0])
     print('')
-    print('platforms:')
-    print('\t' + '\n\t'.join(map(str, list(binaryninja.Platform))))
+    print('platforms: ' + ', '.join(map(str, list(binaryninja.Platform))))
     sys.exit(-1)
 
 if __name__ == '__main__':
@@ -146,21 +96,35 @@ if __name__ == '__main__':
         print(f'{RED}tree-like view:{NORMAL}')
         for block in func.low_level_il:
             for insn in block:
-                traverse_IL(insn, 0)
+                print(il_to_text_tree(insn, 0))
 
         print(f'{RED}line-like view:{NORMAL}')
         for block in func.low_level_il:
             for insn in block:
-                print(f'{insn.instr_index}: ' + il2str(insn))
+                print(f'{insn.instr_index}: ' + il_to_text_line(insn))
 
 #        for block in func.low_level_il:
 #            #print("\t{0}".format(block))
 #            for insn in block:
-#                traverse_IL(insn, 0)
+#                il_to_text_tree(insn, 0)
 #                #print('__str__():')
 #                #print(str(insn))
 #                #print('')
-#                #print('il2str():')
-#                #print(f'{insn.instr_index}: ' + il2str(insn))
+#                #print('il_to_text_line():')
+#                #print(f'{insn.instr_index}: ' + il_to_text_line(insn))
     #print(NORMAL)
 
+        # experimental stuff
+        if 0:
+            print(f'{RED}SMT Action:{NORMAL}')
+            for block in func.low_level_il:
+                for insn in block:
+                    print(f'; {insn.instr_index}: ' + il_to_text_line(insn))
+                    expr = llil_smt.llil_to_expr(insn)
+                    breakpoint()
+
+        if 0:
+            print(f'{RED}pylike:{NORMAL}')
+            for block in func.low_level_il:
+                for insn in block:
+                    print(il_to_pylike(insn))
