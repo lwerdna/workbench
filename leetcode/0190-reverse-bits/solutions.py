@@ -42,9 +42,6 @@ class Solution3:
         return self.f(n, 32)
 
 if __name__ == '__main__':
-    sol0 = Solution0()
-    sol1 = Solution1()
-
     import timeit
     for i, sol in enumerate([Solution0(), Solution1(), Solution2(), Solution3()]):
         def go():
