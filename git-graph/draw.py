@@ -1,13 +1,11 @@
 #!/usr/bin/python3
 
-# from https://github.com/daolis/git-graph
-
-__author__ = 'Stephan Bechter <stephan@apogeum.at>'
-import subprocess
+import os
 import re
-import hashlib
 import sys
-import argparse
+import hashlib
+import tempfile
+import subprocess
 
 # colors
 COLOR_NODE = "cornsilk"
@@ -23,28 +21,40 @@ COLOR_STASH = "red"
 pattern = re.compile(r'^\[(\d+)\|\|(.*)\|\|(.*)\|\|\s?(.*)\]\s([0-9a-f]*)\s?([0-9a-f]*)\s?([0-9a-f]*)$')
 revertMessagePattern = re.compile(r'Revert "(.*)"')
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument("-x", "--debug", dest="debug", action="store_true", help="Show debug messages on stderr")
-parser.add_argument("-m", "--messages", dest="messages", action="store_true", help="Show commit messages in node" )
-parser.add_argument("-r", "--range", help="git commit range" )
-parser.add_argument("-b", "--back", nargs='?', type=int, dest="back", action="store", help="how many commits back from each ref")
-args = parser.parse_args()
-debug = args.debug
-back = args.back
-
-# 'cause it's too fucking hard to make a simple default value in argparse
-if not back:
-    back = 12
+# configuration
+cfg = {
+    'commits_back': 12,
+    'include_test_branches': 'no',
+    'include_remote_tracking_branches': 'no',
+    'output_file_path': '/tmp/tmp.dot',
+    'commit_msg_width': 12
+}
+(tmp_handle, tmp_name) = tempfile.mkstemp(suffix='.ini')
+print("writing temporary contents to %s" % tmp_name)
+tmp_obj = os.fdopen(tmp_handle, 'w')
+for key, val in cfg.items():
+    tmp_obj.write(f'{key} = {val}\n')
+tmp_obj.close()
+print("invoking vim and waiting... (gvim %s)" % tmp_name)
+subprocess.call(["vim", '-f', tmp_name])
+print("reading changes from %s" % tmp_name)
+fp = open(tmp_name)
+for line in fp.readlines():
+    key, val = re.match(r'([^\s]*?)\s*=\s*(.*)', line.strip()).group(1, 2)
+    if val in ['no', 'No', 'false', 'False']: val = False
+    elif val in ['yes', 'Yes', 'true', 'True']: val = True
+    elif re.match(r'^\d+$', val): val = int(val)
+    elif re.match(r'^[\d\.]+$', val): val = float(val)
+    cfg[key] = val
+fp.close()
 
 def log(message):
-    if debug:
-        print(message, file=sys.stderr)
+    print(message, file=sys.stderr)
 
 lines = set()
 
-if back:
-    log(f'collecting {back} commits back from each branch')
+if cfg['commits_back']:
+    log(f'collecting {cfg["commits_back"]} commits back from each branch')
     HEAD = None
     branches = []
     pipe = subprocess.Popen('git branch --all --list --verbose', shell=True, stdout=subprocess.PIPE, universal_newlines=True)
@@ -84,8 +94,22 @@ if back:
     #breakpoint()
     #sys.exit(-1)
     for branch in branches:
+        if not cfg["include_test_branches"] and (branch.startswith('test_') or branch.startswith('remotes/origin/test_')):
+            log(f'skipping branch "{branch}" because it contains "test_"')
+            continue
+        if not cfg["include_remote_tracking_branches"] and (branch.startswith('remotes/origin/')):
+            log(f'skipping branch "{branch}" because it\'s remote tracking')
+            continue
+
         log('collecting commits from %s' % branch)
-        cmd = 'git log --pretty=format:"[%%ct||%%cn||%%s||%%d] %%h %%p" -n %d %s' % (back, branch)
+        # https://git-scm.com/docs/pretty-formats
+        # ct = committer date, UNIX timestamp
+        # cn = committer name
+        # s = subject
+        # d = ref names
+        # h = abbreviated commit hash
+        # p = abbreviated parent hashes
+        cmd = 'git log --pretty=format:"[%%ct||%%cn||%%s||%%d] %%h %%p" -n %d %s' % (cfg['commits_back'], branch)
         log(cmd)
         pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
         (out, err) = pipe.communicate()
@@ -116,17 +140,18 @@ def getCommitDiffHash(hash):
     sha = hashlib.sha1(diff.encode('utf-8'))
     return sha.hexdigest()
 
-print("digraph G {")
-print('\trankdir="RL"')
+fp = open(cfg['output_file_path'], 'w')
+fp.write('digraph G {\n')
+fp.write('\trankdir="RL"\n')
 
-# create mapping messages:
+# map subjects to abbreviated hashes
 # {
 #   'more junk': 'c236dd6'
 #   'little more assembler work': '14b37bc'
 #   'start assembler': '6a5e72a'
 #   ... }
 #
-# create mapping dates
+# map abbreviated hashes to date
 # {
 #   'a340377': '1440645583'
 #   'a512254': '1440645521'
@@ -155,84 +180,42 @@ for line in lines:
         raise Exception("malformed line: %s" % line)
 
 for line in lines:
-    #print(line)
+    # line is like:
+    # [<date>||<name>||<subject>||] <commit hash> <parent hashes>
+    # [1664915022||Glenn Smith||Fix Clang parser decaying array types to pointers in some cases||] 674394d45 c1edaa6a0
     match = re.match(pattern, line)
     if match:
-        date = match.group(1)
-        user = match.group(2)
-        message = match.group(3)
-        ref = match.group(4)
-        commitHash = match.group(5)
-        parentHash1 = match.group(6)
-        parentHash2 = match.group(7)
-
-        if not message in messages:
-            breakpoint()
+        date, user, message, ref, commitHash, parentHash1, parentHash2 = match.group(1, 2, 3, 4, 5, 6, 7)
 
         link = ""
         link2 = ""
         labelExt = ""
-        nodeMessage = ""
-        if args.messages:
-            nodeMessage = "\n" + message.replace("\"", "'");
+        nodeMessage = message.replace("\"", "'")[0: cfg['commit_msg_width']];
         if commitHash in predefinedNodeColor:
             labelExt = "\\nSTASH INDEX"
             nodeColor = predefinedNodeColor[commitHash]
         else:
-            nodeColor=COLOR_NODE
+            nodeColor = COLOR_NODE
 
         if parentHash1:
-            #link = " \"" + parentHash1 + "\"->\"" + commitHash + "\";"
             link = " \"" + commitHash + "\"->\"" + parentHash1 + "\";"
         else:
-            #initial commit
             nodeColor = COLOR_NODE_FIRST
 
         if parentHash2:
-            #link2 = " \"" + parentHash2 + "\"->\"" + commitHash + "\";"
             link2 = " \"" + commitHash + "\"->\"" + parentHash2 + "\";"
 
         if parentHash1 and parentHash2:
             nodeColor = COLOR_NODE_MERGE
 
-        # disagree here, message is very often repeated, eg:
-        #  "Merge branch 'master' of github.com:user/branch"
-        # and does not indicate a cherry pick
-        if False and message in messages:
-            # message exists in history - possible cherry-pick -> compare diff hashes
-            existingHash = messages[message]
-            if commitHash is not existingHash and date > dates[existingHash]:
-                log('commitHash:%s != existingHash:%s' % (commitHash, existingHash))
-                breakpoint()
-                diffHashOld = getCommitDiffHash(existingHash)
-                diffHashActual = getCommitDiffHash(commitHash)
-                log("M [" + message + "]")
-                log("1 [" + diffHashOld + "]")
-                log("2 [" + diffHashActual + "]")
-                if diffHashOld == diffHashActual:
-                    log("equal")
-                    #print('    "' + str(existingHash) + '"->"' + commitHash + '"[label="Cherry\\nPick",style=dotted,fontcolor="red",color="red"]')
-                    print('    "' + commitHash + '"->"' + str(existingHash) + '"[label="Cherry\\nPick",style=dotted,fontcolor="red",color="red"]')
-                    nodeColor = COLOR_NODE_CHERRY_PICK
-                    #labelExt = "\\nCherry Pick"
-                log("")
-        log("Message: [" + message + "]")
-
-        if message.startswith("Revert"):
-            # check for revert
-            log("Revert commit: %s: %s" % (commitHash, message))
-            match = re.match(revertMessagePattern, message)
-            if match and match.group(1) in messages:
-                originalMessage = match.group(1)
-                log("Revert match [" + originalMessage + "]")
-                origRevertHash = messages[originalMessage]
-                #print('    "' + commitHash + '"->"' + str(origRevertHash) + '"[label="Revert",style=dotted,fontcolor="azure4",color="azure4"]')
-                print('    "' + str(origRevertHash) + '"->"' + commitHash + '"[label="Revert",style=dotted,fontcolor="azure4",color="azure4"]')
-            nodeColor = COLOR_NODE_REVERT
-
         nodeInfo = ""
+
+        # if branches reference this node, add to it
         if ref:
-            queue = ref.replace("(", "").replace(")", "").split(",")
+            # '(master)' -> ['master']
+            # '(origin/set-default-arch-menu, set-default-arch-menu)' -> ['origin/set-default-arch-menu', 'set-default-arch-menu']
+            #
+            queue = ref.replace("(", "").replace(")", "").split(", ")
             while queue:
                 refEntry = queue.pop(0)
                 style = "shape=oval,fillcolor=" + COLOR_BRANCH
@@ -260,16 +243,14 @@ for line in lines:
                         log('>>> "' + parentHash2 + '"[color=red]')
                         predefinedNodeColor[parentHash2] = COLOR_STASH
                     continue
-                #else:
-                    #if "origin" in refEntry:
-                    #    continue
-                nodeInfo += '    "' + refEntry + '"[style=filled,' + style + ']; "' + refEntry + '" -> "' + commitHash + '"\n'
-        #print("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\\n(" + user + ")\\n" + message[0:24] + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
 
-        message_prepared = message[0:24]
-        message_prepared = message_prepared.replace('"', '\\"')
-        print("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\\n" + message_prepared + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2)
+                nodeInfo += '    "' + refEntry + ' "[style=filled,' + style + ']; "' + refEntry + '" -> "' + commitHash + '"\n'
+
+
+        fp.write("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2 + '\n')
         if nodeInfo:
-            print(nodeInfo)
-print("}")
+            fp.write(nodeInfo + '\n')
+fp.write("}\n")
+
+fp.close()
 
