@@ -27,7 +27,7 @@ It's a common misconception the arm/thumb state is stored in the lsb of PC, or t
 
 The function **pointers**, however, may have a lsb set to signal `bx` and `blx` to set the appropriate destination mode.
 
-So a `blx` to function **pointer** 0x4000001 executes the function stored at **address** 0x4000000  in thumb mode.
+So a `blx` to function **pointer** 0x4000001 executes the function stored at **address** 0x4000000 in thumb mode.
 
 Sometimes the address and pointer have the same value. A `blx` to function **pointer** 0x4001000 executes the function stored at **address** 0x4001000 in arm mode.
 

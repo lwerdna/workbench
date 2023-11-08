@@ -3,13 +3,17 @@ This is a basic [abstract interpreter](https://en.wikipedia.org/wiki/Abstract_in
 **Contents:**
 
 [./interpreter.py](./helpers.py) - actual abstract interpreter, TreeNode, SASI utilities
+
 [./helpers.py](./helpers.py) - support functions
 
 [./test.py](./test.py) - runs, tests the AI on the test cases
+
 [./test-cases.py](./test-cases.py) - contains the test cases
+
 [./test-case-single.py](./test-case-single.py) - contains a single test case for ease of analysis
 
 [./convert-to-c.py](./pcode-codegen.py) - convert python tests to C
+
 [./graph-aitree.py](./pcode-codegen.py) - draw the result tree after abstract interpretation
 
 **Quick Start:**

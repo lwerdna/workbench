@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # graph class hierarchy of low, medium, high LLIL instruction classes
 
 # sys.path.append(os.path.join(os.environ['HOME'], 'repos', 'lwerdna', 'workbench', 'binja_misc')
@@ -80,3 +82,6 @@ def draw():
             fp.write(edge)
         fp.write('}\n')
     os.system('sfdp /tmp/tmp.dot -Tsvg -o /tmp/tmp.svg')
+
+if __name__ == '__main__':
+    go(highlevelil.ILInstruction)
