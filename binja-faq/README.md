@@ -334,7 +334,7 @@ On newer version of the API you have also the update channel from which BinaryNi
 CoreVersionInfo(major=3, minor=1, build=3729, channel='dev')
 ```
 
-The build field holds the **universal build number**, which increments every time a new build is released, and is independent of the other version numbers, the update channel (dev, stable, etc.) and the license type (personal, commercial). So version 3.1.3469 is the 3469'th build our build machines have ever built and made available for customers. And build 3469 is at the same commit for demo, personal, and commercial.
+The build field holds the **universal build number**, which increments every time a new build is released, and is independent of the other version numbers, the update channel (dev, stable, etc.) and the license type (personal, commercial). So version 3.1.3469 is the 3469'th build our build machines have ever built and made available for customers. And build 3469 is at the same commit (the **build id**, see below) for demo, personal, and commercial.
 
 If BinaryNinja is built from source on a developer machine, it has no build number and the channel is set to "Local":
 
@@ -349,7 +349,7 @@ There's also a confusing hash that is called a **build id** (not a build number)
 Version 3.5.4526 Personal, Build ID ec37d737
 ```
 
-This is the last git commit hash to BinaryNinja core repo (not the API repo!) before this release, and is typically tagged, for example:
+This is the git commit hash of the git HEAD in BinaryNinja core repo (not the API repo!) for this build.
 
 ```
 commit ec37d73742bbd3b8e93bdfda4fc4983bd4de6f86 (tag: v3.5.4526-stable, origin/test_fix_analysis_hang)
