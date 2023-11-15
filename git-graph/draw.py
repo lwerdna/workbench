@@ -25,7 +25,7 @@ revertMessagePattern = re.compile(r'Revert "(.*)"')
 cfg = {
     'commits_back': 12,
     'include_test_branches': 'no',
-    'include_remote_tracking_branches': 'no',
+    'include_remote_tracking_branches': 'yes',
     'output_file_path': '/tmp/tmp.dot',
     'commit_msg_width': 12
 }
@@ -185,12 +185,12 @@ for line in lines:
     # [1664915022||Glenn Smith||Fix Clang parser decaying array types to pointers in some cases||] 674394d45 c1edaa6a0
     match = re.match(pattern, line)
     if match:
-        date, user, message, ref, commitHash, parentHash1, parentHash2 = match.group(1, 2, 3, 4, 5, 6, 7)
+        date, user, subject, ref, commitHash, parentHash1, parentHash2 = match.group(1, 2, 3, 4, 5, 6, 7)
 
         link = ""
         link2 = ""
         labelExt = ""
-        nodeMessage = message.replace("\"", "'")[0: cfg['commit_msg_width']];
+        nodeMessage = subject.replace("\"", "'")[0: cfg['commit_msg_width']];
         if commitHash in predefinedNodeColor:
             labelExt = "\\nSTASH INDEX"
             nodeColor = predefinedNodeColor[commitHash]
@@ -198,12 +198,12 @@ for line in lines:
             nodeColor = COLOR_NODE
 
         if parentHash1:
-            link = " \"" + commitHash + "\"->\"" + parentHash1 + "\";"
+            link = "\"" + commitHash + "\"->\"" + parentHash1 + "\";"
         else:
             nodeColor = COLOR_NODE_FIRST
 
         if parentHash2:
-            link2 = " \"" + commitHash + "\"->\"" + parentHash2 + "\";"
+            link2 = "\"" + commitHash + "\"->\"" + parentHash2 + "\";"
 
         if parentHash1 and parentHash2:
             nodeColor = COLOR_NODE_MERGE
@@ -244,10 +244,15 @@ for line in lines:
                         predefinedNodeColor[parentHash2] = COLOR_STASH
                     continue
 
-                nodeInfo += '    "' + refEntry + ' "[style=filled,' + style + ']; "' + refEntry + '" -> "' + commitHash + '"\n'
+                nodeInfo += '\t"' + refEntry + '" [style=filled,' + style + ']; "' + refEntry + '" -> "' + commitHash + '"'
 
 
-        fp.write("    \"" + commitHash + "\" [label=\"" + commitHash + nodeMessage + labelExt + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];" + link + link2 + '\n')
+        fp.write("\t\"" + commitHash + "\" [label=\"" + commitHash + '\\n' + nodeMessage + labelExt + "\",shape=box,style=filled,fillcolor=" + nodeColor + "];")
+        if link:
+            fp.write("\n\t" + link)
+        if link2:
+            fp.write("\n\t" + link2)
+        fp.write('\n')
         if nodeInfo:
             fp.write(nodeInfo + '\n')
 fp.write("}\n")
