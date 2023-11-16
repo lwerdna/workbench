@@ -6,7 +6,7 @@ Now for the questions!
 
 **Quick answer:** `binaryninja.open_view(path)`
 
-Actual opening is done in class BinaryViewType's methods. When the module binaryninja has a convenience wrapper, it is recommended you use it. 
+Actual opening is done in class BinaryViewType's methods. When the module binaryninja has a convenience wrapper, it is recommended you use it.
 
 The following graph shows the convenience functions in red:
 
@@ -360,3 +360,33 @@ commit ec37d73742bbd3b8e93bdfda4fc4983bd4de6f86 (tag: v3.5.4526-stable, origin/t
 "Auto" refers to actions performed by BinaryNinja's auto analysis. Most of these can be recomputed quickly and so their result is not stored in saved databases.
 
 "User" refers to actions the performed by the user, like `create_user_var()`, `set_user_type()`. They are stored in the database so they can be displayed.
+
+## How do I access globals like "current_function" in imported scripts?
+
+**Quick answer:** By digging through some contexts provided via the UI module.
+
+Here's how you'd get `current_function`:
+
+```python
+from binaryninjaui import UIContext
+ac = UIContext.activeContext().contentActionHandler().actionContext()
+current_function = ac.function
+```
+
+Here's how to get a bit more:
+
+```python
+from binaryninjaui import UIContext
+ac = UIContext.activeContext().contentActionHandler().actionContext()
+bv = current_view = ac.binaryView
+current_token = ac.token
+current_function = ac.function
+here = current_address = ac.address
+current_hlil = current_function.hlil if current_function else None
+current_mlil = current_function.mlil if current_function else None
+current_llil = current_function.llil if current_function else None
+current_basic_block = current_function.get_basic_block_at(here) if current_function else None
+current_selection = (ac.address, ac.address+ac.length) if here != None and isinstance(ac.length, int) else None
+```
+
+See `setupGlobals()` and surrounding logic for how it's done in the snippets plugin: https://github.com/Vector35/snippets/blob/master/__init__.py
