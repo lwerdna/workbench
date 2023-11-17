@@ -390,3 +390,5 @@ current_selection = (ac.address, ac.address+ac.length) if here != None and isins
 ```
 
 See `setupGlobals()` and surrounding logic for how it's done in the snippets plugin: https://github.com/Vector35/snippets/blob/master/__init__.py
+
+And search for stuff like `current_function` in the https://github.com/Vector35/binaryninja-api/blob/dev/python/scriptingprovider.py
