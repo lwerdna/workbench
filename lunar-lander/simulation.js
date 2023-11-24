@@ -199,7 +199,7 @@ function update()
 	pg_acceleration.add_data(acceleration);
 	pg_velocity.add_data(velocity);
 	pg_position.add_data(y);
-	console.log(pid_controller.history[pid_controller.history.length-1]);
+	//console.log(pid_controller.history[pid_controller.history.length-1]);
 	pg_error.add_data(pid_controller.history[pid_controller.history.length-1]);
 
 	elem_position.textContent = Math.round((y + Number.EPSILON) * 10000) / 10000;
