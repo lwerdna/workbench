@@ -117,9 +117,9 @@ if __name__ == '__main__':
     lines = [l.strip() for l in open('prototypes.h').readlines()]
 
     # prepare binja
-    arch = binaryninja.Architecture['mipsel32']
+    arch = binaryninja.Architecture['mips64']
     typelib = binaryninja.typelibrary.TypeLibrary.new(arch, 'libc.so.0')
-    typelib.add_platform(binaryninja.Platform['linux-mipsel'])
+    typelib.add_platform(binaryninja.Platform['mips64'])
     typelib.add_alternate_name('libc.so')
 
     # default typedefs
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     typelib.add_named_type('schar_t', convert(arch, 'int8_t'))
     # TODO: make these platform configuarable
     typelib.add_named_type('size_t', convert(arch, 'unsigned int'))
-    typelib.add_named_type('whar_t', convert(arch, 'unsigned int'))
+    typelib.add_named_type('wchar_t', convert(arch, 'unsigned int'))
     typelib.add_named_type('wint_t', Type.int(4, False))
     typelib.add_named_type('wctype_t', convert(arch, 'unsigned long int'))
 
