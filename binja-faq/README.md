@@ -392,3 +392,75 @@ current_selection = (ac.address, ac.address+ac.length) if here != None and isins
 See `setupGlobals()` and surrounding logic for how it's done in the snippets plugin: https://github.com/Vector35/snippets/blob/master/__init__.py
 
 And search for stuff like `current_function` in the https://github.com/Vector35/binaryninja-api/blob/dev/python/scriptingprovider.py
+
+## Tags confuse me, can you explain?
+
+There are three tag classes (I want to use tag types, but that's something different):
+
+1. **Data tags** exist in binary views. Add these with `bv.add_tag()` and list them with `bv.tags`.
+2. **Function tags** describe an entire function. Add these with `f.add_tag()` without specifying an address, and list them with `f.get_function_tags()`. 
+3. **Address tags** are per-function, but describe an address within the function, not the function in total. Add these with `f.add_tag()` and specify an address, and list them with `f.tags()`.
+
+Data tags, perhaps confusingly, can be placed on addresses that are contained in a function, but will only show up with `bv.tags`, not `f.tags`.
+
+This is the situation graphically:
+
+![image-20240102232337791](./assets/tags.png)
+
+Here's an example of **function tags** added to a function:
+
+```python
+>>> bv.create_tag_type('rolleyes', '🙄')
+>>> current_function.add_tag('rolleyes', '')
+>>> current_function.get_function_tags()
+[<tag 🙄 rolleyes: >]
+```
+
+And **data tags** added to a binary view:
+
+```python
+>>> bv.create_tag_type('cringe', '😬')
+>>> bv.add_tag(0x400764, 'cringe', '')
+>>> bv.tags
+[(4196196, <tag 😬 cringe: >)]
+```
+
+And **address tags** added to an address within a function:
+
+```python
+>>> bv.create_tag_type('pensive', '😔')
+>>> current_function.add_tag('pensive', '', 0x400744)
+>>> current_function.tags
+<TagList 1 Tags: [(<arch: nanomips>, 4196164, <tag 😔 pensive: >)]>
+```
+
+Here's how you can list all tags in a binary view added by the user:
+
+```python
+import binaryninja
+
+def is_user_tag(tag):
+    return tag.type.type == binaryninja.enums.TagTypeType.UserTagType
+
+def get_user_tags(bv):
+    result = []
+
+    # get "data tags" in the binary view
+    for addr, tag in bv.tags:
+        if is_user_tag(tag):
+            result.append((addr, tag))
+
+    for function in bv.functions:
+        # get "function tags" for each function
+        for tag in function.get_function_tags():
+            if is_user_tag(tag):
+                result.append((function.start, tag))
+
+        # get "address tags" within function
+        for arch, addr, tag in function.tags:
+            if is_user_tag(tag):
+                result.append((addr, tag))
+
+    return result
+```
+
