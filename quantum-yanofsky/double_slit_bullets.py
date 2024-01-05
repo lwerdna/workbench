@@ -15,7 +15,8 @@ B = Matrix(vals = [ [ 0, 0, 0, 0, 0, 0, 0, 0 ],
                     [ 0, 0, Rational(1,3), 0, 0, 0, 1, 0 ],
                     [ 0, 0, Rational(1,3), 0, 0, 0, 0, 1 ] ])
 
-for i in range(5):
-    print(f'Bullet position at t={i}:')
-    print(X)
-    X = B*X
+if __name__ == '__main__':
+    for i in range(3): # after 2 nothing changes
+        print(f'Bullet position at t={i}:')
+        print(X)
+        X = B*X

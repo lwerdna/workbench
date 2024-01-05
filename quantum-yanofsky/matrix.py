@@ -35,12 +35,11 @@ class Matrix:
             for j in range(self.n_cols()):
                 values[i][j] = func(self.values[i][j], i, j)
 
-        result = Matrix(self.n_rows(), self.n_cols())
-        result.load(values)
+        result = Matrix(vals = values)
         return result
 
     def transpose(self):
-        return Matrix(self.n_cols(), self.n_rows()).map(lambda c,i,j: self.values[j][i])
+        return Matrix(n_row=self.n_cols(), n_cols=self.n_rows()).map(lambda c,i,j: self.values[j][i])
 
     def row_vector(self, i):
         return self.values[i]
