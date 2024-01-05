@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import math
+import copy
+from sympy import re, im, sqrt, conjugate, I
 
 def complex_modulus(c):
-    return math.sqrt(c.real**2 + c.imag**2)
+    return sqrt(re(c)**2 + im(c)**2)
 
 class Matrix:
     def __init__(self, n_rows, n_cols):
@@ -22,7 +23,7 @@ class Matrix:
     def map(self, func):
         n_rows, n_cols = self.dims()
 
-        values = list(self.values)
+        values = copy.deepcopy(self.values)
         for i in range(n_rows):
             for j in range(n_cols):
                 values[i][j] = func(self.values[i][j], i, j)
@@ -39,7 +40,7 @@ class Matrix:
         return self.map(lambda c,i,j: complex_modulus(c)**2 + 0j)
 
     def conjugate_transpose(self):
-        return self.tranpose().map(lambda c,i,j: c.conjugate())
+        return self.transpose().map(lambda c,i,j: conjugate(c))
 
     def __str__(self):
         lines = []
@@ -47,26 +48,35 @@ class Matrix:
             lines.append(', '.join(str(k) for k in row))
         return '\n'.join(lines)
 
-foo = Matrix(3, 3)
+U = Matrix(3, 3)
 
-foo.load(   [   [1/math.sqrt(2), 1/math.sqrt(2), 0],
-                [-1j/math.sqrt(2), -1j/math.sqrt(2), 0],
-                [0, 0, 1j]
+U.load(     [   [1/sqrt(2), 1/sqrt(2), 0],
+                [-1*I/sqrt(2), -1*I/sqrt(2), 0],
+                [0, 0, I]
             ]
         )
-print(foo)
+print(U)
+print('----')
 
-bar = foo.modulus_squares()
+U_squared = U.modulus_squares()
 
-print(bar)
+print(U_squared)
+print('----')
 
+foo = Matrix(3, 2)
 foo.load(   [   [1, 2],
                 [3, 4],
                 [5, 6]
             ]
         )
 print(foo)
+print('----')
 
 bar = foo.transpose()
 
 print(bar)
+print('----')
+
+U_dagger = U.conjugate_transpose()
+print(U_dagger)
+print('----')
