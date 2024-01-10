@@ -8,10 +8,10 @@ import re
 import struct
 import readline
 
+from capstone import *
+from keystone import *
 from unicorn import *
 from unicorn.arm64_const import *
-
-from keystone import *
 
 from termcolor import colored
 
@@ -33,18 +33,19 @@ regname_to_unicorn_id = {
     'sp': UC_ARM64_REG_SP,
 }
 
-# set up emulator, assembler
+# set up emulator, disassembler, assembler
 ADDRESS = 0x1000000
+cs = Cs(CS_ARCH_ARM64, CS_MODE_LITTLE_ENDIAN)
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)    
-mu = Uc(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN)
-mu.mem_map(0, 4096)
-mu.mem_map(ADDRESS, 4096)
+uc = Uc(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN)
+uc.mem_map(0, 4096)
+uc.mem_map(ADDRESS, 4096)
 
 # track context
 
 regs_old = [-1]*33
 def show_context():
-    global mu
+    global uc
     global regs_old
 
     reg_ids = [
@@ -59,7 +60,7 @@ def show_context():
         UC_ARM64_REG_NZCV
     ]
 
-    regs = [mu.reg_read(x) for x in reg_ids]
+    regs = [uc.reg_read(x) for x in reg_ids]
     regs_str = ['%016X' % x for x in regs]
     regs_str = [x if regs[i]==regs_old[i] else colored(x, 'red') for (i,x) in enumerate(regs_str)]
 
@@ -78,24 +79,49 @@ def show_context():
     print('x28=%s  fp=%s  lr=%s' % (regs_str[28], regs_str[29], regs_str[30]))
     print(' pc=%s  nzcv=%s (N=%d Z=%d C=%d V=%d)' % (regs_str[31], regs_str[32], n, z, c, v))
 
+    addr = regs[31]
+    data = uc.mem_read(addr, 4)
+    for i in cs.disasm(data, addr):
+        bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
+        print(f'{i.address:08X}: {bytes_str} {i.mnemonic} {i.op_str}')
+        break
+
     regs_old = regs
+
+def step(count=1, stop_addr=0x100000000):
+    global uc
+    pointer = uc.reg_read(UC_ARM64_REG_PC)
+    #print('starting emulation at pointer: 0x%08X' % pointer)
+    uc.emu_start(pointer, stop_addr, timeout=0, count=count)
 
 show_context()
 while 1:
-    pc = mu.reg_read(UC_ARM64_REG_PC)
+    pc = uc.reg_read(UC_ARM64_REG_PC)
 
     cmd = input('> ')
 
     result = None
     try:
-        result = general_handle_command(cmd, mu, pc, regname_to_unicorn_id)
+        result = general_handle_command(cmd, uc, cs, pc, regname_to_unicorn_id)
 
-        if result == 'quit':
-            break
+        # did general command handling handle it?
+        match result:
+            case 'quit':
+                break
+            case 'executed':
+                show_context()
+                continue
+            case True:
+                continue
 
-        if not result:
-            result = assemble_command(cmd, pc, mu, ks)
-            
+        # else, let's handle some commands ourself
+        if cmd == 't': # step into
+            step()
+            do_show_context = True
+
+        # if we don't recognize it, but the command is nonempty, assume it's assembler source
+        elif cmd:
+            result = assemble_command(cmd, pc, uc, ks)
             if not result:
                 print(f'ERROR: did not handle command: {cmd}')
 
@@ -109,5 +135,5 @@ while 1:
         print(e.args)
         print('unicorn error:', e)
 
-    if result == 'executed':
+    if do_show_context:
         show_context()
