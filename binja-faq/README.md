@@ -464,3 +464,30 @@ def get_user_tags(bv):
     return result
 ```
 
+## What are those suffixes at the end of some IL instructions?
+
+They're called size tokens and indicate the size of the operation. For example `rax = [rbx].q` means dereference rbx, and read a quadword (8 bytes). Or `xmm1 = _mm_cvtps_pd(xmm0.q)` means read only the bottom 8 bytes of the 16 byte register xmm0.
+
+Currently they're in the core at `LowLevelILFunction::AddSizeToken()` and `LowLevelILFunction::AddFloatSizeToken()` and the API just accesses them with functions like `BNInstructionTextToken()`.
+
+For non-float data it's:
+
+| Size                      | Suffix     | Mnemonic    |
+| ------------------------- | ---------- | ----------- |
+| 8 bits, 1 byte            | .b         | byte        |
+| 16 bits, 2 bytes          | .w         | word        |
+| 32 bits, 4 bytes          | .d         | double word |
+| 64 bits, 8 bytes          | .q         | quad word   |
+| 80 bits, 10 bytes         | .t         | ?           |
+| 128 bits, 16 bytes        | .o         | ?           |
+| 8*&lt;x&gt; bits, &lt;x&gt; bytes | .&lt;x&gt; |             |
+
+And for float's:
+
+| Size                              | Suffix     | Mnemonic         |
+| --------------------------------- | ---------- | ---------------- |
+| 16 bits, 2 byte                   | .h         | half precision   |
+| 32 bits, 4 bytes                  | .s         | single precision |
+| 64 bits, 8 bytes                  | .d         | double precision |
+| 80 bits, 10 bytes                 | .t         | ?                |
+| 8*&lt;x&gt; bits, &lt;x&gt; bytes | .&lt;x&gt; |                  |
