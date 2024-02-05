@@ -1,5 +1,5 @@
 CPPFLAGS = 
-CPPFLAGS += -I/usr/local/include -std=c++11 -Ofast
+CPPFLAGS += -I/usr/local/include -I/opt/homebrew/Cellar/capstone/5.0.1/include -L/opt/homebrew/Cellar/capstone/5.0.1/lib/ -std=c++11 -Ofast
 
 all: gofer.so method0 method1
 
@@ -8,7 +8,7 @@ gofer.so: gofer.cpp
 		-lcapstone \
 		-shared -o gofer.so gofer.cpp \
 		-Wl,-headerpad_max_install_names
-	install_name_tool -change libcapstone.3.dylib /usr/local/lib/libcapstone.3.dylib gofer.so
+	install_name_tool -change libcapstone.5.dylib /usr/local/lib/libcapstone.5.dylib gofer.so
 	#install_name_tool -add_rpath `pwd` gofer.so
 
 method0: method0.cpp
