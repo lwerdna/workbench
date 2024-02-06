@@ -25,7 +25,7 @@ def print_cursor(cursor):
 
 fpath = '/bin/ls' if len(sys.argv)==1 else sys.argv[1]
 
-with binaryninja.open_view(fpath) as bv:
+with binaryninja.load(fpath) as bv:
     settings = function.DisassemblySettings()
     settings.set_option(DisassemblyOption.ShowAddress)
     settings.set_option(DisassemblyOption.ShowOpcode)
@@ -53,6 +53,22 @@ with binaryninja.open_view(fpath) as bv:
     for (name, reginfo) in bv.arch.regs.items():
         print('name:%s index:%d offset:%d size:%d full_width_reg:%s' % \
             (name, reginfo.index, reginfo.offset, reginfo.size, reginfo.full_width_reg))
+
+    print_divider('symbols')
+    for name in sorted(bv.symbols.keys()):
+        print(f'key:"{name}"')
+        symlist = bv.symbols[name]
+        for s in symlist:
+            print('\t' + str(s))
+
+    print_divider('functions')
+    for f in bv.functions:
+        print(repr(f), str(f))
+
+    print_divider('llil basic blocks')
+    for func in bv.functions:
+        for bb in func.low_level_il.basic_blocks:
+            print("LLIL basic block {} start: ".format(str(bb)) + hex(bb.start) + ' end: ' + hex(bb.end) + ' outgoing edges: ' + str(len(bb.outgoing_edges)))
 
     print_divider('disassembly')
     obj = lineardisassembly.LinearViewObject.disassembly(bv, settings)
