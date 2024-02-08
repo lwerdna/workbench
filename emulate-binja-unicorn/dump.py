@@ -10,7 +10,7 @@ def stringify(data):
 if __name__ == '__main__':
     fpath = sys.argv[1] if sys.argv[1:] else '../testbins/md5/md5_x64-macos'
 
-    bv = binaryninja.open_view(fpath)
+    bv = binaryninja.load(fpath)
 
     print('functions = [')
     for function in bv.functions:
