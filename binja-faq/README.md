@@ -1,3 +1,7 @@
+---
+typora-copy-images-to: ./assets
+---
+
 Welcome to my collection of BinaryNinja questions. I also recommend you look through Jordan's snippets at: https://gist.github.com/psifertex/6fbc7532f536775194edd26290892ef7
 
 Now for the questions!
@@ -491,3 +495,40 @@ And for float's:
 | 64 bits, 8 bytes                  | .d         | double precision |
 | 80 bits, 10 bytes                 | .t         | ?                |
 | 8*&lt;x&gt; bits, &lt;x&gt; bytes | .&lt;x&gt; |                  |
+
+## How do I analyze a firmware made of multiple memory dumps?
+
+Without the ability to make a "project" or to load file's manually (like IDA's File -> Load file -> Additional binary file), you must use a workaround.
+
+### Workaround #1: Make a blob
+
+The first option is to concatenate the files into a blob, then add segments that map from the blob into the appropriate memory regions. It's a bit tough because BinaryNinja insists on at least one auto (not user) segment. In load options, I recommend you put this segment somewhere out of the way:
+
+![segment-out-of-way](./assets/segment-out-of-way.png)
+
+Once the file is loaded, you can then add segments manually or use the API. See [make_blob.py](./code/make_blob.py) which assembles a blob from a device memory dump while collecting and emitting the API calls:
+
+```python
+flags0 = SegmentFlag.SegmentExecutable | SegmentFlag.SegmentContainsCode | SegmentFlag.SegmentReadable
+flags1 = SegmentFlag.SegmentContainsData | SegmentFlag.SegmentReadable
+bv.add_user_segment(0, 0x8000, 0x0, 0x8000, flags0)
+bv.add_user_segment(0x40000000, 0x800000, 0x8000, 0x800000, flags0)
+bv.add_user_segment(0x40800000, 0x800000, 0x8000, 0x800000, flags0)
+bv.add_user_segment(0x41000000, 0x800000, 0x8000, 0x800000, flags0)
+bv.add_user_segment(0x41800000, 0x800000, 0x8000, 0x800000, flags0)
+bv.add_user_segment(0x42000000, 0x800000, 0x8000, 0x800000, flags0)
+bv.add_user_segment(0x42800000, 0x800000, 0x8000, 0x800000, flags0)
+bv.add_user_segment(0x48000000, 0x480100000, 0x808000, 0x100000, flags1)
+```
+
+...resulting in:
+
+![](./assets/firmware-segments.png)
+
+### Workaround #2: Use an ELF container
+
+The "program headers" (struct elf32_phdr) specify how the ELF file should be mapped to memory. We can utilize those with the firmware dumps stuffed into the ELF to get them in the desired memory locations:
+
+![image-20240208124016663](./assets/elf-map-segments.png)
+
+See [make_elf.py](./code/make_elf.py) for a helper script to create a minimal ELF files from memory dumps like this.
