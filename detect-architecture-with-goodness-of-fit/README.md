@@ -16,7 +16,7 @@ Use [generate-reference.py](./generate-reference.py) to construct the data in [r
 
 ![](./assets/distributions.png)
 
-This is after discarding the high occurrence of null bytes, for which I don't have a quick explanation why they're so prevalent.
+This is after discarding the high occurrence of null bytes, whose prevalence I can't explain.
 
 The goodness of fit test I use is [Pearson's chi squared test](https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test) because it's simple to understand. Between all corresponding values in the two distributions, you calculate the ratio of the squared error to the reference value. Then add that all up. The result is called a **test statistic** among mathematicians.
 
@@ -24,9 +24,9 @@ The goodness of fit test I use is [Pearson's chi squared test](https://en.wikipe
 result = sum([(sampled[i] - reference[i])**2 / reference[i] for i in range(256)])
 ```
 
-I think this test statistic is then looked up in a table, where if it exceeds some threshold or critical value, you can conclude the sampled data is not from the reference distribution (data is special), otherwise it is (null hypothesis, data is not special).
+Normally, this test statistic is then looked up in a table, where if it exceeds some threshold or critical value, you can conclude the sampled data is not from the reference distribution (data is special, reject null hypothesis), otherwise the result isn't special enough, and you cannot reject.
 
-We're not interested in a simple "yes/no" but which reference distribution it's closest to. So we'll simply compute the four scores and choose the reference implementation scoring the lowest (is the most similar).
+However, we're not interested in a simple accept/reject, but rather which reference distribution is closest. We want to score each of the reference distributions versus the sampled distribution, and declare a winner: the reference implementation scoring the lowest (is the most similar).
 
 We want to disregard bytes in the input blob that are definitely not code. Two techniques I can think of off the top of my head are:
 
@@ -35,7 +35,7 @@ We want to disregard bytes in the input blob that are definitely not code. Two t
 
 Both of these are implemented prior to sampling.
 
-See [guess-arch.py](./guess_arch.py) for the implementation. Here's it's performance on a small corpus of binaries I have compared to the ID produced by the [file](https://man7.org/linux/man-pages/man1/file.1.html) identification tool.
+See [algorithm.py](./algorithm.py) for the implementation, and [guess-arch.py](./guess_arch.py) for a command line driver program to run it on a file or directory. Here's it's performance on a small corpus of binaries I have compared to the ID produced by the [file](https://man7.org/linux/man-pages/man1/file.1.html) identification tool.
 
 ```
 path                           us         file       result
@@ -119,6 +119,6 @@ true_or_false-macos-x64        aarch64    x86_64
 wpa_cli-mips64.elf             mips64     mips64     MATCH!
 ```
 
-Without surprise, it identifies all the busybox binaries correctly. Overall it performs well. I should look into why the libpthread files are all misidentified.
+Having been "trained" on the busybox binaries, it identifies all the busybox binaries correctly. Overall it performs well. I should look into why the libpthread files are all misidentified.
 
 <!-- Originally made: 2019-08-09 -->

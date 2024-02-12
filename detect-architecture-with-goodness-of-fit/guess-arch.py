@@ -29,8 +29,8 @@ def get_arch_via_file(fpath):
     if 'MIPS' in output:
         return 'mips32'
     else:
-        print(output)
         breakpoint()
+        return 'unknown'
 
 if __name__ == '__main__':
     arg = sys.argv[1]
