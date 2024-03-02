@@ -93,9 +93,9 @@ def solution2(n):
 
 if __name__ == '__main__':
     # width of board in squares
-    width = 10
+    width = 5
 
-    s = solution0(width)
+    s = solution2(width)
     print(s.sexpr())
 
     t0 = time.time()

@@ -80,7 +80,19 @@
 ; solving for a function that behaves like another function
 (reset)
 
-; /a/b/c + /ab + ab/c + ac
+; complicated = /a/b/c + /ab + ab/c + ac
+;
+; a b c    complicated
+; 0 0 0    1
+; 0 0 1    0
+; 0 1 0    1
+; 0 1 1    1
+; 1 0 0    0
+; 1 0 1    1
+; 1 1 0    1
+; 1 1 1    1
+;
+; complicated = !(/a/bc + a/b/c) = (a + b + /c)(/a + b + c)
 (define-fun complicated ((a Bool) (b Bool) (c Bool)) Bool
   (or (and (not a) (not b) (not c))
       (and (not a) b)
@@ -102,6 +114,7 @@
 ; attempt #1: set the function bodies equal to each other
 ; this produced "unknown"
 (echo "-- simplify test #1")
+(reset-assertions)
 (declare-fun simplified (Bool Bool Bool) Bool)
 (assert (= complicated simplified))
 (check-sat)
@@ -110,8 +123,8 @@
 ; this is a mistake: Z3 can just assign also x, y, z
 ; it produces x=false, y=false, z=false, simplified(a,b,c) = /a/b/c
 ; and indeed simplified(x,y,z) = complicated(x,y,z) = true
-(reset-assertions)
 (echo "-- simplify test #2")
+(reset-assertions)
 (declare-fun x () Bool)
 (declare-fun y () Bool)
 (declare-fun z () Bool)
@@ -120,9 +133,26 @@
 (get-model)
 
 ; attempt #3: set the functions equal applied to all possible inputs
-; this works but produces a terribly complicated function
+; this works but produces a terribly complicated function that's essentially:
+;   if x0,x1,x2==(true,true,false) return true
+; elif x0,x1,x2==(true,true,true) return true
+; elif x0,x1,x2==(true,false,true) return true
+; elif x0,x1,x2==(false,false,false) return true
+; elif x0,x1,x2==(false,true,false) return true
+; elif x0,x1,x2==(false,true,true) return true
+; else return false
+;
+; in other words, it's like a sum-of-products finder.
 (echo "-- simplify test #3")
-(reset-assertions)
+(reset)
+(define-fun complicated ((a Bool) (b Bool) (c Bool)) Bool
+  (or (and (not a) (not b) (not c))
+      (and (not a) b)
+      (and a b (not c))
+      (and a c)
+  )
+)
+(declare-fun simplified (Bool Bool Bool) Bool)
 (assert (= (complicated false false false) (simplified false false false)))
 (assert (= (complicated false false true) (simplified false false true)))
 (assert (= (complicated false true false) (simplified false true false)))
@@ -135,13 +165,30 @@
 (get-model)
 
 ; attempt #4: using quantifier
+; this produces closest formula:
+;
+; !( x0 +  x1 +  x2) +
+; !( x0 + !x1      ) +
+; !(!x0 + !x2      ) +
+; !(!x0 + !x1 +  x2)
+;
+; which is:
+;
+; (!x0 !x1 !x2) + (!x0 x1) + (x0 x2) + (x0 x1 !x2)
+;
+; Which, is the original formula with variables renamed (x0, x1, x2) become (a, b, c)
+
 (echo "-- simplify test #4")
 (reset-assertions)
-(echo "4")
 (assert (forall ((a Bool) (b Bool) (c Bool)) (= (simplified a b c) (complicated a b c))))
 (check-sat)
 (get-model)
 
+; I say there's some unknown function f:Int->Int
+; and f(10) = 1
+;     f(20) = 2
+;     f(30) = 3
+; and it's unable to find f(x) = x/10
 (echo "-- uninterpreted function from wikipedia")
 (reset)
 (declare-fun f (Int) Int)

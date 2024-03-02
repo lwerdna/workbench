@@ -11,7 +11,7 @@ import binascii
 
 from helpers import *
 
-import llil_smt
+#import llil_smt
 
 import binaryninja
 from binaryninja import core
@@ -31,9 +31,14 @@ NORMAL = '\x1B[0m'
 #             sp
 #         LLIL_CONST
 #             20
-def il_to_text_tree(il, depth):
+def il_to_text_tree(il, options, depth=0):
     lines = []
     indent = '\t'*depth
+
+    value_str = ''
+    if 'value' in options:
+        if hasattr(il, 'value'):
+            value_str = f' (value: {il.value})'
 
     # is an instruction
     if isinstance(il, lowlevelil.LowLevelILInstruction):
@@ -44,16 +49,18 @@ def il_to_text_tree(il, depth):
             if tmp < 0: # if neg, convert to pos
                 tmp = (1<<(il.size*8))+tmp
             tmp = '0x%X' % tmp if il.size else '%d' % il.size
-            lines.append(f'{indent}LLIL_CONST{size_suffix}({tmp})')
+            lines.append(f'{indent}LLIL_CONST{size_suffix}({tmp}){value_str}')
         else:
-            lines.append(f'{indent}{il.operation.name}{size_suffix}')
+            lines.append(f'{indent}{il.operation.name}{size_suffix}{value_str}')
 
         for o in il.operands:
-            lines.append(il_to_text_tree(o, depth+1))
+            lines.append(il_to_text_tree(o, options, depth+1))
 
     # not an instruction
     else:
         lines.append(indent + str(il))
+        if value_str:
+            lines.append(f'{indent}value: {value_str}{value_str}')
 
     return '\n'.join(lines)
 

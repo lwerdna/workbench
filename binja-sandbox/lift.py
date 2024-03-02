@@ -8,7 +8,7 @@ import binascii
 
 from helpers import *
 
-import llil_smt
+#import llil_smt
 
 import binaryninja
 from binaryninja import core
@@ -30,6 +30,8 @@ def usage():
     print('    %s ~/fdumps/filesamples/hello-linux-x64.elf _start' % sys.argv[0])
     print('')
     print('platforms: ' + ', '.join(map(str, list(binaryninja.Platform))))
+    print('')
+    print('architectures: ' + ', '.join(map(str, list(binaryninja.Architecture))))
     sys.exit(-1)
 
 if __name__ == '__main__':
@@ -56,6 +58,7 @@ if __name__ == '__main__':
 
         # parse byte arguments
         data = bytes.fromhex(''.join(byte_list))
+        print(f'writing {len(data)} bytes to binaryview')
 
         plat = binaryninja.Platform[plat_name]
         bview = binaryview.BinaryView.new(data)
@@ -96,7 +99,7 @@ if __name__ == '__main__':
         print(f'{RED}tree-like view:{NORMAL}')
         for block in func.low_level_il:
             for insn in block:
-                print(il_to_text_tree(insn, 0))
+                print(il_to_text_tree(insn, {}))
 
         print(f'{RED}line-like view:{NORMAL}')
         for block in func.low_level_il:
@@ -106,7 +109,7 @@ if __name__ == '__main__':
 #        for block in func.low_level_il:
 #            #print("\t{0}".format(block))
 #            for insn in block:
-#                il_to_text_tree(insn, 0)
+#                il_to_text_tree(insn, {})
 #                #print('__str__():')
 #                #print(str(insn))
 #                #print('')

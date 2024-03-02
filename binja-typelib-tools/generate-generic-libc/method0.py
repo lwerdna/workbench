@@ -117,9 +117,9 @@ if __name__ == '__main__':
     lines = [l.strip() for l in open('prototypes.h').readlines()]
 
     # prepare binja
-    arch = binaryninja.Architecture['mips64']
+    arch = binaryninja.Architecture['nanomips']
     typelib = binaryninja.typelibrary.TypeLibrary.new(arch, 'libc.so.0')
-    typelib.add_platform(binaryninja.Platform['mips64'])
+    typelib.add_platform(binaryninja.Platform['nanomips'])
     typelib.add_alternate_name('libc.so')
 
     # default typedefs
@@ -160,6 +160,7 @@ if __name__ == '__main__':
         typelib.add_named_object(result['name'], Type.function(A, B))
 
     typelib.finalize()
-    print('writing test.bntl')
-    typelib.write_to_file('test.bntl')
+    fname = 'libc.so.0.bntl'
+    print(fname)
+    typelib.write_to_file(fname)
 

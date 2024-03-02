@@ -16,8 +16,10 @@ def worker(thread_id, work_gen, result):
         if type(func) == binaryninja.function.Function:
             func = func.mlil # this initiates the analysis
 
-        for instr in func.instructions:
-            batch.add(instr.operation)
+        a = len(func.basic_blocks)
+
+        #for instr in func.instructions:
+        #    batch.add(instr.operation)
 
     result.update(batch)
 
@@ -70,7 +72,7 @@ def experimentB(bv, n_threads=12):
     print(f'{t1-t0} seconds')
 
 def experimentC(bv):
-    workGen = WorkGen((f for f in bv.mlil_functions(12)))
+    workGen = WorkGen((f for f in bv.mlil_functions()))
     result = Result()
 
     t0 = time.perf_counter()
