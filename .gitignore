@@ -1,5 +1,9 @@
 *.o
 *.so
+*.so.1
+*.dylib
+*.dll
+*.lib
 *.class
 .DS_Store
 __pycache__/
