@@ -14,6 +14,7 @@ def lstruct_read(ls, inferior, addr):
             advance_by = lstruct_len(sublist)
             lstruct_read(sublist, inferior, addr)
         else:
+            print(entry)
             name, length, formatter = entry
             data = inferior.read_memory(addr, length).tobytes()
             entry.extend([addr, data])
