@@ -14,7 +14,7 @@ from termcolor import colored
 from helpers import *
 
 STACK_ADDR = 0xF0000000
-STACK_LENGTH = 0x00010000
+STACK_LENGTH = 0x00020000
 
 rname_to_unicorn = {
     'rax': UC_X86_REG_RAX, 'rbx': UC_X86_REG_RBX, 'rcx': UC_X86_REG_RCX, 'rdx': UC_X86_REG_RDX,
@@ -28,8 +28,13 @@ rname_to_unicorn = {
 cs = Cs(CS_ARCH_X86, CS_MODE_64)
 ks = Ks(KS_ARCH_X86, KS_MODE_64)
 mu = Uc(UC_ARCH_X86, UC_MODE_64)
+
+# set up a page at 0
+mu.mem_map(0, 4096)
+# set up the stack
+print(f'Setting up stack at [0x{STACK_ADDR:08X}, 0x{STACK_ADDR+STACK_LENGTH:08X})')
 mu.mem_map(STACK_ADDR, STACK_LENGTH)
-mu.reg_write(UC_X86_REG_RSP, STACK_ADDR+STACK_LENGTH)
+mu.reg_write(UC_X86_REG_RSP, STACK_ADDR+STACK_LENGTH//2)
 
 regs_old = [-1]*len(rname_to_unicorn)
 def show_context():
