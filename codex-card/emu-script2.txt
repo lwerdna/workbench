@@ -1,0 +1,7 @@
+; set up code
+eb 0 04 10 5f e2 08 2b b1 ec 54 41 02 f3 04 4b 2d ed 70 00 20 e1 4e 47 d0 8b 69 17 67 90 70 24 5f b5 3f 52 52 e1 
+
+; start at 0
+rip = 0
+
+; should go to [0xF0000000, 0xF0010000)
