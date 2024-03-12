@@ -68,8 +68,7 @@ def show_context(uc):
     data = uc.mem_read(addr, 4)
     disfunc = cs_thumb.disasm if is_thumb(uc) else cs_arm.disasm
     for i in disfunc(data, addr):
-        bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
-        print(f'{i.address:08X}: {bytes_str} {i.mnemonic} {i.op_str}')
+        print(f'{i.address:08X}: {i.bytes.hex()} {i.mnemonic} {i.op_str}')
         break
 
 def step(count=1, stop_addr=0x100000000):
