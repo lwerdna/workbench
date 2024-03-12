@@ -86,7 +86,7 @@ if __name__ == '__main__':
         #print(f'{pc:08X}: r0=0x{r0:X} r1=0x{r1:X} r2=0x{r2:X} r3=0x{r3:X} sp=0x{sp:X}')
 
         if pc == 0xff0:
-            print('AFTER PADDDING!')
+            print('AFTER PADDING!')
             print(hexdump(uc, r1))
 
     uc.hook_add(UC_HOOK_CODE, callback_code)
