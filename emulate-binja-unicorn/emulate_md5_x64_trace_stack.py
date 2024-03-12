@@ -11,6 +11,9 @@ from md5_x64_dump import *
 
 from helpers import *
 
+STACK_MEM_START = 0xF0000000
+STACK_MEM_LENGTH = 2**16    
+
 cs_context = None
 def disasm(data, addr):
     global cs_context
@@ -27,6 +30,9 @@ def disasm_uc(uc):
     return f'{rip:X}: {distxt}'
 
 def setup_machine():
+    global STACK_MEM_START
+    global STACK_MEM_LENGTH
+
     uc = Uc(UC_ARCH_X86, UC_MODE_64)
 
     # calculate code area
@@ -41,13 +47,16 @@ def setup_machine():
         uc.mem_write(function["address"], b''.join(function['instructions']))
 
     # create stack area
-    STACK_MEM_START  = 0xF0000000
-    STACK_MEM_LENGTH = 2**16    
     print(f'creating stack segment [0x{STACK_MEM_START:X}, 0x{STACK_MEM_START+STACK_MEM_LENGTH:X})')
     uc.mem_map(STACK_MEM_START, STACK_MEM_LENGTH)
     uc.reg_write(UC_X86_REG_RSP, STACK_MEM_START + STACK_MEM_LENGTH - 8*32) # 32 pushes
 
     return uc
+
+def is_stack_addr(addr):
+    global STACK_MEM_START
+    global STACK_MEM_LENGTH
+    return addr >= STACK_MEM_START and addr < (STACK_MEM_START + STACK_MEM_LENGTH)
 
 if __name__ == '__main__':
     name2addr = {f['name']: f['address'] for f in functions}
@@ -77,50 +86,49 @@ if __name__ == '__main__':
         uc.hook_add(UC_HOOK_CODE, callback_code)
 
     if 1:
-        #fp_reads = open('stack_reads.txt', 'w')
-        #fp_writes = open('stack_writes.txt', 'w')
+        fp_reads = open('stack_reads.txt', 'w')
+        fp_writes = open('stack_writes.txt', 'w')
         def callback_mem_access(uc, access, address, size, value, user_data):
-            # UC_MEM_READ = 16
-            # UC_MEM_WRITE = 17
-            # UC_MEM_FETCH = 18
-            #global fp_reads
-            #global fp_writes
-#            global instrs
-#            #if address == 0xF000FE40:
-#            #    breakpoint()
-#            if access == UC_MEM_WRITE: #17
-#                #print(">>> Memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" %(address, size, value))
-#                #fp_writes.write(f'{instrs} 0x{address:X}\n')
-#                #print(f'{instrs} 0x{address:X} (WRITE)')
-#                pass
-#            elif access == UC_MEM_FETCH: #18
-#                print(f'{instrs} 0x{address:X} (FETCH)')
-#            elif access == UC_MEM_READ: #16
-#                #print(">>> Memory is being READ at 0x%x, data size = %u" %(address, size))
-#                #fp_reads.write(f'{instrs} 0x{address:X}\n')
-#                print(f'{instrs} 0x{address:X} (READ)')
+            global fp_reads
+            global fp_writes
+            global instrs
 
-            print(f'{disasm_uc(uc)} <-- accesses address 0x{address:X} with access={access}')
+            if address == 0x100007fc0:
+                breakpoint()
+
+            if not is_stack_addr(address):
+                return
+
+            if access == UC_MEM_READ: #16
+                print(">>> Memory is being READ at 0x%x, data size = %u" %(address, size))
+                fp_reads.write(f'{instrs} 0x{address:X}\n')
+                #print(f'{instrs} 0x{address:X} (READ)')
+            elif access == UC_MEM_WRITE: #17
+                print(">>> Memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" %(address, size, value))
+                fp_writes.write(f'{instrs} 0x{address:X}\n')
+                #print(f'{instrs} 0x{address:X} (WRITE)')
+
+            #print(f'{disasm_uc(uc)} <-- accesses address 0x{address:X} with access={access}')
 
         uc.hook_add(UC_HOOK_MEM_READ, callback_mem_access, None)
         uc.hook_add(UC_HOOK_MEM_WRITE, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_FETCH, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_WRITE_PROT, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_READ_PROT, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_FETCH_PROT, callback_mem_access, None)
-        uc.hook_add(UC_HOOK_MEM_READ_AFTER, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_FETCH, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_WRITE_PROT, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_READ_PROT, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_FETCH_PROT, callback_mem_access, None)
+        #uc.hook_add(UC_HOOK_MEM_READ_AFTER, callback_mem_access, None)
 
     print('calling MD5Init(&context)')
     uc.reg_write(UC_X86_REG_RDI, p_context) # RDI = arg0
     x64_push_qword(uc, 0) # return address
     uc.emu_start(name2addr['_MD5Init'], 0)
 
-    buf = x64_alloc_stack(uc, 64)
+    input_str = b'A' * 8*64 # 8x 64-byte (512 bit) chunks
+    buf = x64_alloc_stack(uc, len(input_str))
     print(f'input string allocated to buffer [0x{buf:X}, 0x{buf+64:X})')
-    input_str = b'The quick brown fox jumps over the lazy dog'
     uc.mem_write(buf, input_str)
 
     print('calling MD5Update(&context, "The quick brown fox jumps over the lazy dog", 43)')
@@ -150,5 +158,5 @@ if __name__ == '__main__':
     data = uc.mem_read(p_digest, 16)
     print(hexdump(data, p_digest))
 
-    #fp_reads.close()
-    #fp_writes.close()
+    fp_reads.close()
+    fp_writes.close()
