@@ -23,14 +23,10 @@ f000fe70: 9e 10 7d 9d 37 2b b6 82 6b d8 1d 35 42 a4 19 d6  ..}.7+..k..5B...
 
 ## Tracing and plotting reads/writes
 
-With memory hooks (see [./, we can draw reads (green) and writes (red):
+With memory hooks (see [./emulate_md5_x64_trace_stack.py](emulate_md5_x64_trace_stack.py), we can draw reads (green) and writes (red). The y axis is the stack address and the x axis is the i'th instruction emulated, essentially a time access. This shows what I think are the 8 rounds used on a 8*64 byte input before a final round from MD5Final():
 
-I think this shows the 
+![](./assets/md5rounds.png)
 
-**dependencies**: capstone, unicorn.
+And zooming in on a round, the 16 operations:
 
-
-
-
-
-
+![](./assets/md5operations.png)s
