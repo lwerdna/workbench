@@ -3,60 +3,8 @@
 import os
 import sys
 
+import helpers
 import kconfiglib
-
-class CustomExpression():
-    def __init__(self, operator, operands):
-        self.operator = operator
-        self.operands = operands
-
-operator2str = {
-    kconfiglib.AND: 'and ',
-    kconfiglib.OR: 'or ',
-    kconfiglib.NOT: 'not ',
-    kconfiglib.EQUAL: '== ',
-    kconfiglib.UNEQUAL: '!= ',
-    kconfiglib.LESS: '< ',
-    kconfiglib.LESS_EQUAL: '<= ',
-    kconfiglib.GREATER: '> ',
-    kconfiglib.GREATER_EQUAL: '>= '
-}
-
-# is an expression "y"? <symbol y, bool, value y, constant>
-def is_const_symbol(expr):
-    return type(expr) == kconfiglib.Symbol and expr.is_constant
-
-def is_y(expr):
-    return is_const_symbol(expr) and expr.type == kconfiglib.BOOL and expr.name == 'y'
-
-def is_n(expr):
-    return is_const_symbol(expr) and expr.type == kconfiglib.BOOL and expr.name == 'n'
-
-def expr_to_smt2(expr):
-    if type(expr) == kconfiglib.Symbol:
-        if is_y(expr):
-            return 'true'
-        return expr.name
-    elif type(expr) == tuple:
-        operator = expr[0]
-        if not operator in operator2str:
-            breakpoint()
-        operands = expr[1:]
-        return '(' + operator2str[operator] + ' '.join(expr_to_smt2(o) for o in operands) + ')'
-    elif type(expr) == kconfiglib.Choice:
-        return 'EXACTLY_ONE(' + ', '.join(expr_to_smt2(x) for x in expr.syms) + ')'
-    elif type(expr) == CustomExpression:
-        return '(' + expr.operator.join([expr_to_smt2(x) for x in expr.operands]) + ')'
-    else:
-        breakpoint()
-
-    breakpoint()
-
-def assert_expression(expr):
-    return '(assert (' + expr_to_smt2(expr) + '))'
-
-def assert_implies(left, right):
-    return assert_expression(CustomExpression(' => ', [left, right]))
 
 def collect_menu_nodes(node):
     result = []
@@ -100,26 +48,26 @@ def menu_node_to_str_brief(node):
 
     return "MENU (comment)"
 
-# kconfiglib is configured through the environment
-os.environ['srctree'] = '/home/andrewl/Downloads/linux-3.10.1'
-os.environ['SRCARCH'] = 'arm'
+if __name__ == '__main__':
+	# kconfiglib is configured through the environment
+	os.environ['srctree'] = helpers.get_kernel_path()
+	os.environ['SRCARCH'] = 'arm'
 
-kconf = kconfiglib.standard_kconfig()
+	kconf = kconfiglib.standard_kconfig()
 
-#menu_nodes = collect_menu_nodes(kconf.top_node)
-mnode_arm = find_menu_node_by_sym_name_bfs(kconf.top_node, 'ARM')
-mnodes = collect_menu_nodes(mnode_arm)
+	#menu_nodes = collect_menu_nodes(kconf.top_node)
+	mnode_arm = find_menu_node_by_sym_name_bfs(kconf.top_node, 'ARM')
+	mnodes = collect_menu_nodes(mnode_arm)
 
-print('digraph g {')
-print(f'\t// {len(mnodes)} nodes')
-for node in mnodes:
-    label = menu_node_to_str_brief(node)
-    print(f'\t{id(node)} [label="{label}"]')
-print('\t// edges')
-for node in mnodes:
-    if node.list:
-        print(f'\t{id(node)} -> {id(node.list)} [label="child"]')
-    #if node.next:
-    #    print(f'\t{id(node)} -> {id(node.next)} [label="next"]')
-print('}')
-
+	print('digraph g {')
+	print(f'\t// {len(mnodes)} nodes')
+	for node in mnodes:
+	    label = menu_node_to_str_brief(node)
+	    print(f'\t{id(node)} [label="{label}"]')
+	print('\t// edges')
+	for node in mnodes:
+	    if node.list:
+	        print(f'\t{id(node)} -> {id(node.list)} [label="child"]')
+	    #if node.next:
+	    #    print(f'\t{id(node)} -> {id(node.next)} [label="next"]')
+	print('}')
