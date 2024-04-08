@@ -49,11 +49,7 @@ def menu_node_to_str_brief(node):
     return "MENU (comment)"
 
 if __name__ == '__main__':
-	# kconfiglib is configured through the environment
-	os.environ['srctree'] = helpers.get_kernel_path()
-	os.environ['SRCARCH'] = 'arm'
-
-	kconf = kconfiglib.standard_kconfig()
+	kconf = helpers.get_kconf_object()
 
 	#menu_nodes = collect_menu_nodes(kconf.top_node)
 	mnode_arm = find_menu_node_by_sym_name_bfs(kconf.top_node, 'ARM')
