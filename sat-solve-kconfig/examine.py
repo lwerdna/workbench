@@ -22,10 +22,23 @@ if __name__ == '__main__':
     else:
         sym = kconf.syms[sym_name]
 
+    print('-----------------------')
+    print(f'looking up: {sym_name}')
+    print(f'     found: {repr(sym)}')
+
     select_map = helpers.create_select_map(kconf)
+    print('-----------------------')
     print('selected by:')
-    for selector in sorted(select_map[sym_name]):
-        print('  ' + selector)
+    print('-----------------------')
+    for symbol, condition in sorted(select_map[sym_name], key=lambda x: x[0].name):
+        print(symbol.name + ' when ' + helpers.expr_to_str(condition))
+
+    if sym.direct_dep:
+        print('-----------------------')
+        print('direct dependencies:')
+        print('-----------------------')
+        print(helpers.expr_to_str(sym.direct_dep))
+
 
     print('starting debugger with "sym" assigned')
     breakpoint()

@@ -13,8 +13,8 @@ def get_kernel_path():
     PATH_DOWNLOADS = os.path.join(os.environ['HOME'], 'Downloads')
     candidates = []
     candidates.append(os.path.join(PATH_DOWNLOADS, 'linux-3.10'))
-    candidates.append(os.path.join(PATH_DOWNLOADS, 'linux-3.10.1'))
-    candidates.append(os.path.join(PATH_DOWNLOADS, 'linux-master'))
+    #candidates.append(os.path.join(PATH_DOWNLOADS, 'linux-3.10.1'))
+    #candidates.append(os.path.join(PATH_DOWNLOADS, 'linux-master'))
     for candidate in candidates:
         if os.path.exists(candidate):
             return candidate
@@ -42,7 +42,7 @@ def create_select_map(kconf):
         for (dst, cond) in src.orig_selects:
             if not dst.name in result:
                 result[dst.name] = []
-            result[dst.name].append((dst, cond))
+            result[dst.name].append((src, cond))
     return result
 
 ###############################################################################
