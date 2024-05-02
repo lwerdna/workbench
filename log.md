@@ -1,3 +1,15 @@
+# 2024-05-01
+{
+Patch files with `dd`:
+$ xxd -g 1 /tmp/probe.bin
+00000000: de ad be ef                                      ....
+$ xxd -g 1 /tmp/tmp.bin
+00000000: 41 41 41 41 41 41 41 41                          AAAAAAAA
+$ dd if=/tmp/probe.bin iseek=0 of=/tmp/tmp.bin oseek=2 bs=1 conv=notrunc
+$ xxd -g 1 /tmp/tmp.bin
+00000000: 41 41 de ad be ef 41 41                          AA....AA
+} #TIL
+
 # 2024-04-24
 Project 102: Using a tap (layer 2) virtual network device, simulate a switch and some hosts with python.
 
@@ -32,6 +44,9 @@ Project 101: make a tap (layer 2) virtual network device and print packets sent 
 
 # 2024-04-19
 Project 100: sample CP15 feature registers in REnode guest with armv7 assembler
+
+# 2024-04-05
+Project 098: try to generate constraints in SMT form from KConfig, solve with z3 (WIP)
 
 # 2024-03-20
 Project 099: search /dev/mem (physical) or /dev/kmem (virtual) for target
