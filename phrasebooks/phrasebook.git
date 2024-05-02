@@ -1,0 +1,66 @@
+# undo last commit
+$ git reset --soft HEAD~1   # modified files from HEAD become staged
+$ git reset --mixed HEAD~1  # modified files from HEAD remain modified, but not staged
+$ git reset --hard HEAD~1   # modified files from HEAD are completely reverted
+
+# set branch to particular commit
+# form: git branch --force <branch-name> [<new-tip-commit>]
+git branch -f master 1258f0d0aae # if you are not currently on master
+git reset --hard 1258f0d0aae # if you are on master, have staging be empty
+git branch --force tmp # brings tmp to current commit
+
+# merge pull request
+	# METHOD0:
+	# point tmp to master
+	$ git checkout master
+	$ git checkout -b tmp
+
+	# get on submitter's commit
+	$ git remote add yrp604 https://github.com/yrp604/arch-arm64.git
+	$ git fetch yrp604
+	$ git checkout yrp604/nicer-cmake
+
+	# rebase on to tmp, then update tmp
+	$ git rebase tmp
+	$ git branch --force tmp
+
+	# 
+	$ git checkout master
+	$ get merge tmp
+	$ git branch -d tmp
+
+	# METHOD1:
+	# bring in remote changes into temporary branch
+	$ git checkout -b tmp
+	$ git pull https://github.com/<CONTRIBUTER>/arch-arm64.git pr_branch_name
+	# test
+	$ git checkout staging
+	$ git merge tmp
+	$ git branch -d tmp
+	$ git push origin staging
+
+	# alternatively, create a branch that tracks a remote branch
+	$ git checkout -b yrp604-rotr staging
+	$ git pull https://github.com/yrp604/arch-mips.git rotr
+	# then merge the changes
+	$ git checkout staging
+	$ git merge --no-ff yrp604-rotr
+	$ git push origin staging
+
+# delete branch
+git branch -d tmp # (locally)
+git branch -d -r origin/branch # delete remote tracking branch (locally)
+git push origin -d dev # delete branch on remote side
+
+# undo local shit
+git reset
+git checkout .
+
+# change last commit message
+git commit --amend -m "New commit message." # makes new commit hash!
+git push --force <remoteName> <branchName> # if pushed
+
+# config stuff
+git config --global user.name "Andrew Lamoureux"
+git config --global user.email andrew@vector35.com
+

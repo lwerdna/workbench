@@ -1,0 +1,61 @@
+<!-- minimal page -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="../d3/d3.min.js"></script>
+    <script src="myscript0.js"></script>
+  </head>
+  <body>
+    <!-- page content -->
+  </body>
+  <script src="myscript1.js"></script> <!-- loads after body -->
+</html>
+
+<!-- include SVG methods: Inline, object, embed -->
+
+<svg id="foo">blah blah</svg>
+<object id="keyboard" type="image/svg+xml" data="keyboard.svg"></object>
+<embed id="keyboard2" type="image/svg+xml" data="keyboard.svg" />
+
+<!-- show some javascript -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>title</title>
+  <style type="text/css">
+	body { color: red; }
+  </style>
+  </head>
+  <body>
+
+  <script type="text/javascript">
+   function autorun()
+   {
+		alert("autorun()!");
+   }
+
+   if (window.addEventListener) window.addEventListener("load", autorun, false);
+   else if (window.attachEvent) window.attachEvent("onload", autorun);
+   else window.onload = autorun;
+  </script>
+
+  <p>I'm in the body!</p>
+
+  </body>
+</html>
+
+<!-- slider -->
+<p>
+  Probability of a girl being named "Florida": <input type="range" id="slider" min=".001" max="1" value=".001" step=".001">
+  <span id="slider-value">50</span>
+</p>
+
+let slider = document.getElementById('slider');
+let slider_value = document.getElementById('slider-value');
+let p_florida = document.getElementById('slider').valueAsNumber;

@@ -1,0 +1,82 @@
+//undirected
+
+// filled nodes
+fillcolor=red, style=filled
+// font for all nodes
+node [fontname="Courier New" fontsize="8"];
+// orthogonal lines
+graph [splines=ortho, nodesep=1]
+// vertical or horizontal layout
+rankdir="TB" // top to bottom, default
+rankdir="LR" // left to right
+// newlines in nodes (centered, left-aligned, right-aligned)
+a [label="foo\nbar"]
+a [label="foo\lbar"]
+a [label="foo\rbar"]
+
+// separate sections
+graph G {
+    // global settings
+    node [shape="rectangle" fontname="Courier New" fontsize="8"];
+	// nodes
+	a [label="Foo"];
+	b [label="Bar"];
+	// edges
+	a -> b;
+}
+
+// The graph name and the semicolons are optional
+graph graphname {
+    a -- b -- c;
+    b -- d;
+}
+
+// directed
+digraph graphname {
+    a -> b -> c;
+    b -> d;
+}
+
+// nodes can have their identifiers and labels separated
+digraph G {
+    {
+        p0 [label="premise #0"]
+        ai0 [label="and intro" shape="rectangle"]
+        ie0 [label="impl elim" shape="Mrecord"]
+    }
+    p0 -> ai0 [label="P"];
+    "premise #1" -> ai0 [label="Q"];
+    ai0 -> ie0 [label="P^Q"];
+    "premise #2" -> ie0 [label="P^Q -> R"];
+    ie0 -> "result" [label="R"];
+}
+
+// subgraphs have to be labelled "cluster_" to get them draw separately
+digraph G {
+	a -> b;
+	b -> c;
+	subgraph cluster_0 {
+		c -> d;
+		d -> e;
+		subgraph cluster_1 {
+			e -> f;
+			f -> g;
+		}
+		g -> h;
+		h -> i;
+	}
+	i -> j;
+	j -> k;
+}
+
+// You want:
+// 
+dot -Tsvg -o out.svg out.dot
+unflatten -l 10 out.dot | dot -Tsvg -o out.svg out.dot
+
+dot ./tmp.dot -Tpng -o tmp_dot.png
+neato ./tmp.dot -Tpng -o tmp_neato.png
+fdp ./tmp.dot -Tpng -o tmp_fdp.png
+sfdp ./tmp.dot -Tpng -o tmp_sfdp.png
+twopi ./tmp.dot -Tpng -o tmp_twopi.png
+circo ./tmp.dot -Tpng -o tmp_circo.png

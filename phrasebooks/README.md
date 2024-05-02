@@ -1,0 +1,1 @@
+This is the phrase book idea (https://en.wikipedia.org/wiki/Phrase_book) for foreign languages applied to computer languages.

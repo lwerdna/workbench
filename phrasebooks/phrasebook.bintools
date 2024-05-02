@@ -1,0 +1,3 @@
+MACOS
+
+llvm-nm -gU ./libfoo.dylib                   get exported symbols
