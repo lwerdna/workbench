@@ -38,6 +38,10 @@ Project 099: search /dev/mem (physical) or /dev/kmem (virtual) for target
 I needed to recover kernel parameters sent as a tagged list from bootloader.
 add ATAGs dissection to: https://github.com/lwerdna/finter
 
+# 2024-03-13
+Add "hello world" LKM for Ubuntu
+https://github.com/lwerdna/reference_code/tree/master/hello_world_ubuntu_lkm
+
 # 2024-03-08
 add u-boot dissection to: https://github.com/lwerdna/finter
 uImage is (image or zImage or ?) wrapped in struct legacy_img_hdr

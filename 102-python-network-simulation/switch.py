@@ -1,49 +1,44 @@
-#!/usr/bin/env python
-
-import os
-import sys
-import fcntl
-import random
-import subprocess
-
 from helpers import *
 
+from port import Port
 
-if __name__ == '__main__':
+class Switch():
+    def __init__(self, n_ports):
+        self.ports = [Port() for i in range(n_ports)]
+        self.mac_addr_table = {}
+        self.running = False
 
-    switch = Switch()
-    switch.connect_host(Host('Alice', str2ip('192.168.123.10')))
-    hosts.append(Host('Bob', str2ip('192.168.123.11')))
-    hosts.append(Host('Charlie', str2ip('192.168.123.12')))
+    def run(self):
+        self.running = True
+        while self.running:
+            for i, port in enumerate(self.ports):
+                frame = port.receive()
+                if frame == None:
+                    continue
 
-    for host in hosts:
-        print(host)
+                print(f'SWITCH received frame on port {i}:')
+                print(hexdump(frame))
+                finfo = parse_ethernet_ii(frame)
+                srcmac = finfo['src']
+                dstmac = finfo['dst']
 
-    child = subprocess.Popen('tap2streams', stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+                # update mac address table?
+                if not srcmac in self.mac_addr_table:
+                    print(f'SWITCH adding {mac2str(srcmac)} -> port {i} mapping')
+                    self.mac_addr_table[srcmac] = i
 
-    reply_func = lambda f: os.write(child.stdin.fileno(), f)
+                if dstmac == b'\xFF\xFF\xFF\xFF\xFF\xFF':
+                    outidxs = [j for j in range(len(self.ports)) if j != i]
+                    print('SWITCH broadcast, repeating on ports {outidxs}')
+                    for idx in outidxs:
+                        self.ports[idx].send(frame)
+                    continue
 
-    while True:
-        # wait for child to write to stdout (incoming frame)
-        frame = os.read(child.stdout.fileno(), 65536)
+                print(f'SWITCH unicast, searching for: {mac2str(dstmac)}')
+                pi = self.mac_addr_table.get(dstmac)
+                if pi == None:
+                    print(f'SWITCH not found, discarding frame')
+                    continue
 
-        print('ROUTER received frame:')
-        print(hexdump(frame))
-
-        finfo = parse_ethernet_ii(frame)
-        packet = finfo['payload']
-
-        if finfo['dst'] == b'\xFF\xFF\xFF\xFF\xFF\xFF':
-            print('broadcast frame received, sending payload to all hosts!')
-            for host in hosts:
-                host.receive(finfo['type'], packet, reply_func)
-        else:
-            print(f'targetted frame received, sending payload to host with mac: {mac2str(finfo["dst"])}')
-            for host in hosts:
-                if host.mac_addr == finfo['dst']:
-                    host.receive(finfo['type'], packet, reply_func)
-
-        # respond with
-        #os.write(child.stdin.fileno(), buf)
-
-        
+                print(f'SWITCH sending to port {pi}')
+                self.ports[pi].send(frame)
