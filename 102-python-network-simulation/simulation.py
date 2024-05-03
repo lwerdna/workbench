@@ -22,9 +22,9 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
 
     # set up network
-    host0 = Host('Alice', str2ip('192.168.123.10'))
-    host1 = Host('Bob', str2ip('192.168.123.11'))
-    host2 = Host('Charlie', str2ip('192.168.123.12'))
+    host0 = Host('Alice', str2ip('192.168.123.10'), b'\xAA\xAA\xAA\xAA\xAA\xAA')
+    host1 = Host('Bob', str2ip('192.168.123.11'), b'\xBA\xBB\xBB\xBB\xBB\xBB')
+    host2 = Host('Charlie', str2ip('192.168.123.12'), b'\xCC\xCC\xCC\xCC\xCC\xCC')
 
     switch = Switch(8)
     connect(switch.ports[0], host0.nic.rj45)

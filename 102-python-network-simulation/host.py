@@ -4,13 +4,13 @@ from nic import NIC
 from port import Port
 
 class Host:
-    def __init__(self, label, ip_addr):
+    def __init__(self, label, ip_addr, mac_addr=None):
         self.label = label
         self.ip_addr = ip_addr
         self.arp_table = {} # ip -> mac
 
         # create a NIC and connect to it over a "bus"
-        self.nic = NIC()
+        self.nic = NIC(mac_addr)
         self.bus = Port()
         connect(self.bus, self.nic.bus)
 

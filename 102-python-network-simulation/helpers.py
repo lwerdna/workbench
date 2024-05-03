@@ -7,6 +7,12 @@ import random
 mac_loopback = b'\x00\x00\x00\x00\x00\x00'
 mac_bcast = b'\xFF\xFF\xFF\xFF\xFF\xFF'
 
+def mac_is_multicast(mac):
+    return mac[0] & 1 # is G(roup) of I/G bit set?
+
+def mac_is_unicast(mac):
+    return (mac[0] & 1) == 0 # is G(roup) of I/G bit clear?
+
 # https://gist.github.com/mzpqnxow/a368c6cd9fae97b87ef25f475112c84c
 def hexdump(src, addr=0, length=16, sep='.'):
     FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
