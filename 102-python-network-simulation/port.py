@@ -19,3 +19,6 @@ class Port:
                 return None
             else:
                 return self.queue.pop(0)
+
+    def connected(self):
+        return self.destination != None

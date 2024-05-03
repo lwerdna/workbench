@@ -25,7 +25,7 @@ class NIC():
                 #print(hexdump(frame))
 
                 finfo = parse_ethernet_ii(frame)
-                if finfo['dst'] == self.macaddr or finfo['dst'] == mac_bcast:
+                if finfo['dst'] in [self.macaddr, mac_bcast, mac_loopback]:
                     self.bus.send(frame)
 
             # host -> rj45

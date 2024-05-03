@@ -12,6 +12,9 @@ class Switch():
         self.running = True
         while self.running:
             for i, port in enumerate(self.ports):
+                if not port.connected():
+                    continue
+
                 frame = port.receive()
                 if frame == None:
                     continue
@@ -28,7 +31,7 @@ class Switch():
                     self.mac_addr_table[srcmac] = i
 
                 if dstmac == b'\xFF\xFF\xFF\xFF\xFF\xFF':
-                    outidxs = [j for j in range(len(self.ports)) if j != i]
+                    outidxs = [j for j in range(len(self.ports)) if j != i and self.ports[j].connected()]
                     print(f'SWITCH broadcast, repeating on ports {outidxs}')
                     for idx in outidxs:
                         self.ports[idx].send(frame)

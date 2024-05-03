@@ -8,7 +8,7 @@ We make some virtual hosts that can respond to ARP and PING.
 Quick start:
 $ sudo ip tuntap add dev tap0 mode tap
 $ make
-$ ./vrouter.py
+$ ./simulation.py
 
 We now have:
 	Alice on 192.168.123.10

@@ -4,6 +4,7 @@ import re
 import struct
 import random
 
+mac_loopback = b'\x00\x00\x00\x00\x00\x00'
 mac_bcast = b'\xFF\xFF\xFF\xFF\xFF\xFF'
 
 # https://gist.github.com/mzpqnxow/a368c6cd9fae97b87ef25f475112c84c

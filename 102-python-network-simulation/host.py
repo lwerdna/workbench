@@ -37,7 +37,7 @@ class Host:
                 case _:
                     print(f'unknown type: 0x{finfo["type"]:X}')
 
-    def handle_ipv4(packet):
+    def handle_ipv4(self, packet):
         ipv4_info = parse_ipv4(packet)
         if ipv4_info['dst_addr'] != self.ip_addr:
             return
@@ -86,8 +86,9 @@ class Host:
     def handle_arp(self, packet):
         ainfo = parse_arp(packet)
         
-        print(f'sender mac:{mac2str(ainfo["sender_mac"])} ip:{ip2str(ainfo["sender_ip"])}')
-        print(f'target mac:{mac2str(ainfo["target_mac"])} ip:{ip2str(ainfo["target_ip"])}')
+        print(f'{self} GOT ARP')
+        print(f'  sender mac:{mac2str(ainfo["sender_mac"])} ip:{ip2str(ainfo["sender_ip"])}')
+        print(f'  target mac:{mac2str(ainfo["target_mac"])} ip:{ip2str(ainfo["target_ip"])}')
 
         self.arp_table[ainfo['sender_ip']] = ainfo['sender_mac']
 
