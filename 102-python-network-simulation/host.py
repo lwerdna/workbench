@@ -1,5 +1,6 @@
 from helpers import *
 
+from nic import NIC
 from port import Port
 
 class Host:
@@ -7,13 +8,18 @@ class Host:
         self.label = label
         self.ip_addr = ip_addr
         self.arp_table = {} # ip -> mac
-        self.nic = Port() # port to nic
+
+        # create a NIC and connect to it over a "bus"
+        self.nic = NIC()
+        self.bus = Port()
+        connect(self.bus, self.nic.bus)
+
         self.running = False
 
     def run(self):
         self.running = True
         while self.running:
-            frame = self.nic.receive()
+            frame = self.bus.receive()
             if frame == None:
                 continue
 
@@ -43,7 +49,7 @@ class Host:
                     reply = b''
                     # add layer 2 (ethernet)
                     ethhdr = self.arp_table[ipv4_info['src_addr']] # eth destination
-                    ethhdr += self.mac_addr # eth source
+                    ethhdr += self.nic.macaddr # eth source
                     ethhdr += b'\x08\x00' # eth type: IPv4
                     reply += ethhdr
                     assert len(reply) == 14
@@ -73,7 +79,7 @@ class Host:
                     reply += icmp
                     assert len(reply) == 14 + 20 + len(icmp_packet)
 
-                    self.nic.send(reply)
+                    self.bus.send(reply)
                 case _:
                     return
 
@@ -87,14 +93,14 @@ class Host:
 
         match ainfo['opcode']:
             case 1: # request
-                if not (ainfo['target_mac'] in [b'\x00'*6, self.mac_addr]): # matches our mac or is wildcard
-                    return
+                #if not (ainfo['target_mac'] in [b'\x00'*6, self.nic.macaddr]): # matches our mac or is wildcard
+                #    return
                 if not ainfo['target_ip'] == self.ip_addr:
                     return
                 reply = b''
                 # add layer 2 (ethernet)
                 reply += ainfo['sender_mac'] # eth destination
-                reply += self.mac_addr # eth source
+                reply += self.nic.macaddr # eth source
                 reply += b'\x08\x06' # eth type: ARP
                 # add layer 2 (ARP)
                 reply += b'\x00\x01' # hw type
@@ -102,12 +108,12 @@ class Host:
                 reply += b'\x06' # hw size
                 reply += b'\x04' # protocol size
                 reply += b'\x00\x02' # opcode: reply
-                reply += self.mac_addr # sender mac
+                reply += self.nic.macaddr # sender mac
                 reply += self.ip_addr # sender ip
                 reply += ainfo['sender_mac'] # target mac
                 reply += ainfo['sender_ip'] # target ip
                 print(f'{self} replying!')
-                reply_func(reply)
+                self.bus.send(reply)
 
             case 2: # reply
                 pass
@@ -115,4 +121,4 @@ class Host:
                 pass
 
     def __str__(self):
-        return f'HOST "{self.label}" ip={ip2str(self.ip_addr)}'
+        return f'HOST "{self.label}" mac={mac2str(self.nic.macaddr)} ip={ip2str(self.ip_addr)}'

@@ -7,25 +7,30 @@ class NIC():
         if not macaddr:
             macaddr = generate_mac()
         self.macaddr = macaddr
-        self.rj45 = Port()
-        self.host = Port()
+
+        self.rj45 = Port() # the side representing where cat5 would connect
+        self.bus = Port() # the side representing where the host would connect
+
         self.promiscuous = False
+
         self.running = False
 
     def run(self):
         self.running = True
         while self.running:
+            # rj45 -> host
             frame = self.rj45.receive()
             if frame != None:
-                print(f'NIC received frame on rj45 port')
-                print(hexdump(frame))
+                #print(f'NIC received frame on rj45 port')
+                #print(hexdump(frame))
 
                 finfo = parse_ethernet_ii(frame)
                 if finfo['dst'] == self.macaddr or finfo['dst'] == mac_bcast:
-                    self.host.send(frame)
+                    self.bus.send(frame)
 
-            frame = self.host.receive()
+            # host -> rj45
+            frame = self.bus.receive()
             if frame != None:
-                print(f'NIC received frame from host')
-                print(hexdump(frame))
-                self.rj45.send(Frame)
+                #print(f'NIC received frame from host')
+                #print(hexdump(frame))
+                self.rj45.send(frame)

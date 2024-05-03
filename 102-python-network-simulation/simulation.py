@@ -25,29 +25,21 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
 
     # set up network
-    host0 = Host('Alice', str2ip('192.168.123.10'))
-    nic0 = NIC()
-    connect(host0.nic, nic0.host)
-
-    host1 = Host('Bob', str2ip('192.168.123.11'))
-    nic1 = NIC()
-    connect(host1.nic, nic1.host)
-
-    host2 = Host('Charlie', str2ip('192.168.123.12'))
-    nic2 = NIC()
-    connect(host2.nic, nic2.host)
+    host0 = Host('Alice', str2ip('192.168.10.1'))
+    host1 = Host('Bob', str2ip('192.168.10.2'))
+    host2 = Host('Charlie', str2ip('192.168.10.3'))
 
     switch = Switch(8)
-    connect(switch.ports[0], nic0.rj45)
-    connect(switch.ports[1], nic1.rj45)
-    connect(switch.ports[2], nic2.rj45)
+    connect(switch.ports[0], host0.nic.rj45)
+    connect(switch.ports[1], host1.nic.rj45)
+    connect(switch.ports[2], host2.nic.rj45)
 
     tapPort = Port()
     connect(tapPort, switch.ports[7])
     
     # turn everything on
     threads = []
-    devices = [host0, host1, host2, nic0, nic1, nic2, switch]
+    devices = [host0, host1, host2, host0.nic, host1.nic, host2.nic, switch]
     for device in devices:
         t = threading.Thread(target=device.run, args=tuple())
         threads.append(t)

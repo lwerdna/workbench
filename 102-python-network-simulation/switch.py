@@ -29,7 +29,7 @@ class Switch():
 
                 if dstmac == b'\xFF\xFF\xFF\xFF\xFF\xFF':
                     outidxs = [j for j in range(len(self.ports)) if j != i]
-                    print('SWITCH broadcast, repeating on ports {outidxs}')
+                    print(f'SWITCH broadcast, repeating on ports {outidxs}')
                     for idx in outidxs:
                         self.ports[idx].send(frame)
                     continue
