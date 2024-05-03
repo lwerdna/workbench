@@ -1,5 +1,16 @@
 #!/usr/bin/env python
 
+# +----------------+
+# | SWITCH  port 0 |---- virtual host "Alice"   192.168.123.10 AA:AA:AA:AA:AA:AA
+# |         port 1 |---- virtual host "Bob"     192.168.123.11 BA:BB:BB:BB:BB:BB
+# |         port 2 |---- virtual host "Charlie" 192.168.123.12 CC:CC:CC:CC:CC:CC
+# |         port 3 |
+# |         port 4 |
+# |         port 5 |
+# |         port 6 |
+# |         port 7 |---- tap (Host linux)       192.168.123.1
+# +----------------+
+
 import time
 import signal
 import threading

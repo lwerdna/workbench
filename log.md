@@ -1,3 +1,6 @@
+# 2024-05-03
+Project 102 updated with devices (switch, nic, host) implemented as threads, can ping from host OS.
+
 # 2024-04-24
 Project 102: Using a tap (layer 2) virtual network device, simulate a switch and some hosts with python.
 
