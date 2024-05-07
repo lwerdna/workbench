@@ -1,3 +1,27 @@
+# 2024-05-07
+
+https://github.com/lwerdna/reference_code/tree/master/hello_arm_linux_gnueabi_gcc
+
+# 2024-05-06
+
+Run an ARM application inside an ARM chroot with qemu.
+Note qemu-arm is the user binary emulator and qemu-system-arm is the system emulator.
+If error "chroot: failed to run command ‘/usr/bin/qemu-arm’: No such file or directory", it is due (I think) to inability to find some dependency (a .so?) of qemu-arm, not missing qemu-arm itself.
+Using qemu-arm-static from package qemu-user-static is easiest since no dependencies, and no interpreter / dynamic linker.
+Place it in sysroot at path/to/sysroot/usr/bin.
+Final command was:
+```
+$ sudo LD_LIBRARY_PATH="/path/libs/a;/path/libs/b" chroot . /usr/bin/qemu-arm-static -g 12345 /path/to/executable
+```
+It is a little mindbending since:
+* All paths are given as if the chroot has taken effect.
+* qemu-arm-static is host architecture, executable is guest architecture (ARM)
+
+Is Linux and its ways of thinking like a mindbending playground? Consider:
+* Chroot and emulation.
+* SLIP and tuntap and tunneling packets.
+* A file can contain a filesystem (which of course contains files).
+
 # 2024-05-03
 Project 102 updated with devices (switch, nic, host) implemented as threads, can ping from host OS.
 
