@@ -1,5 +1,6 @@
 # 2024-05-07
 
+Compile ARM binaries using apt installable packages and examine the resulting executables:
 https://github.com/lwerdna/reference_code/tree/master/hello_arm_linux_gnueabi_gcc
 
 # 2024-05-06
@@ -68,6 +69,9 @@ add ATAGs dissection to: https://github.com/lwerdna/finter
 # 2024-03-13
 Add "hello world" LKM for Ubuntu
 https://github.com/lwerdna/reference_code/tree/master/hello_world_ubuntu_lkm
+
+# 2024-03-12
+Project 103: dump binaries and emulate them using unicorn, aiming to get some of the graphical output of stack reads/writes that whitebox crypto defeat papers have
 
 # 2024-03-08
 add u-boot dissection to: https://github.com/lwerdna/finter
