@@ -1,0 +1,28 @@
+FROM: https://askubuntu.com/questions/4868/what-is-the-difference-between-upstream-and-downstream-when-referring-to-who-to
+
+Think of it as a great river, with the people who write the software as the source of the river. They would be the upstream, futher downstream would be your distribution, and at the end of the river would be the user. Ubuntu is in the middle of the river.
+
+Upstream would be the software that Ubuntu packages and ships to users. Things like GNOME, Firefox, X.org, the Linux kernel, and many more applications. This is the bulk of the things that are in the archive, as they represent a collection of upstream projects.
+
+Ubuntu has one special upstream, Debian, which Ubuntu derives from. So, they are Ubuntu's upstream for many packages, though for some packages, like the kernel, Ubuntu packages directly from the upstream project, though for the majority of packages Debian is the upstream to Ubuntu, and the project that is packaged is upstream to Debian.
+
+Downstreams of Ubuntu would be Ubuntu derived distributions, like Linux Mint.
+
+Examples of usage of this term depends on the context. So for example if you have a bug with Firefox that Ubuntu didn't introduce then you might hear the term "Make sure you're reporting that bug upstream". The person means reporting the bug directly to Firefox in this case.
+
+In the case of Ubuntu, getting the right feedback from users to the upstream developers is an important thing we do. Here are some links of what we do:
+
+    Upstream information for application developers. I maintain this namespace as a landing page for upstream application developers who want to understand how to work with Ubuntu.
+    Reporting bugs upstream, see the report.
+    Ensuring patches from users get back upstream so they can be integrated. Remember that every patch carried in a distro has an engineering cost AND improving the software for everyone is a goal.
+    Our work with Debian.
+
+To better answer your question here are some examples of how someone would tell you to talk to an upstream:
+
+    "I want to make a multimedia application for Ubuntu" - You would use the upstream gstreamer framework.
+    "I want my app to talk to other apps over the internet" - You would use the upstream telepathy framework.
+    "I want to add a feature to Firefox." - You would go talk to Firefox directly and do all that work upstream.
+    "I want to add an Ubuntu specific feature to Firefox" - You would talk to Ubuntu as it's likely upstream wouldn't want or care about the feature. A maintainer will let you know.
+    Likewise, if you were to report a bug to an upstream app (like Firefox) that was caused by something in Ubuntu, not Firefox, they would refer you to report the bug downstream. (thanks tj111)
+
+Likewise, if you were to report a bug to an upstream app (like Firefox) that was caused by something in Ubuntu, not Firefox, they would refer you to report the bug downstream.

@@ -1,3 +1,49 @@
+# 2024-05-08
+
+I always used apt at the "surface", never understanding deeper inner workings.
+Sometimes some answers used dpkg, which I kind of knew was related.
+dpkg is debian base / low-level package management, while apt is higher.
+apt reaches out to sources, handles dependencies, etc.
+'dpkg' is a package itself, containing (abridged):
+$ dpkg -L dpkg
+    dpkg, dpkg-deb, dpkg-divert, dpkg-maintscript-helper, dpkg-query,
+    dpkg-realpath, dpkg-split, dpkg-statoverride, dpkg-trigger,
+    update-alternatives,
+'dpkg-dev' is a package, containing (abridged):
+$ pkg -L dpkg-dev
+    dpkg-architecture, dpkg-buildflags, dpkg-buildpackage, dpkg-checkbuilddeps,
+    dpkg-distaddfile, dpkg-genbuildinfo, dpkg-genchanges, dpkg-gencontrol,
+    dpkg-gensymbols, dpkg-mergechangelogs, dpkg-name, dpkg-parsechangelog,
+    dpkg-scanpackages, dpkg-scansources, dpkg-shlibdeps, dpkg-source,
+    dpkg-vendor,
+dpkg invocations are worth memorizing, like:
+  dpkg -S <file> to find where a file comes from
+  dpkg -L <package> to find what files are contained in a package
+  dpkg -l to list all packages installed on the system
+The package filenames are a bitch to parse.
+qemu-user-binfmt_6.2+dfsg-2ubuntu6.18_amd64.deb is something like:
+qemu-user-binfmt    name of package
+6.2                 version of qemu
++dfsg               repacked to meet Debian free software compliance
+                    https://wiki.debian.org/DebianFreeSoftwareGuidelines
+                    (+ds would mean repacked for other reasons)
+-2                  number of Debian packaging revisions
+
+Having an idea of how software goes from author to conveniently installable on your machine is very useful.
+My current simple understanding is:
+Qemu is a project written by qemu people.
+That is "consumed" by Debian, who modify it, repackage it, and slap a tag on it.
+That is "consumed" by Ubuntu, who modify it, repackage it, and slap a tag on it.
+That is "consumed" by Ubuntu users, who `apt install` the packages.
+From sources to destination, it kind of flows like a river or stream.
+Bugs whose fix can only be fixed earlier in the process are upstream bugs.
+Bugs whose cause is due to repackaging, later in the process, are downstream bugs.
+See: https://askubuntu.com/questions/4868/what-is-the-difference-between-upstream-and-downstream-when-referring-to-who-to locally mirrored at ./assets/great-explanation-upstream-downstream.txt
+Upstream is synonymous with "source".
+
+A #IDoAndIUnderstand project I need to undertake:
+https://askubuntu.com/questions/458748/is-it-possible-to-add-a-location-folder-on-my-hard-disk-to-sources-list for creating a local package.
+
 # 2024-05-07
 
 Compile ARM binaries using apt installable packages and examine the resulting executables:
