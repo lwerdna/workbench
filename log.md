@@ -1,3 +1,13 @@
+# 2024-05-09
+
+Project 104: easy return oriented programming (ROP) exercise from ired.team
+
+Pass command output as argument:
+$ echo $(echo -n 'hey')
+Pass file contents as argument:
+$ echo -n 'hey' > /tmp/tmp.txt
+$ echo $(</tmp/tmp.txt)
+
 # 2024-05-08
 
 I always used apt at the "surface", never understanding deeper inner workings.
