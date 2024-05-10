@@ -1,3 +1,38 @@
+# 2024-05-10
+
+Project 105: slightly harder ROP, call system("/bin/sh") and exit()
+
+{
+All that "2>&1" type stuff in bash are called redirections or redirection operators.
+https://www.gnu.org/software/bash/manual/bash.html#Redirections
+
+ls > dirlist 2>&1
+can be thought of as an imperative program:
+stdout = fp_dirlist
+stderr = stdout # and thus dirlist
+both stdout and stderr are descriptors of file "dirlist", so it accomplishes the goal of collecting all of ls's output (stdout and stderr) into the file
+
+ls 2>&1 > dirlist
+stderr = stdout # gets a copy of stdout
+stdout = fp_dirlist
+now stderr has the stdout descriptor, while stdout has the descriptor of file "dirlist", so you'll see error messages on the screen and normal messages in the file
+} #TIL
+
+{
+Is a "site" like python's location for packages and modules outside the core location?
+python -m site
+Compare and contrast these two commands:
+python -c "import sys; print(sys.path)"
+python -S -c "import sys; print(sys.path)"
+
+find where a package gets imported from:
+python -v -c 'import pwn' 2>&1 | less
+
+list info on a package, including dependencies:
+pip show pwntools
+pip show -f pwntools
+} #Python #TIL
+
 # 2024-05-09
 
 Project 104: easy return oriented programming (ROP) exercise from ired.team
