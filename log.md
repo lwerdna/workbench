@@ -1,3 +1,17 @@
+# 2024-05-11
+
+Project 105: upgrade with dup2() call so payload can come from redirected stdin but spawned shell can still interact with terminal.
+
+I was conceptualizing STDIN, STDOUT, STDERR wrong.
+They're not distinct descriptors (0, 1, 2) that refer to distinct things (terminals? parts of terminals? streams?).
+They're distinct descriptors that refer to the SAME thing (a pseudo terminal).
+It's when you do redirection (like "./foo > output.txt") that you draw a descriptor away, to refer to a new thing (here, STDOUT/1 describes the file output.txt).
+To convince yourself, try to read() from STDOUT, it works!
+See test-fds.c in Project 105.
+Now dup(1, 0) says make 0 describe to whatever 1 describes, closing 0 if it currently describes something.
+So if 0 has been redirected, you can restore it the original pts because 1 and 2 still hold a reference.
+So dup(2, 0) should also work.
+
 # 2024-05-10
 
 Project 105: slightly harder ROP, call system("/bin/sh") and exit()

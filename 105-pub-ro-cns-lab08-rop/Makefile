@@ -1,13 +1,13 @@
-all: rlibc2
+all: rlibc
 
-rlibc2: ret2libc2.o extra.o
-	gcc ret2libc2.o extra.o -o rlibc2
+rlibc: ret2libc.o extra.o
+	gcc ret2libc.o extra.o -o rlibc
 
-ret2libc2.o: ret2libc2.c
-	gcc -fno-stack-protector -c ret2libc2.c -o ret2libc2.o
+ret2libc.o: ret2libc.c
+	gcc -fno-stack-protector -c ret2libc.c -o ret2libc.o
 
 extra.o: extra.s
 	nasm extra.s -f elf64 -o extra.o
 
 clean:
-	rm -rf *.o rlibc rlibc2 rlibc-rop.txt peda-session-rlibc.txt peda-session-rlibc2.txt
+	rm -rf *.o rlibc rlibc rlibc-rop.txt peda-session-rlibc.txt peda-session-rlibc.txt test-fds

