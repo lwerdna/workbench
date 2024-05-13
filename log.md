@@ -1,3 +1,7 @@
+# 2024-05-13
+
+Project 106: Add example where unicorn UC_HOOK_MEM_FETCH_UNMAPPED can detect unmapped fetches, and survive execution. I thought changing PC/RIP from the offending fetch address would be sufficient, but you must also map in memory at the fetch address to prevent an additional UC_ERR_MAP.
+
 # 2024-05-11
 
 Project 105: upgrade with dup2() call so payload can come from redirected stdin but spawned shell can still interact with terminal.
@@ -176,7 +180,7 @@ Add "hello world" LKM for Ubuntu
 https://github.com/lwerdna/reference_code/tree/master/hello_world_ubuntu_lkm
 
 # 2024-03-12
-Project 103: dump binaries and emulate them using unicorn, aiming to get some of the graphical output of stack reads/writes that whitebox crypto defeat papers have
+Project 103: Dump binaries and emulate them using unicorn, aiming to get some of the graphical output of stack reads/writes that whitebox crypto defeat papers have. Demonstrate use of unicorn hooks. #Crypto #Emulation #Unicorn
 
 # 2024-03-08
 add u-boot dissection to: https://github.com/lwerdna/finter
