@@ -23,6 +23,8 @@ https://github.com/lwerdna/dotfiles/blob/master/gdbinit_mem
 
 Remember, gdb doesn't mean only linux targets, it's anything that accepts gdb rsp connections, like qemu, renode, etc.
 
+Add whitebox-lift.py example to Project 106
+
 # 2024-05-13
 
 Project 106: Add example where unicorn UC_HOOK_MEM_FETCH_UNMAPPED can detect unmapped fetches, and survive execution. I thought changing PC/RIP from the offending fetch address would be sufficient, but you must also map in memory at the fetch address to prevent an additional UC_ERR_MAP.

@@ -1,4 +1,4 @@
-A sandbox environment for [unicorn](https://pypi.org/project/unicorn/) tests and experiments.
+A sandbox environment for [unicorn](https://pypi.org/project/unicorn/) tests, experiments, and examples.
 
 Some projects that have spawned from this area are:
 
