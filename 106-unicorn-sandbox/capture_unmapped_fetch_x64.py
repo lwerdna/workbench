@@ -8,7 +8,14 @@
 # without memory there, a UC_ERR_MAP error will happen, but your
 # UC_HOOK_MEM_UNMAPPED callback will *NOT* execute.
 #
-# You must map in memory so the original fetch succeeds. 
+# You must map in memory so the original fetch succeeds.
+#
+# I have found a citation!
+# https://github.com/unicorn-engine/unicorn/blob/master/include/unicorn/unicorn.h
+# > In the event of a UC_MEM_FETCH_UNMAPPED callback, the memory can be
+# > mapped in as executable, in which case execution will resume from the fetched
+# > address. The instruction pointer may be written to in order to change where
+# > execution resumes, but the fetch must succeed if execution is to resume.
 
 import os
 import sys

@@ -1,3 +1,28 @@
+# 2024-05-14
+
+The only verb I knew for stealing code from a target (instead of reimplementing it) was "rip", but in some whitebox crypto papers they use "lift".
+With the ease of setting up one-off emulators, I'm up to three methods for doing this:
+1) copy the blob(s), jump/call into it carefully
+2) copy the assembly(s), fixing things manually, and assemble an executable object
+3) copy the blob(s), and set up a quick VM to execute it
+
+There are pros/cons to each, but #1 and #2 require the target and host tool architecture match.
+Option #3 is not just architecture independent, the host tool can be a scripting language.
+Namely, python and pip-installable unicorn emulator make for a very powerful combination for these tasks.
+
+There are initial barriers with new tooling, but after some examples and experience are collected, the investment pays off.
+Here's one useful pattern:
+Instead of ahead-of-time knowing and planning all the paths the ripped code will take, a sort of "rip template" is useful.
+Start with an initial dumped blob.
+Capture every time execution reaches outside of the blob(s) (via UC_HOOK_MEM_FETCH_UNMAPPED), and output enough information to track down what needs to be further ripped.
+Now it's an iterative process.
+
+Add dump_best_effort function to my gdb script, which, unlike gdb's built-in dump, won't abandon the dump completely when encountering unreadable memory:
+
+https://github.com/lwerdna/dotfiles/blob/master/gdbinit_mem
+
+Remember, gdb doesn't mean only linux targets, it's anything that accepts gdb rsp connections, like qemu, renode, etc.
+
 # 2024-05-13
 
 Project 106: Add example where unicorn UC_HOOK_MEM_FETCH_UNMAPPED can detect unmapped fetches, and survive execution. I thought changing PC/RIP from the offending fetch address would be sufficient, but you must also map in memory at the fetch address to prevent an additional UC_ERR_MAP.
