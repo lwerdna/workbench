@@ -1,5 +1,5 @@
 import os
-fpath = os.path.join(os.environ['HOME'], 'Desktop', 'TA1 Output', 'TA1-Kudu-traces', 'CVE-2019-10999_dcs-5020l_v1.15.12_semantics.jsonl')
+fpath = os.path.join(os.environ['HOME'], 'Desktop', 'Foo', 'Bar', 'Baz.jsonl')
 
 f'f-strings'
 r'raw-strings'

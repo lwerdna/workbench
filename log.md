@@ -1,3 +1,29 @@
+# 2024-05-16
+
+
+
+# 2024-05-15
+
+Blackbox some code in gdb:
+- breakpoint at end of function
+- quick script to /tmp/tmp.gdb:
+define try
+	set $pc = 0x400104
+	set $r0 = $arg0
+	set $r1 = 32
+	c
+(gdb) source /tmp/tmp.gdb
+(gdb) try 1
+(gdb) try 2
+
+Reminder for how to configure the guest interpreter in qemu arm emulation:
+$ qemu-arm ./target
+qemu-arm: Could not open '/lib/ld-linux.so.3': No such file or directory
+$ dpkg-query --search ld-linux.so.3
+libc6-armhf-cross: /usr/arm-linux-gnueabihf/lib/ld-linux.so.3
+libc6-armel-cross: /usr/arm-linux-gnueabi/lib/ld-linux.so.3
+$ qemu-arm -L /usr/arm-linux-gnueabi ./target
+
 # 2024-05-14
 
 The only verb I knew for stealing code from a target (instead of reimplementing it) was "rip", but in some whitebox crypto papers they use "lift".
