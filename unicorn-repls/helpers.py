@@ -5,6 +5,21 @@ from termcolor import colored
 
 from unicorn.arm_const import *
 
+def align_down_4k(addr):
+    return addr & 0xFFFFFFFFFFFFF000 # lose the bottom 12 bits (4k)
+
+def align_up_4k(addr):
+    return align_down_4k(addr) + 0x1000 if (addr & 0xFFF) else addr
+
+def align_4k(addr):
+    return (align_down_4k(addr), align_up_4k(addr+1))
+
+def map_needed_pages(uc, addr, size, perms):
+    lo = align_down_4k(addr)
+    hi = align_up_4k(addr+size)
+    print(f'uc.mem_map(0x{lo:X}, 0x{hi-lo:X}) -> [0x{lo:X}, 0x{hi:X})')
+    uc.mem_map(lo, hi-lo, perms=perms)
+
 def get_hex_dump(data, addr=0, grouping=1, endian='little'):
 	result = ''
 	while(data):
