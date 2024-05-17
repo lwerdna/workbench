@@ -4,6 +4,7 @@
 
 import re
 import struct
+import readline
 
 # capstone, keystone, unicorn
 from capstone import *
@@ -206,9 +207,47 @@ def read_string(uc, addr, limit=2048):
 
     return result
 
-#----------------------------------------------------------------------
-# repl helpers
-#----------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# hooks
+#------------------------------------------------------------------------------
+
+def hook_mem_fetch_unmapped(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED FETCH FROM ADDRESS: 0x{address:X})')
+    uc.emu_stop()
+    return False
+
+def hook_mem_write_unmapped(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}')
+    uc.emu_stop()
+    return True
+
+def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED READ: {size} bytes from 0x{address:X})')
+    uc.emu_stop()
+    return True
+
+def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X}')
+    uc.emu_stop()
+    return True
+
+def install_default_hooks(uc):
+    # hook unmapped fetches
+    uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, hook_mem_fetch_unmapped)
+    # hook unmapped writes
+    uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_write_unmapped)
+    # hook unmapped reads
+    uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped)
+    # hook execute from nx memory
+    uc.hook_add(UC_HOOK_MEM_FETCH_PROT, hook_mem_fetch_prot)
+
+#------------------------------------------------------------------------------
+# REPL helpers
+#------------------------------------------------------------------------------
 
 # track context
 regs_old = [-1]*len(reg_name_to_uc_id)

@@ -28,15 +28,13 @@ if __name__ == '__main__':
     print(f'     load == 0x{load:X}')
 
     uc = Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_LITTLE_ENDIAN)
+    aarch32.install_default_hooks(uc)
 
     # create memory
     map_needed_pages(uc, load, size, UC_PROT_ALL)
 
     # write uImage (discluding header)
     uc.mem_write(load, blob[64:64+size])
-    print('wrote %02X %02X %02X %02X to 0x%08X\n' % (blob[64], blob[65], blob[66], blob[67], load))
-
-    print(get_hex_dump(uc.mem_read(load, 0x40), load))
 
     #
     uc.reg_write(UC_ARM_REG_R0, 0)

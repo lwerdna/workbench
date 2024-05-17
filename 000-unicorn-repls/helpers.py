@@ -4,6 +4,7 @@ import struct
 from termcolor import colored
 
 from unicorn.arm_const import *
+from unicorn.unicorn_const import *
 
 def align_down_4k(addr):
     return addr & 0xFFFFFFFFFFFFF000 # lose the bottom 12 bits (4k)
@@ -166,13 +167,36 @@ def general_handle_command(cmd, emulator, disassembler, addr, register_lookup):
 
     # anything bytes-like ends up being written and executed, example:
     # eb fe
-    if m := re.match(r'^[a-hA-H0-9 ]+$', cmd):
+    if m := re.match(r'^[a-fA-F0-9 ]+$', cmd):
         data = parse_bytes_permissive(cmd)
         emulator.mem_write(addr, data)
         addr_stop = addr + len(data)
         print(f'writing, executing [0x{addr:X}, 0x{addr_stop:X}): ', colored(data.hex(), 'green') + f' at 0x{addr:X}')
         emulator.emu_start(addr, addr_stop)
         return 'executed'
+
+    # go
+    if cmd in ['g', 'go', 'c', 'cont', 'continue']:
+        pc = emulator.reg_read(UC_ARM_REG_PC)
+        emulator.emu_start(pc, 0)
+        return 'executed'
+
+    # "monitor" commands
+    # monitor map <addr> <length> <perms>
+    if m := re.match(r'monitor map (.*) (.*) (.*)$', cmd):
+        addr = int(m.group(1), 16)
+        length = int(m.group(2), 16)
+        perms = 0
+        for c in m.group(3):
+            if c in 'rR':
+                perms |= UC_PROT_READ
+            elif c in 'wW':
+                perms |= UC_PROT_WRITE
+            elif c in 'xX':
+                perms |= UC_PROT_EXECUTE
+        print(f'uc.mem_map(0x{addr:X}, 0x{length:X}, 0x{perms:X})')
+        emulator.mem_map(addr, length, perms)
+        return True
 
     return None
 
