@@ -83,19 +83,38 @@ assert parse_bytes_permissive(' A   BC D') == b'\xAB\xCD'
 assert parse_bytes_permissive('  A B  C D') == b'\xAB\xCD'
 assert parse_bytes_permissive(' ABCD  ') == b'\xAB\xCD'
 
-# these are commands general enough to be handled in a way factored from each architecture repl
-#
-def general_handle_command(cmd, emulator, disassembler, addr, register_lookup):
-    if cmd == 'r':
-        return 'executed' # so caller will show context
-    if cmd == 'q':
-        return 'quit'
-
-    if m := re.match(r'^echo (.*)$', cmd):
-        message = m.group(1)
-        print(colored(message, 'red'))
+def general_mem_read_commands(uc, cmd):
+    # dump bytes, example:
+    # db 0
+    if m := re.match(r'db ([^L ]+)( L.*)?', cmd):
+        addr = int(m.group(1), 16)
+        length = 1*int(m.group(2)[2:], 16) if m.group(2) else 64
+        data = uc.mem_read(addr, length)
+        print(get_hex_dump(data, addr, grouping=1))
         return True
 
+    if m := re.match(r'dw ([^L ]+)( L.*)?', cmd):
+        addr = int(m.group(1), 16)
+        length = 2*int(m.group(2)[2:], 16) if m.group(2) else 64
+        data = uc.mem_read(addr, length)
+        print(get_hex_dump(data, addr, grouping=2))
+        return True
+
+    if m := re.match(r'dd ([^L ]+)( L.*)?', cmd):
+        addr = int(m.group(1), 16)
+        length = 4*int(m.group(2)[2:], 16) if m.group(2) else 64
+        data = uc.mem_read(addr, length)
+        print(get_hex_dump(data, addr, grouping=4))
+        return True
+
+    if m := re.match(r'dq ([^L ]+)( L.*)?', cmd):
+        addr = int(m.group(1), 16)
+        length = 8*int(m.group(2)[2:], 16) if m.group(2) else 64
+        data = uc.mem_read(addr, length)
+        print(get_hex_dump(data, addr, grouping=8))
+        return True
+
+def general_mem_write_commands(uc, cmd):
     # enter bytes, example:
     # eb 0 AA BB CC DD
     if m := re.match(r'eb ([a-fA-F0-9x]+) (.*)', cmd):
@@ -106,81 +125,26 @@ def general_handle_command(cmd, emulator, disassembler, addr, register_lookup):
         emulator.mem_write(addr, data)
         return True
 
+def general_register_commands(uc, cmd, lookup):
     # set register, example:
     # r pc = 0x10
     if m := re.match(r'(?:regset|r) ([^ ]+)\s*=\s*(.*)', cmd):
         rname, rval = m.group(1, 2)
-        emulator.reg_write(register_lookup[rname], int(rval, 16))
+        emulator.reg_write(lookup[rname], int(rval, 16))
         return True
 
     # reg write, example:
     # r3 = 0xDEADBEEF
     if m := re.match(r'([^\s]+)\s*=\s*(.+)', cmd):
         rname, rval = m.group(1, 2)
-        if rname in register_lookup:
-            emulator.reg_write(register_lookup[rname], int(rval, 16))
-            return 'executed'
+        if rname in lookup:
+            emulator.reg_write(lookup[rname], int(rval, 16))
+            return True
         else:
             print('ERROR: unknown register %s' % rname)
             return False
 
-    # dump bytes, example:
-    # db 0
-    if m := re.match(r'db ([^L ]+)( L.*)?', cmd):
-        addr = int(m.group(1), 16)
-        length = 1*int(m.group(2)[2:], 16) if m.group(2) else 64
-        data = emulator.mem_read(addr, length)
-        print(get_hex_dump(data, addr, grouping=1))
-        return True
-
-    if m := re.match(r'dw ([^L ]+)( L.*)?', cmd):
-        addr = int(m.group(1), 16)
-        length = 2*int(m.group(2)[2:], 16) if m.group(2) else 64
-        data = emulator.mem_read(addr, length)
-        print(get_hex_dump(data, addr, grouping=2))
-        return True
-
-    if m := re.match(r'dd ([^L ]+)( L.*)?', cmd):
-        addr = int(m.group(1), 16)
-        length = 4*int(m.group(2)[2:], 16) if m.group(2) else 64
-        data = emulator.mem_read(addr, length)
-        print(get_hex_dump(data, addr, grouping=4))
-        return True
-
-    if m := re.match(r'dq ([^L ]+)( L.*)?', cmd):
-        addr = int(m.group(1), 16)
-        length = 8*int(m.group(2)[2:], 16) if m.group(2) else 64
-        data = emulator.mem_read(addr, length)
-        print(get_hex_dump(data, addr, grouping=8))
-        return True
-
-    # disassemble bytes, example:
-    # u 0
-    if m := re.match(r'u (.*)', cmd):
-        addr = int(m.group(1),16)
-        data = emulator.mem_read(addr, 64)
-        for i in disassembler.disasm(data, addr):
-            addr_str = '%08X' % i.address
-            bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
-            print(f'{addr_str}: {bytes_str} {i.mnemonic} {i.op_str}')
-        return True
-
-    # anything bytes-like ends up being written and executed, example:
-    # eb fe
-    if m := re.match(r'^[a-fA-F0-9 ]+$', cmd):
-        data = parse_bytes_permissive(cmd)
-        emulator.mem_write(addr, data)
-        addr_stop = addr + len(data)
-        print(f'writing, executing [0x{addr:X}, 0x{addr_stop:X}): ', colored(data.hex(), 'green') + f' at 0x{addr:X}')
-        emulator.emu_start(addr, addr_stop)
-        return 'executed'
-
-    # go
-    if cmd in ['g', 'go', 'c', 'cont', 'continue']:
-        pc = emulator.reg_read(UC_ARM_REG_PC)
-        emulator.emu_start(pc, 0)
-        return 'executed'
-
+def general_monitor_commands(uc, cmd):
     # "monitor" commands
     # monitor map <addr> <length> <perms>
     if m := re.match(r'monitor map (.*) (.*) (.*)$', cmd):
@@ -193,21 +157,22 @@ def general_handle_command(cmd, emulator, disassembler, addr, register_lookup):
             elif c in 'wW':
                 perms |= UC_PROT_WRITE
             elif c in 'xX':
-                perms |= UC_PROT_EXECUTE
+                perms |= UC_PROT_EXEC
         print(f'uc.mem_map(0x{addr:X}, 0x{length:X}, 0x{perms:X})')
-        emulator.mem_map(addr, length, perms)
+        uc.mem_map(addr, length, perms)
         return True
 
-    return None
-
-def assemble_command(asmstr, addr, uc, ks):
-    encoding, count = None, None
-    encoding, count = ks.asm(asmstr, addr=addr)
-    data = b''.join([x.to_bytes(1, 'big') for x in encoding])
-    print(f'assembled {addr:08X}: {colored(data.hex(), "green")} ({len(encoding)} bytes)')
-    uc.mem_write(addr, data)
-    uc.emu_start(addr, addr + len(data))
-    return 'executed'
+def general_disassemble_commands(uc, cmd, addr, disassembler):
+    # disassemble bytes, example:
+    # u 0
+    if m := re.match(r'u (.*)', cmd):
+        addr = int(m.group(1), 16)
+        data = uc.mem_read(addr, 64)
+        for i in disassembler.disasm(data, addr):
+            addr_str = '%08X' % i.address
+            bytes_str = ' '.join(['%02X'%b for b in i.bytes]).ljust(2+1+2+1+2+1+2)
+            print(f'{addr_str}: {bytes_str} {i.mnemonic} {i.op_str}')
+        return True
 
 # hi and lo are inclusive, eg: 4,0 means gets b4...b0 (5 bits total)
 def get_bits(value, hi, lo=None):

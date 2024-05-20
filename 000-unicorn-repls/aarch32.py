@@ -14,7 +14,7 @@ from unicorn.arm_const import *
 
 from termcolor import colored
 
-from helpers import get_bits, general_handle_command
+from helpers import *
 
 # set up assemblers, disassemblers
 ks_arm = Ks(KS_ARCH_ARM, KS_MODE_ARM + KS_MODE_LITTLE_ENDIAN)
@@ -298,7 +298,7 @@ def install_default_hooks(uc):
     # hook execute from nx memory
     uc.hook_add(UC_HOOK_MEM_FETCH_PROT, hook_mem_fetch_prot)
 
-def hook_code_breakpoint(uc, address, size, user_data):
+def callback_breakpoint(uc, address, size, user_data):
     pc = uc.reg_read(UC_ARM_REG_PC)
     #print(f'{pc:08X} BREAKPOINT! {user_data}')
     print(f'{pc:08X} BREAKPOINT!')
@@ -309,18 +309,22 @@ def hook_code_breakpoint(uc, address, size, user_data):
 #
 #------------------------------------------------------------------------------
 
-def bp_add_helper(uc, target_address, breakpoint_addresses):
-    uc.hook_add(UC_HOOK_CODE, hook_code_breakpoint, begin=target_address, end=target_address)
-    breakpoint_addresses.add(target_address)
+def bp_add_helper(uc, addr, breakpoints):
+    if addr in breakpoints:
+        return
+    hookobj = uc.hook_add(UC_HOOK_CODE, callback_breakpoint, begin=addr, end=addr)
+    breakpoints[addr] = hookobj
 
-def bp_del_helper(uc, target_address, breakpoint_addresses):
-    uc.hook_del(target_address)
-    breakpoint_addresses.remove(target_address)
+def bp_del_helper(uc, addr, breakpoints):
+    hookobj = breakpoints.get(addr)
+    if not hookobj:
+        return
+    uc.hook_del(hookobj)
+    del breakpoints[addr]
 
 def repl(uc):
     pending_code = []
-    # addresses where breakpoints are set
-    bp_addrs = set()
+    breakpoints = {} # address -> hook object
 
     while 1:
         for code in pending_code:
@@ -334,27 +338,38 @@ def repl(uc):
         cmd = input('> ')
 
         try:
-            if cmd.startswith(';') or cmd=='' or cmd.isspace():
+            if cmd.startswith(';') or cmd=='' or cmd.isspace(): # comments
                 pass
-
-            # is this a general (platform-independent) command?
-            result = general_handle_command(cmd, uc, cs, pc, reg_name_to_uc_id)
-            match result:
-                case 'quit':
-                    break
-                case 'executed':
-                    show_context(uc)
-                    continue
-                case True:
-                    continue
+            elif cmd == 'q': # quit?
+                break;
+            elif cmd == 'r': # show context?
+                do_show_context = True
+            elif general_mem_read_commands(uc, cmd):
+                continue
+            elif general_mem_write_commands(uc, cmd):
+                continue
+            elif general_register_commands(uc, cmd, reg_name_to_uc_id):
+                continue
+            elif general_disassemble_commands(uc, cmd, pc, cs):
+                continue
+            elif general_monitor_commands(uc, cmd):
+                continue
 
             # basic execution
-            if m := re.match(r'go?(\d+)', cmd): # go
-                # carefully step over breakpoint
-                if pc in bp_addrs:
-                    bp_del_helper(uc, pc, bp_addrs)
+            elif cmd == 'g':
+                if hookobj := breakpoints.get(pc): # step over possible bp
+                    bp_del_helper(uc, pc, breakpoints)
                     step(uc, count=1)
-                    bp_add_helper(uc, pc)
+                    bp_add_helper(uc, pc, breakpoints)
+
+                step(uc, count=0)
+                do_show_context = True
+
+            elif m := re.match(r'g (.*)', cmd): # step over possible bp
+                if hookobj := breakpoints.get(pc):
+                    bp_del_helper(uc, pc, breakpoints)
+                    step(uc, count=1)
+                    bp_add_helper(uc, pc, breakpoints)
 
                 stop_addr = int(m.group(1), 16)
                 print(colored(f'emulating until 0x{stop_addr:X}', 'yellow'))
@@ -362,10 +377,9 @@ def repl(uc):
                 do_show_context = True
 
             elif cmd == 't': # step into
-                if pc in bp_addrs:
-                    print('deleting!')
-                    bp_del_helper(uc, pc, bp_addrs)
-                    #pending_code.append(lambda: bp_add_helper(uc, pc, bp_addrs))
+                if pc in breakpoints:
+                    bp_del_helper(uc, pc, breakpoints)
+                    pending_code.append(lambda: bp_add_helper(uc, pc, breakpoints))
 
                 step(uc)
                 do_show_context = True
@@ -384,22 +398,20 @@ def repl(uc):
             # breakpoint commands
             elif m := re.match(r'bp (.*)$', cmd):
                 addr = int(m.group(1), 16)
-                if addr in bp_addrs:
+                if addr in breakpoints:
                     print(f'breakpoint already at 0x{addr:X}')
                 else:
-                    uc.hook_add(UC_HOOK_CODE, hook_code_breakpoint, begin=addr, end=addr, user_data="test user data")
-                    bp_addrs.add(addr)
+                    bp_add_helper(uc, addr, breakpoints)
 
             elif m := re.match(r'bc (.*)$', cmd):
                 addr = int(m.group(1), 16)
-                if addr in bp_addrs:
-                    uc.hook_del(addr)
-                    bp_addrs.remove(addr)
+                if addr in breakpoints:
+                    bp_del_helper(uc, addr, breakpoints)
                 else:
                     print('breakpoint at 0x{addr:X} not found')
 
             elif cmd == 'bl':
-                for addr in bp_addrs:
+                for addr in breakpoints:
                     print(f'breakpoint at 0x{addr:X}')
 
             # assemble, step, example:
