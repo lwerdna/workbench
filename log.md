@@ -1,3 +1,7 @@
+# 2024-05-20
+
+Project 106: It appears unicorn stops at the first or second instruction of the last JIT'd block upon unmapped memory write.
+
 # 2024-05-16
 
 Project 107: Can a usermode emulator (unicorn) be used to automatically decompress zImages?

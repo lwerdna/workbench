@@ -18,7 +18,8 @@ def align_4k(addr):
 def map_needed_pages(uc, addr, size, perms):
     lo = align_down_4k(addr)
     hi = align_up_4k(addr+size)
-    print(f'uc.mem_map(0x{lo:X}, 0x{hi-lo:X}) -> [0x{lo:X}, 0x{hi:X})')
+    #print(f'uc.mem_map(0x{lo:X}, 0x{hi-lo:X}) -> [0x{lo:X}, 0x{hi:X})')
+    print(f'mapped [{lo:08X}, {hi:08X})')
     uc.mem_map(lo, hi-lo, perms=perms)
 
 def get_hex_dump(data, addr=0, grouping=1, endian='little'):
@@ -65,23 +66,6 @@ def parse_bytes_permissive(string):
     bytes_ = [nybles[i:i+2] for i in range(0, len(nybles), 2)]
     data = b''.join([int(x, 16).to_bytes(1, 'big') for x in bytes_])
     return data
-
-assert parse_bytes_permissive('') == b''
-assert parse_bytes_permissive('A') == b'\x0A'
-assert parse_bytes_permissive('AB') == b'\xAB'
-assert parse_bytes_permissive('ABC') == b'\x0A\xBC'
-assert parse_bytes_permissive('ABCD') == b'\xAB\xCD'
-assert parse_bytes_permissive(' A') == b'\x0A'
-assert parse_bytes_permissive('   A  ') == b'\x0A'
-assert parse_bytes_permissive('A   B ') == b'\xAB'
-assert parse_bytes_permissive('  A B  ') == b'\xAB'
-assert parse_bytes_permissive('   A B  C') == b'\x0A\xBC'
-assert parse_bytes_permissive('   A B C  ') == b'\x0A\xBC'
-assert parse_bytes_permissive('A BC   ') == b'\x0A\xBC'
-assert parse_bytes_permissive('AB  C D') == b'\xAB\xCD'
-assert parse_bytes_permissive(' A   BC D') == b'\xAB\xCD'
-assert parse_bytes_permissive('  A B  C D') == b'\xAB\xCD'
-assert parse_bytes_permissive(' ABCD  ') == b'\xAB\xCD'
 
 def general_mem_read_commands(uc, cmd):
     # dump bytes, example:
@@ -182,26 +166,44 @@ def get_bits(value, hi, lo=None):
     mask = (1<<(hi+1))-1
     return (value & mask) >> lo
 
-#foo = 0b10101010101010101010101010101010
-#assert get_bits(foo, 0, 0) == 0
-#assert get_bits(foo, 1, 1) == 1
-#assert get_bits(foo, 2, 2) == 0
-#assert get_bits(foo, 3, 3) == 1
-#assert get_bits(foo, 31, 31) == 1
-#assert get_bits(foo, 30, 30) == 0
-#assert get_bits(foo, 29, 29) == 1
-#assert get_bits(foo, 28, 28) == 0
-#assert get_bits(foo, 1, 0) == 0b10
-#assert get_bits(foo, 2, 0) == 0b010
-#assert get_bits(foo, 3, 0) == 0b1010
-#assert get_bits(foo, 4, 0) == 0b01010
-#assert get_bits(foo, 5, 0) == 0b101010
-#assert get_bits(foo, 6, 0) == 0b0101010
-#assert get_bits(foo, 7, 0) == 0b10101010
-#assert get_bits(foo, 7, 1) == 0b1010101
-#assert get_bits(foo, 7, 2) == 0b101010
-#assert get_bits(foo, 7, 3) == 0b10101
-#assert get_bits(foo, 7, 4) == 0b1010
-#assert get_bits(foo, 7, 5) == 0b101
-#assert get_bits(foo, 7, 6) == 0b10
-#assert get_bits(foo, 7, 7) == 0b1
+if 0:
+	foo = 0b10101010101010101010101010101010
+	assert get_bits(foo, 0, 0) == 0
+	assert get_bits(foo, 1, 1) == 1
+	assert get_bits(foo, 2, 2) == 0
+	assert get_bits(foo, 3, 3) == 1
+	assert get_bits(foo, 31, 31) == 1
+	assert get_bits(foo, 30, 30) == 0
+	assert get_bits(foo, 29, 29) == 1
+	assert get_bits(foo, 28, 28) == 0
+	assert get_bits(foo, 1, 0) == 0b10
+	assert get_bits(foo, 2, 0) == 0b010
+	assert get_bits(foo, 3, 0) == 0b1010
+	assert get_bits(foo, 4, 0) == 0b01010
+	assert get_bits(foo, 5, 0) == 0b101010
+	assert get_bits(foo, 6, 0) == 0b0101010
+	assert get_bits(foo, 7, 0) == 0b10101010
+	assert get_bits(foo, 7, 1) == 0b1010101
+	assert get_bits(foo, 7, 2) == 0b101010
+	assert get_bits(foo, 7, 3) == 0b10101
+	assert get_bits(foo, 7, 4) == 0b1010
+	assert get_bits(foo, 7, 5) == 0b101
+	assert get_bits(foo, 7, 6) == 0b10
+	assert get_bits(foo, 7, 7) == 0b1
+
+	assert parse_bytes_permissive('') == b''
+	assert parse_bytes_permissive('A') == b'\x0A'
+	assert parse_bytes_permissive('AB') == b'\xAB'
+	assert parse_bytes_permissive('ABC') == b'\x0A\xBC'
+	assert parse_bytes_permissive('ABCD') == b'\xAB\xCD'
+	assert parse_bytes_permissive(' A') == b'\x0A'
+	assert parse_bytes_permissive('   A  ') == b'\x0A'
+	assert parse_bytes_permissive('A   B ') == b'\xAB'
+	assert parse_bytes_permissive('  A B  ') == b'\xAB'
+	assert parse_bytes_permissive('   A B  C') == b'\x0A\xBC'
+	assert parse_bytes_permissive('   A B C  ') == b'\x0A\xBC'
+	assert parse_bytes_permissive('A BC   ') == b'\x0A\xBC'
+	assert parse_bytes_permissive('AB  C D') == b'\xAB\xCD'
+	assert parse_bytes_permissive(' A   BC D') == b'\xAB\xCD'
+	assert parse_bytes_permissive('  A B  C D') == b'\xAB\xCD'
+	assert parse_bytes_permissive(' ABCD  ') == b'\xAB\xCD'

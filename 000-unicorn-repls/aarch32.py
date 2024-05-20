@@ -274,6 +274,8 @@ def hook_mem_write_unmapped(uc, access, address, size, value, user_data):
     pc = uc.reg_read(UC_ARM_REG_PC)
     print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}')
     uc.emu_stop()
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}')
     return True
 
 def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
@@ -289,14 +291,18 @@ def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
     return True
 
 def install_default_hooks(uc):
+    result = {}
+
     # hook unmapped fetches
-    uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, hook_mem_fetch_unmapped)
+    result['MEM_FETCH_UNMAPPED'] = uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, hook_mem_fetch_unmapped)
     # hook unmapped writes
-    uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_write_unmapped)
+    result['MEM_WRITE_UNMAPPED'] = uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_write_unmapped)
     # hook unmapped reads
-    uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped)
+    result['MEM_READ_UNMAPPED'] = uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped)
     # hook execute from nx memory
-    uc.hook_add(UC_HOOK_MEM_FETCH_PROT, hook_mem_fetch_prot)
+    result['MEM_FETCH_PROT'] = uc.hook_add(UC_HOOK_MEM_FETCH_PROT, hook_mem_fetch_prot)
+
+    return result
 
 def callback_breakpoint(uc, address, size, user_data):
     pc = uc.reg_read(UC_ARM_REG_PC)
@@ -312,6 +318,7 @@ def callback_breakpoint(uc, address, size, user_data):
 def bp_add_helper(uc, addr, breakpoints):
     if addr in breakpoints:
         return
+    print(f'bp_add_helper(..., 0x{addr:X}, ...)')
     hookobj = uc.hook_add(UC_HOOK_CODE, callback_breakpoint, begin=addr, end=addr)
     breakpoints[addr] = hookobj
 
@@ -322,20 +329,24 @@ def bp_del_helper(uc, addr, breakpoints):
     uc.hook_del(hookobj)
     del breakpoints[addr]
 
-def repl(uc):
+def repl(uc, script_lines=[]):
     pending_code = []
     breakpoints = {} # address -> hook object
 
     while 1:
         for code in pending_code:
             code()
+        pending_code = []
 
         do_show_context = False
 
         pc = uc.reg_read(UC_ARM_REG_PC)
         cs = cs_thumb if is_thumb(uc) else cs_arm
 
-        cmd = input('> ')
+        if script_lines:
+            cmd = script_lines.pop(0)
+        else:
+            cmd = input('> ')
 
         try:
             if cmd.startswith(';') or cmd=='' or cmd.isspace(): # comments
@@ -365,8 +376,8 @@ def repl(uc):
                 step(uc, count=0)
                 do_show_context = True
 
-            elif m := re.match(r'g (.*)', cmd): # step over possible bp
-                if hookobj := breakpoints.get(pc):
+            elif m := re.match(r'g (.*)', cmd):
+                if hookobj := breakpoints.get(pc): # step over possible bp
                     bp_del_helper(uc, pc, breakpoints)
                     step(uc, count=1)
                     bp_add_helper(uc, pc, breakpoints)

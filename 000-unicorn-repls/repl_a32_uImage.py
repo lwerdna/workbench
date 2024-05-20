@@ -11,6 +11,11 @@ from unicorn.arm_const import *
 import aarch32
 from helpers import *
 
+def on_demand_alloc(uc, access, addr, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    map_needed_pages(uc, addr, size, UC_PROT_READ|UC_PROT_WRITE)
+    return True
+
 if __name__ == '__main__':
     fpath = sys.argv[1]
     blob = open(fpath, 'rb').read()
@@ -28,7 +33,11 @@ if __name__ == '__main__':
     print(f'     load == 0x{load:X}')
 
     uc = Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_LITTLE_ENDIAN)
-    aarch32.install_default_hooks(uc)
+
+    # accept default hooks, except add on-demand mapping upon bad write
+    hooks = aarch32.install_default_hooks(uc)
+    uc.hook_del(hooks['MEM_WRITE_UNMAPPED'])
+    uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, on_demand_alloc)
 
     # create memory
     map_needed_pages(uc, load, size, UC_PROT_ALL)
