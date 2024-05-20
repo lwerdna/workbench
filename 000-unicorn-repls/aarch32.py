@@ -260,6 +260,13 @@ def step(uc, count=1, stop_addr=0x100000000):
     #print('starting emulation at pointer: 0x%08X' % pointer)
     uc.emu_start(pointer, stop_addr, timeout=0, count=count)
 
+def get_current_instruction_size(uc):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    data = uc.mem_read(pc, 4)
+    disfunc = cs_thumb.disasm if is_thumb(uc) else cs_arm.disasm
+    for i in disfunc(data, pc):
+        return len(i.bytes)
+
 #------------------------------------------------------------------------------
 #
 #------------------------------------------------------------------------------
@@ -318,7 +325,6 @@ def callback_breakpoint(uc, address, size, user_data):
 def bp_add_helper(uc, addr, breakpoints):
     if addr in breakpoints:
         return
-    print(f'bp_add_helper(..., 0x{addr:X}, ...)')
     hookobj = uc.hook_add(UC_HOOK_CODE, callback_breakpoint, begin=addr, end=addr)
     breakpoints[addr] = hookobj
 
@@ -393,6 +399,18 @@ def repl(uc, script_lines=[]):
                     pending_code.append(lambda: bp_add_helper(uc, pc, breakpoints))
 
                 step(uc)
+                do_show_context = True
+
+            elif cmd == 'n': # step over
+                if pc in breakpoints:
+                    bp_del_helper(uc, pc, breakpoints)
+                    pending_code.append(lambda: bp_add_helper(uc, pc, breakpoints))
+
+                pc_next = pc + get_current_instruction_size(uc)
+                if pc_next in breakpoints:
+                    step(uc, count=0)
+                else:
+                    step(uc, count=0, stop_addr=pc_next)
                 do_show_context = True
 
             # toggle arm/thumb mode

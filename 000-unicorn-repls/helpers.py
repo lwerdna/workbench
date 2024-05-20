@@ -18,8 +18,14 @@ def align_4k(addr):
 def map_needed_pages(uc, addr, size, perms):
     lo = align_down_4k(addr)
     hi = align_up_4k(addr+size)
+
+    permstr = ''
+    permstr += 'R' if perms & UC_PROT_READ else '-'
+    permstr += 'W' if perms & UC_PROT_WRITE else '-'
+    permstr += 'X' if perms & UC_PROT_EXEC else '-'
+
     #print(f'uc.mem_map(0x{lo:X}, 0x{hi-lo:X}) -> [0x{lo:X}, 0x{hi:X})')
-    print(f'mapped [{lo:08X}, {hi:08X})')
+    print(f'mapped [{lo:08X}, {hi:08X}) {permstr}')
     uc.mem_map(lo, hi-lo, perms=perms)
 
 def get_hex_dump(data, addr=0, grouping=1, endian='little'):
