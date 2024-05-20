@@ -207,47 +207,9 @@ def read_string(uc, addr, limit=2048):
 
     return result
 
-#------------------------------------------------------------------------------
-# hooks
-#------------------------------------------------------------------------------
-
-def hook_mem_fetch_unmapped(uc, access, address, size, value, user_data):
-    pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} UNMAPPED FETCH FROM ADDRESS: 0x{address:X})')
-    uc.emu_stop()
-    return False
-
-def hook_mem_write_unmapped(uc, access, address, size, value, user_data):
-    pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}')
-    uc.emu_stop()
-    return True
-
-def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
-    pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} UNMAPPED READ: {size} bytes from 0x{address:X})')
-    uc.emu_stop()
-    return True
-
-def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
-    pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X}')
-    uc.emu_stop()
-    return True
-
-def install_default_hooks(uc):
-    # hook unmapped fetches
-    uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, hook_mem_fetch_unmapped)
-    # hook unmapped writes
-    uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_write_unmapped)
-    # hook unmapped reads
-    uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped)
-    # hook execute from nx memory
-    uc.hook_add(UC_HOOK_MEM_FETCH_PROT, hook_mem_fetch_prot)
-
-#------------------------------------------------------------------------------
-# REPL helpers
-#------------------------------------------------------------------------------
+#----------------------------------------------------------------------
+# repl helpers
+#----------------------------------------------------------------------
 
 # track context
 regs_old = [-1]*len(reg_name_to_uc_id)
@@ -286,6 +248,10 @@ def show_context(uc):
         print(f'{i.address:08X}: {i.bytes.hex()} {i.mnemonic} {i.op_str}')
         break
 
+# if count == 0:
+#     execute any count, until stop address
+# else
+#     execute count instructions, ignore stop address
 def step(uc, count=1, stop_addr=0x100000000):
     thumb = bool(uc.reg_read(UC_ARM_REG_CPSR) & 0x20)
     pointer = uc.reg_read(UC_ARM_REG_PC)
@@ -294,8 +260,72 @@ def step(uc, count=1, stop_addr=0x100000000):
     #print('starting emulation at pointer: 0x%08X' % pointer)
     uc.emu_start(pointer, stop_addr, timeout=0, count=count)
 
+#------------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------------
+
+def hook_mem_fetch_unmapped(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED FETCH FROM ADDRESS: 0x{address:X})')
+    uc.emu_stop()
+    return False
+
+def hook_mem_write_unmapped(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}')
+    uc.emu_stop()
+    return True
+
+def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} UNMAPPED READ: {size} bytes from 0x{address:X})')
+    uc.emu_stop()
+    return True
+
+def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X}')
+    uc.emu_stop()
+    return True
+
+def install_default_hooks(uc):
+    # hook unmapped fetches
+    uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, hook_mem_fetch_unmapped)
+    # hook unmapped writes
+    uc.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_write_unmapped)
+    # hook unmapped reads
+    uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped)
+    # hook execute from nx memory
+    uc.hook_add(UC_HOOK_MEM_FETCH_PROT, hook_mem_fetch_prot)
+
+def hook_code_breakpoint(uc, address, size, user_data):
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    #print(f'{pc:08X} BREAKPOINT! {user_data}')
+    print(f'{pc:08X} BREAKPOINT!')
+    uc.emu_stop()
+    return True
+
+#------------------------------------------------------------------------------
+#
+#------------------------------------------------------------------------------
+
+def bp_add_helper(uc, target_address, breakpoint_addresses):
+    uc.hook_add(UC_HOOK_CODE, hook_code_breakpoint, begin=target_address, end=target_address)
+    breakpoint_addresses.add(target_address)
+
+def bp_del_helper(uc, target_address, breakpoint_addresses):
+    uc.hook_del(target_address)
+    breakpoint_addresses.remove(target_address)
+
 def repl(uc):
+    pending_code = []
+    # addresses where breakpoints are set
+    bp_addrs = set()
+
     while 1:
+        for code in pending_code:
+            code()
+
         do_show_context = False
 
         pc = uc.reg_read(UC_ARM_REG_PC)
@@ -320,12 +350,23 @@ def repl(uc):
 
             # basic execution
             if m := re.match(r'go?(\d+)', cmd): # go
+                # carefully step over breakpoint
+                if pc in bp_addrs:
+                    bp_del_helper(uc, pc, bp_addrs)
+                    step(uc, count=1)
+                    bp_add_helper(uc, pc)
+
                 stop_addr = int(m.group(1), 16)
                 print(colored(f'emulating until 0x{stop_addr:X}', 'yellow'))
                 step(uc, count=0, stop_addr=stop_addr)
                 do_show_context = True
 
             elif cmd == 't': # step into
+                if pc in bp_addrs:
+                    print('deleting!')
+                    bp_del_helper(uc, pc, bp_addrs)
+                    #pending_code.append(lambda: bp_add_helper(uc, pc, bp_addrs))
+
                 step(uc)
                 do_show_context = True
 
@@ -339,6 +380,27 @@ def repl(uc):
             elif cmd == 'mode thumb':
                 set_thumb(uc)
                 do_show_context = True
+
+            # breakpoint commands
+            elif m := re.match(r'bp (.*)$', cmd):
+                addr = int(m.group(1), 16)
+                if addr in bp_addrs:
+                    print(f'breakpoint already at 0x{addr:X}')
+                else:
+                    uc.hook_add(UC_HOOK_CODE, hook_code_breakpoint, begin=addr, end=addr, user_data="test user data")
+                    bp_addrs.add(addr)
+
+            elif m := re.match(r'bc (.*)$', cmd):
+                addr = int(m.group(1), 16)
+                if addr in bp_addrs:
+                    uc.hook_del(addr)
+                    bp_addrs.remove(addr)
+                else:
+                    print('breakpoint at 0x{addr:X} not found')
+
+            elif cmd == 'bl':
+                for addr in bp_addrs:
+                    print(f'breakpoint at 0x{addr:X}')
 
             # assemble, step, example:
             # mov r0, 0xDEAD
