@@ -32,43 +32,36 @@ def alloc_stack(uc, length):
 def data2hex(data):
     return ' '.join(f'{x:02X}' for x in data)
 
-# https://gist.github.com/mzpqnxow/a368c6cd9fae97b87ef25f475112c84c
-def hexdump(src, addr=0, length=16, sep='.'):
-    FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
-    lines = []
-    for c in range(0, len(src), length):
-        chars = src[c: c + length]
-        hex_ = ' '.join(['{:02x}'.format(x) for x in chars])
-        if len(hex_) > 24:
-            hex_ = '{}{}'.format(hex_[:24], hex_[24:])
-        printable = ''.join(['{}'.format((x <= 127 and FILTER[x]) or sep) for x in chars])
-        lines.append('{0:08x}: {1:{2}s} {3:{4}s}'.format(addr+c, hex_, length * 3, printable, length))
-    return '\n'.join(lines)
+#------------------------------------------------------------------------------
+# TRACKING
+#------------------------------------------------------------------------------
+regions_rw = set()
+regions_rwx = set()
 
 #------------------------------------------------------------------------------
 # VM setup
 #------------------------------------------------------------------------------
 
-def map_mem_helper(uc, addr, size, perms=UC_PROT_READ|UC_PROT_WRITE|UC_PROT_ALL):
-    global regions
-    if regions.overlaps(addr):
-        return
+def map_mem_helper(uc, addr, size, perms=None):
+    global regions_rw
+    global regions_rwx
+
+    if perms is None:
+        perms = UC_PROT_READ|UC_PROT_WRITE
 
     lo = align_down_4k(addr)
     hi = align_up_4k(addr+size)
 
+    if perms == UC_PROT_READ|UC_PROT_WRITE:
+        regions_rw.add((lo, hi))
+    elif perms == UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC:
+        regions_rwx.add((lo, hi))
+    else:
+        pass
+
     print(f'uc.mem_map(0x{lo:X}, 0x{hi-lo:X}) -> [0x{lo:X}, 0x{hi:X})')
     # make it not executable, to capture when jump occurs
-    uc.mem_map(lo, hi-lo, perms=perms)
-
-    # update regions
-    regions[lo:hi] = True
-    regions.merge_overlaps(strict=False)
-
-    # print regions
-    print('current regions: ')
-    for region in sorted(regions, key=lambda r: r.begin):
-        print(f'[{region.begin:08X}, {region.end:08X})')
+    uc.mem_map(lo, hi-lo, perms)
 
 def hook_mem_fetch_unmapped(uc, access, address, size, value, user_data):
     pc = uc.reg_read(UC_ARM_REG_PC)
@@ -76,10 +69,9 @@ def hook_mem_fetch_unmapped(uc, access, address, size, value, user_data):
     return False
 
 def hook_mem_write_unmapped(uc, access, address, size, value, user_data):
-
     pc = uc.reg_read(UC_ARM_REG_PC)
-    extra = f' ("{chr(value)}")' if size==1 else ''
-    print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}{extra}')
+    #extra = f' ("{chr(value)}")' if size==1 else ''
+    #print(f'{pc:08X} UNMAPPED WRITE: {size} bytes {hex(value)} to 0x{address:X}{extra}')
     map_mem_helper(uc, address, 1)
     return True
 
@@ -90,25 +82,28 @@ def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
     return True
 
 def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
-    pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X}')
+    global regions_rw, regions_rwx
 
-    if 0:
-        uc.emu_stop()
-    else:
-        map_mem_helper(uc, address, 1, UC_PROT_ALL)
+    pc = uc.reg_read(UC_ARM_REG_PC)
+    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X} Z')
+
+    # flip all regions
+    for lo,hi in regions_rw:
+        print('C')
+        uc.mem_protect(lo, hi-lo, UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
+    for lo,hi in regions_rwx:
+        print('D')
+        uc.mem_protect(lo, hi-lo, UC_PROT_READ|UC_PROT_WRITE)
+
+    print('E')
+    regions_rw, regions_rwx = regions_rwx, regions_rw
+
+    breakpoint()
         
     return True
 
 def setup_machine():
-    STACK_MEM_START = 0xC0000000
-    STACK_MEM_LENGTH = 16 * 1024 * 1024 # 16mb
-
     uc = Uc(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_LITTLE_ENDIAN)
-
-    # set up stack
-    #uc.mem_map(STACK_MEM_START, STACK_MEM_START+STACK_MEM_LENGTH)
-    #uc.reg_write(UC_ARM_REG_SP, STACK_MEM_START + STACK_MEM_LENGTH)
 
     # hook unmapped fetches
     uc.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, hook_mem_fetch_unmapped)
@@ -137,7 +132,7 @@ if __name__ == '__main__':
     print(f'     size == 0x{size:X}')
 
     uc = setup_machine()
-    map_mem_helper(uc, load, size, UC_PROT_ALL)
+    map_mem_helper(uc, load, size, UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
 
     # write uImage (discluding header)
     uc.mem_write(load, blob[64:64+size])
@@ -151,14 +146,3 @@ if __name__ == '__main__':
     print(f'starting emulation @0x{load:X}')
     uc.emu_start(load, 0)
 
-    # dump any regions that are not the original region
-    regions.merge_overlaps(strict=False)
-
-    for region in regions:
-        if region.begin <= load < region.end:
-            pass
-        length = region.end - region.begin
-        fname = f'{region.begin:08X}.bin'
-        print(f'dumping 0x{length} ({length}) bytes to {fname}')
-        with open(fname, 'wb') as fp:
-            fp.write(uc.mem_read(region.begin, length))
