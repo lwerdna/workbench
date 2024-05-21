@@ -24,57 +24,40 @@ def align_up_4k(addr):
 def align_4k(addr):
     return (align_down_4k(addr), align_up_4k(addr+1))
 
-def alloc_stack(uc, length):
-    sp = uc.reg_read(UC_ARM_REG_SP)
-    uc.reg_write(UC_ARM_REG_SP, sp-length)
-    return sp-length
-
-def data2hex(data):
-    return ' '.join(f'{x:02X}' for x in data)
-
 #------------------------------------------------------------------------------
 # TRACKING
 #------------------------------------------------------------------------------
-regions = set()
-regions_x = set()
-candidate = set()
 
-def enveloping(addr):
-    global regions
+def extent(uc, addr):
+    regions = list(uc.mem_regions())
+    regions = [(a, b+1, c) for (a, b, c) in regions] # convert [a,b] -> [a,b)
+    regions = sorted(regions, key=lambda r: r[0])
 
-    # sort regions by start address
-    tmp = sorted(regions, key=lambda reg: reg[0])
-
-    # find region
-    for i, (lo, hi) in enumerate(tmp):
+    for i, (lo, hi, prot) in enumerate(regions):
         if lo <= addr < hi:
             break
     else:
-        raise Exception()
+        assert False, f'seeking extent of address 0x{addr:X} that isnt mapped'
 
-    # find how long it continues
-    lo, hi = tmp[i]
-    for (a, b) in tmp[i+1:]:
-        if a == hi:
+    for (a, b, p) in regions[i+1:]:
+        if a == hi and prot == p:
             hi = b
         else:
             break
 
-    return (lo, hi)
+    return lo, hi
 
 #------------------------------------------------------------------------------
 # VM setup
 #------------------------------------------------------------------------------
 
 def map_mem_helper(uc, addr, size, perms=None):
-    global regions
 
     if perms is None:
         perms = UC_PROT_READ|UC_PROT_WRITE
 
     lo = align_down_4k(addr)
     hi = align_up_4k(addr+size)
-    regions.add((lo, hi))
 
     permstr = ''
     permstr += 'R' if perms & UC_PROT_READ else '-'
@@ -98,34 +81,65 @@ def hook_mem_write_unmapped(uc, access, address, size, value, user_data):
 
 def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
     pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} UNMAPPED READ: {size} bytes from 0x{address:X})')
+    print(f'{pc:08X} UNMAPPED READ: {size} bytes from 0x{address:X}')
     map_mem_helper(uc, address, 1)
     return True
 
 def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
-    global regions
-
     pc = uc.reg_read(UC_ARM_REG_PC)
     print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X}')
 
-    lo, hi = enveloping(address)
-    print(f'enveloping addresses [{lo:08X},{hi:08X})')
+    #print(f'protecting [{lo:08X}, {hi:08X})')
+    #uc.mem_protect(lo, hi-lo-0x1000, perms=UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
 
-    print(f'protecting [{lo:08X}, {hi:08X})')
-    uc.mem_protect(lo, hi-lo-0x1000, perms=UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
+    #breakpoint()
+    regions = list(uc.mem_regions())
+    regions = [(a, b+1, c) for (a, b, c) in regions] # convert [a,b] -> [a,b)
+    regions = sorted(regions, key=lambda r: r[0])
 
-    # unmap every address
-    regions_new = set()
-    for a, b in sorted(regions, key=lambda reg: reg[0]):
-        if lo <= a <= hi:
-            #print(f'protecting [{a:08X}, {b:08X})')
-            #uc.mem_protect(a, b-a, perms=UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
-            regions_new.add((a, b))
+    # get the extent of this region
+    for i, (lo, hi, prot) in enumerate(regions):
+        if lo <= address < hi:
+            break
+    else:
+        assert False, f'seeking extent of address 0x{address:X} that isnt mapped'
+
+    for (a, b, p) in regions[i+1:]:
+        if a == hi and prot == p:
+            hi = b
         else:
-            print(f'unmapping [{a:08X}, {b:08X})')
-            uc.mem_unmap(a, b-a)
+            break
 
-    regions = regions_new
+    print(f'extent: [{lo:08X}, {hi:08X})')
+
+    # does the remainder of the current page exist in the first page of the largest region?
+    # (is it likely we're a relocated version of the zImage?)
+    largest = regions[0]
+    for region in regions:
+        if region[1]-region[0] > largest[1]-largest[0]:
+            largest = region
+
+    remainder = uc.mem_read(address, align_up_4k(address+1) - address)
+    if not (largest[0] <= address < largest[1]) and uc.mem_read(largest[0], 0x1000).find(remainder) != -1:
+        print('detected relocated kernel')
+
+        print('flipping protections')
+        for a, b, prot in uc.mem_regions():
+            # +X the region we jumped to
+            if lo <= a < hi:
+                uc.mem_protect(a, b-a+1, UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
+            # -X other regions
+            else:
+                uc.mem_protect(a, b-a+1, UC_PROT_READ|UC_PROT_WRITE)
+
+        print('continuing')
+    else:
+        blob = uc.mem_read(lo, hi-lo)
+        fpath = 'dump.bin'
+        print(f'writing 0x{len(blob):X} ({len(blob)}) bytes to {fpath}')
+        with open(fpath, 'wb') as fp:
+            fp.write(blob)
+        uc.emu_stop()
     return True
 
 def setup_machine():
