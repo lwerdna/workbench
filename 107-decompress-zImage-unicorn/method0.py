@@ -35,32 +35,53 @@ def data2hex(data):
 #------------------------------------------------------------------------------
 # TRACKING
 #------------------------------------------------------------------------------
-regions_rw = set()
-regions_rwx = set()
+regions = set()
+regions_x = set()
+candidate = set()
+
+def enveloping(addr):
+    global regions
+
+    # sort regions by start address
+    tmp = sorted(regions, key=lambda reg: reg[0])
+
+    # find region
+    for i, (lo, hi) in enumerate(tmp):
+        if lo <= addr < hi:
+            break
+    else:
+        raise Exception()
+
+    # find how long it continues
+    lo, hi = tmp[i]
+    for (a, b) in tmp[i+1:]:
+        if a == hi:
+            hi = b
+        else:
+            break
+
+    return (lo, hi)
 
 #------------------------------------------------------------------------------
 # VM setup
 #------------------------------------------------------------------------------
 
 def map_mem_helper(uc, addr, size, perms=None):
-    global regions_rw
-    global regions_rwx
+    global regions
 
     if perms is None:
         perms = UC_PROT_READ|UC_PROT_WRITE
 
     lo = align_down_4k(addr)
     hi = align_up_4k(addr+size)
+    regions.add((lo, hi))
 
-    if perms == UC_PROT_READ|UC_PROT_WRITE:
-        regions_rw.add((lo, hi))
-    elif perms == UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC:
-        regions_rwx.add((lo, hi))
-    else:
-        pass
+    permstr = ''
+    permstr += 'R' if perms & UC_PROT_READ else '-'
+    permstr += 'W' if perms & UC_PROT_WRITE else '-'
+    permstr += 'X' if perms & UC_PROT_EXEC else '-'
 
-    print(f'uc.mem_map(0x{lo:X}, 0x{hi-lo:X}) -> [0x{lo:X}, 0x{hi:X})')
-    # make it not executable, to capture when jump occurs
+    print(f'map [0x{lo:X}, 0x{hi:X}) {permstr}')
     uc.mem_map(lo, hi-lo, perms)
 
 def hook_mem_fetch_unmapped(uc, access, address, size, value, user_data):
@@ -82,24 +103,29 @@ def hook_mem_read_unmapped(uc, access, address, size, value, user_data):
     return True
 
 def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
-    global regions_rw, regions_rwx
+    global regions
 
     pc = uc.reg_read(UC_ARM_REG_PC)
-    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X} Z')
+    print(f'{pc:08X} EXEC FROM NX MEM AT 0x{address:X}')
 
-    # flip all regions
-    for lo,hi in regions_rw:
-        print('C')
-        uc.mem_protect(lo, hi-lo, UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
-    for lo,hi in regions_rwx:
-        print('D')
-        uc.mem_protect(lo, hi-lo, UC_PROT_READ|UC_PROT_WRITE)
+    lo, hi = enveloping(address)
+    print(f'enveloping addresses [{lo:08X},{hi:08X})')
 
-    print('E')
-    regions_rw, regions_rwx = regions_rwx, regions_rw
+    print(f'protecting [{lo:08X}, {hi:08X})')
+    uc.mem_protect(lo, hi-lo-0x1000, perms=UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
 
-    breakpoint()
-        
+    # unmap every address
+    regions_new = set()
+    for a, b in sorted(regions, key=lambda reg: reg[0]):
+        if lo <= a <= hi:
+            #print(f'protecting [{a:08X}, {b:08X})')
+            #uc.mem_protect(a, b-a, perms=UC_PROT_READ|UC_PROT_WRITE|UC_PROT_EXEC)
+            regions_new.add((a, b))
+        else:
+            print(f'unmapping [{a:08X}, {b:08X})')
+            uc.mem_unmap(a, b-a)
+
+    regions = regions_new
     return True
 
 def setup_machine():
@@ -137,12 +163,12 @@ if __name__ == '__main__':
     # write uImage (discluding header)
     uc.mem_write(load, blob[64:64+size])
 
-    # 
+    #
     uc.reg_write(UC_ARM_REG_R0, 0)
     uc.reg_write(UC_ARM_REG_R1, 0x0) # machine type number
     uc.reg_write(UC_ARM_REG_R2, 0x0) # atags or device tree
     uc.reg_write(UC_ARM_REG_PC, ep)
-   
+
     print(f'starting emulation @0x{load:X}')
     uc.emu_start(load, 0)
 
