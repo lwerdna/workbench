@@ -2,14 +2,11 @@
 
 import re
 import sys
+import time
 import struct
-
-from intervaltree import IntervalTree
 
 from unicorn import *
 from unicorn.arm_const import *
-
-regions = IntervalTree()
 
 #------------------------------------------------------------------------------
 # VM setup
@@ -33,6 +30,7 @@ def extent(uc, addr):
     regions = [(a, b+1, c) for (a, b, c) in regions] # convert [a,b] -> [a,b)
     regions = sorted(regions, key=lambda r: r[0])
 
+    # search for region that contains addr
     for i, (lo, hi, prot) in enumerate(regions):
         if lo <= addr < hi:
             break
@@ -45,6 +43,13 @@ def extent(uc, addr):
         else:
             break
 
+    for (a, b, p) in reversed(regions[0:i]):
+        if b == lo and prot == p:
+            lo = a
+        else:
+            break
+
+    print(f'0x{addr:X} was contained in [0x{lo:X}, 0x{hi:X}')
     return lo, hi
 
 #------------------------------------------------------------------------------
@@ -98,18 +103,7 @@ def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
     regions = sorted(regions, key=lambda r: r[0])
 
     # get the extent of this region
-    for i, (lo, hi, prot) in enumerate(regions):
-        if lo <= address < hi:
-            break
-    else:
-        assert False, f'seeking extent of address 0x{address:X} that isnt mapped'
-
-    for (a, b, p) in regions[i+1:]:
-        if a == hi and prot == p:
-            hi = b
-        else:
-            break
-
+    lo, hi = extent(uc, address)
     print(f'extent: [{lo:08X}, {hi:08X})')
 
     # does the remainder of the current page exist in the first page of the largest region?
@@ -139,7 +133,10 @@ def hook_mem_fetch_prot(uc, access, address, size, value, user_data):
         print(f'writing 0x{len(blob):X} ({len(blob)}) bytes to {fpath}')
         with open(fpath, 'wb') as fp:
             fp.write(blob)
+        print('stopping emulation')
         uc.emu_stop()
+        print('STOPPED')
+
     return True
 
 def setup_machine():
@@ -162,11 +159,15 @@ if __name__ == '__main__':
 
     # read uboot header
     # https://github.com/u-boot/u-boot/blob/master/include/image.h
-    magic, _, _, size, load, ep, _, os, arch, type_, _ = struct.unpack_from('>IIIIIIIBBBB', blob)
+    magic, _, _, size, load, ep, _, os, arch, type_, compression = struct.unpack_from('>IIIIIIIBBBB', blob)
     assert magic == 0x27051956
     assert os == 5 # IH_OS_LINUX
     assert arch == 2 # IH_ARCH_ARM
     assert type_ == 2 # IH_TYPE_KERNEL
+
+    #if compression == 0:
+    #    print('no compression! emulation not required!')
+    #    sys.exit(0)
 
     print(f'len(blob) == 0x{len(blob):X}')
     print(f'     size == 0x{size:X}')

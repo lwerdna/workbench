@@ -12,6 +12,25 @@ $ xxd -l 0x70 -g 1 /path/to/uImage
 
 Which is 8x "mov r0, r0" then "b 0x10" then 0x016f2818 magic number.
 
+40008000                 NOP
+40008004                 NOP
+40008008                 NOP
+4000800C                 NOP
+40008010                 NOP
+40008014                 NOP
+40008018                 NOP
+4000801C                 NOP
+40008020                 B               loc_40008030
+40008020 ; ---------------------------------------------------------------------------
+40008024                 DCD 0x16F2818 @ Magic numbers to help the loader
+40008028                 DCD 0         @ absolute load/run zImage address
+4000802C                 DCD 0x9FFAB0  @ zImage end address
+40008030 ; ---------------------------------------------------------------------------
+40008030
+40008030 loc_40008030
+40008030                 MRS             R9, CPSR
+...
+
 1. nops, jump over magic
 2. determine final kernel image address
   if CONFIG_AUT_ZRELADDR: address is PC with top 5 bits preserved + TEXT_OFFSET
