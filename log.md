@@ -1,3 +1,41 @@
+# 2024-05-29
+
+dup2() and friends are about as hard to remember as the source and destination of `ln -s`.
+To reinforce, dup2(A, B) closes _the file described by B_, then makes B describe _the file described by A_.
+
+At process start, we have three descriptors, but only one open file:
+
+                     +-------------+
+[0] ---------------> |             |
+[1] ---------------> | /dev/pts/13 |
+[2] ---------------> |             |
+                     +-------------+
+
+If we add a descriptor, with a socket() or an open() call, we might get:
+
+                     +-------------+
+[0] ---------------> |             |
+[1] ---------------> | /dev/pts/13 |
+[2] ---------------> |             |
+                     +-------------+
+                     +-------------+
+[3] ---------------> | myfile.txt  |
+                     +-------------+
+
+Now dup(3, 0) would close the file described by 0 (/dev/pts/13) and make 0 describe the file described by 3 (myfile.txt).
+But since 1 and 2 described the same file as 0, they too will also describe myfile.txt:
+
+                     +-------------+
+[0] ---------------> |             |
+[1] ---------------> | myfile.txt  |
+[2] ---------------> |             |
+[3] ---------------> |             |
+                     +-------------+
+
+See test-fds2.c in project 105 for experiment.
+
+This is important in listening shells, where 0,1,2 are made to describe the socket before an execve() call.
+
 # 2024-05-20
 
 Project 106: It appears unicorn stops at the first or second instruction of the last JIT'd block upon unmapped memory write.
