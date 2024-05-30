@@ -1,3 +1,7 @@
+# 2024-05-30
+
+Project 108: simple and predictable remote listening shell, with loose future plans to make an optimized, dependency-free version with manual syscalls
+
 # 2024-05-29
 
 Project 109: clear up some personal confusion about dup2()

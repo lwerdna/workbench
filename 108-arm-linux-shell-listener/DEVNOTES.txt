@@ -1,6 +1,3 @@
-
-
-
 `man 2 syscall` actually contains nice tables of linux syscall conventions on all platforms
   `man man` for reminder of what the sections numbers are
 ARM uses SWI #0
@@ -17,6 +14,7 @@ sa_family_t is surprisingly hard to find definition in header file
 compile example program and use gdb:
   $ arm-linux-gnueabi-gcc -g ./test.c -o test
   $ gdb-multiarch ./test
+    (gdb) ptype sa_family_t
     (gdb) ptype struct sockaddr
     (gdb) print sizeof(struct sockaddr)
     etc.
@@ -33,7 +31,5 @@ AF_INET is 2
 
 INADDR_ANY is 0x0000000 or IP 0.0.0.0 (all interfaces)
 
-addr.sin_port = 31337;        // very difficult to debug mistake!
-addr.sin_port = htons(31337);
-
-
+addr.sin_port = 31337;        // WRONG! and difficult to debug
+addr.sin_port = htons(31337); // RIGHT!

