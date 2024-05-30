@@ -1,0 +1,39 @@
+
+
+
+`man 2 syscall` actually contains nice tables of linux syscall conventions on all platforms
+  `man man` for reminder of what the sections numbers are
+ARM uses SWI #0
+  r7 has syscall number
+  r0,r1,...,r6 are arguments
+  SWI vs. SVC:
+    SWI (sofware interrupt) is old mnemonic
+    SVC (supervisor call) is new mnemonic
+    same encoding! "swi #0" and "svc #0" encode to EF000000
+  find syscall numbers in kernel source arch/arm/include/uapi/asm/unistd.h
+    __NR_exit, __NR_socket, etc.
+
+sa_family_t is surprisingly hard to find definition in header file
+compile example program and use gdb:
+  $ arm-linux-gnueabi-gcc -g ./test.c -o test
+  $ gdb-multiarch ./test
+    (gdb) ptype struct sockaddr
+    (gdb) print sizeof(struct sockaddr)
+    etc.
+  struct sockaddr is the general socket address, consisting of 16 bytes:
+    00 00                                        // family
+    00 00 00 00 00 00 00 00 00 00 00 00 00 00    // data
+  struct sockaddr_in is the special case for internet address:
+    00 00                                        // family
+    00 00                                        // sin_port
+    00 00 00 00                                  // sin_addr
+    00 00 00 00 00 00 00 00                      // sin_zero
+
+AF_INET is 2
+
+INADDR_ANY is 0x0000000 or IP 0.0.0.0 (all interfaces)
+
+addr.sin_port = 31337;        // very difficult to debug mistake!
+addr.sin_port = htons(31337);
+
+
