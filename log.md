@@ -1,3 +1,24 @@
+# 2024-05-31
+
+What order do the registers appear on the stack after push {r4-r11,lr}?
+Project 000 unicorn repls makes it easy:
+$ ./repl_a32_blank.py 
+> r4=4
+> r4=5
+> r11=0xB
+> lr=0xDEADBEEF
+> push {r4-r11,lr}
+> dds ffffffdc
+FFFFFFDC: 0x00000004
+FFFFFFE0: 0x00000005
+FFFFFFE4: 0x00000000
+FFFFFFE8: 0x00000000
+FFFFFFEC: 0x00000000
+FFFFFFF0: 0x00000000
+FFFFFFF4: 0x00000000
+FFFFFFF8: 0x0000000B
+FFFFFFFC: 0xDEADBEEF
+
 # 2024-05-30
 
 Project 108: simple and predictable remote listening shell, with loose future plans to make an optimized, dependency-free version with manual syscalls

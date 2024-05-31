@@ -28,6 +28,24 @@ def map_needed_pages(uc, addr, size, perms):
     print(f'mapped [{lo:08X}, {hi:08X}) {permstr}')
     uc.mem_map(lo, hi-lo, perms=perms)
 
+def find_mem_region(uc, address):
+    # NB: unicorn regions are INCLUSIVE [a,b]
+    for lo, hi, prot in uc.mem_regions():
+        if lo <= address <= hi:
+            # but I like NON-INCLUSIVE [a,b)
+            return lo, hi+1, prot
+
+def clamp_address_length(uc, address, length):
+    region = find_mem_region(uc, address)
+    if region is None:
+        return None
+    lo, hi, prot = region
+
+    if address + length > hi:
+        length = hi - address
+
+    return address, length
+
 def get_hex_dump(data, addr=0, grouping=1, endian='little'):
 	result = ''
 	while(data):
@@ -79,6 +97,7 @@ def general_mem_read_commands(uc, cmd):
     if m := re.match(r'db ([^L ]+)( L.*)?', cmd):
         addr = int(m.group(1), 16)
         length = 1*int(m.group(2)[2:], 16) if m.group(2) else 64
+        addr, length = clamp_address_length(uc, addr, length)
         data = uc.mem_read(addr, length)
         print(get_hex_dump(data, addr, grouping=1))
         return True
@@ -86,6 +105,7 @@ def general_mem_read_commands(uc, cmd):
     if m := re.match(r'dw ([^L ]+)( L.*)?', cmd):
         addr = int(m.group(1), 16)
         length = 2*int(m.group(2)[2:], 16) if m.group(2) else 64
+        addr, length = clamp_address_length(uc, addr, length)
         data = uc.mem_read(addr, length)
         print(get_hex_dump(data, addr, grouping=2))
         return True
@@ -93,13 +113,25 @@ def general_mem_read_commands(uc, cmd):
     if m := re.match(r'dd ([^L ]+)( L.*)?', cmd):
         addr = int(m.group(1), 16)
         length = 4*int(m.group(2)[2:], 16) if m.group(2) else 64
+        addr, length = clamp_address_length(uc, addr, length)
         data = uc.mem_read(addr, length)
         print(get_hex_dump(data, addr, grouping=4))
+        return True
+
+    if m := re.match(r'dds ([^L ]+)( L.*)?', cmd):
+        addr = int(m.group(1), 16)
+        length = 4*int(m.group(2)[2:], 16) if m.group(2) else 64
+        addr, length = clamp_address_length(uc, addr, length)
+        data = uc.mem_read(addr, length)
+        for value in struct.iter_unpack('<I', data):
+            print(f'{addr:08X}: 0x{value[0]:08X}')
+            addr += 4
         return True
 
     if m := re.match(r'dq ([^L ]+)( L.*)?', cmd):
         addr = int(m.group(1), 16)
         length = 8*int(m.group(2)[2:], 16) if m.group(2) else 64
+        addr, length = clamp_address_length(uc, addr, length)
         data = uc.mem_read(addr, length)
         print(get_hex_dump(data, addr, grouping=8))
         return True
@@ -112,7 +144,7 @@ def general_mem_write_commands(uc, cmd):
         addr = int(addr, 16)
         data = parse_bytes_permissive(bytestr)
         print('writing:', colored(data.hex(), 'green'))
-        emulator.mem_write(addr, data)
+        uc.mem_write(addr, data)
         return True
 
 def general_register_commands(uc, cmd, lookup):
@@ -120,7 +152,7 @@ def general_register_commands(uc, cmd, lookup):
     # r pc = 0x10
     if m := re.match(r'(?:regset|r) ([^ ]+)\s*=\s*(.*)', cmd):
         rname, rval = m.group(1, 2)
-        emulator.reg_write(lookup[rname], int(rval, 16))
+        uc.reg_write(lookup[rname], int(rval, 16))
         return True
 
     # reg write, example:
@@ -128,7 +160,7 @@ def general_register_commands(uc, cmd, lookup):
     if m := re.match(r'([^\s]+)\s*=\s*(.+)', cmd):
         rname, rval = m.group(1, 2)
         if rname in lookup:
-            emulator.reg_write(lookup[rname], int(rval, 16))
+            uc.reg_write(lookup[rname], int(rval, 16))
             return True
         else:
             print('ERROR: unknown register %s' % rname)
