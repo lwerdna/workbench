@@ -84,22 +84,6 @@ void dump_bytes(uint8_t *buf, int len, uint32_t addr)
 	}
 }
 
-void hexdump(void *c_)
-{
-	unsigned char *c = c_;
-	int i,j;
-	char ascii[18];
-	ascii[16] = '\n';
-	ascii[17] = '\0';
-	for(i=0; i<8; ++i, c+=16) {
-		m_printf("%p: ", c + i*16);
-		for(j=0; j<16; ++j) {
-			m_printf("%02X ", c[j]);
-			ascii[j] = (c[j]>=' ' && c[j]<='~') ? c[j] : '.';
-		}
-		m_printf(ascii);
-	}
-}
 
 void printBits(uint32_t foo, int width)
 {
@@ -111,6 +95,22 @@ void printBits(uint32_t foo, int width)
 	printf("%s", buf+(32-i));
 }
 
+void hexdump(uint8_t *data, size_t size, uintptr_t addr) 
+{
+	char ascii[17];
+	for (int i = 0; i < size; ++i) {
+		if (i % 16 == 0)
+			printf("%" PRIxPTR ": ", addr+i); // print address
+		printf("%02X ", ((unsigned char*)data)[i]); // print byte
+		ascii[i % 16] = (data[i]>=' ' && data[i]<='~') ? (char)data[i] : '.'; // fill ascii
+		if (i==size-1 || (i+1) % 16 == 0) {
+			for (int j=15-(i%16); j>0; --j) // advance to ascii
+				printf("   ");
+			ascii[i%16 + 1] = '\0';
+			printf(" %s\n", ascii); // print ascii
+		}
+	}
+}
 
 #include <time.h> /* clock(), CLOCKS_PER_SEC */
 void time_using_process_clock()
