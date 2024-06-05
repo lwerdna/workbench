@@ -38,5 +38,5 @@ def parse(fpath):
 		print()
 
 for i in range(1, 146+1):
-	#print('// parsing %d.html' % i)
+	print('// parsing %d.html' % i)
 	parse('./html/%d.html' % i)
