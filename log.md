@@ -1,3 +1,15 @@
+# 2024-06-06
+
+There are a number of ways to programmatically break an attached GDB on ARM, including at least:
+
+__asm__ volatile("bkpt");
+PROS: breaks right in the instruction stream
+CONS: some targets (my qemu) won't let me advance $pc over the instruction (`set $pc = $pc+4` does nothing)
+
+raise(SIGTRAP);
+PROS: can continue easily from trapped location
+CONS: execution is somewhere (signal handler stuff?) so you can't reap useful values around the stopping point, like the returns from functions
+
 # 2024-06-04
 
 Project 110: use PTRACE to attach to a process, change value, then detach.
