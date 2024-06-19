@@ -1,3 +1,29 @@
+# 2024-06-19
+
+I didn't know there were no load multiple (ldm), store multiple (stm), push, or pop instructions in A64.
+
+This is a handy template for experimenting with instruction encodings:
+
+```python
+import os
+from struct import pack, unpack
+
+def disasm(instr):
+    instr, = unpack('<I', pack('>I', instr))
+    cmd = 'cstool arm64 ' + hex(instr)[2:]
+    os.system(cmd)
+
+# LDP <Xt1>, <Xt2> [Xn], #<imm>
+instr = 0
+instr |= 0b10 << 30 # opc
+instr |= 0b10100011 << 22
+instr |= 2 << 15 # imm7 = imm/8 = 16/8 = 2
+instr |= 31 << 10 # Rt2
+instr |= 31 << 5 # Rn
+instr |= 0 << 0 # Rt
+disasm(instr)
+```
+
 # 2024-06-17
 
 Beware readlink(), which does not null-terminate strings. In my case, there happened to be a 0x02

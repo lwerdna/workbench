@@ -1634,6 +1634,102 @@ uintptr_t get_executing_address(pid_t pid)
 	#endif
 }
 
+char *signal_to_name(int sig)
+{
+	switch(sig) {
+		case SIGHUP: return "SIGHUP";
+		case SIGINT: return "SIGINT";
+		case SIGQUIT: return "SIGQUIT";
+		case SIGILL: return "SIGILL";
+		case SIGTRAP: return "SIGTRAP";
+		case SIGABRT: return "SIGABRT";
+		//case SIGIOT: return "SIGIOT";
+		case SIGBUS: return "SIGBUS";
+		case SIGFPE: return "SIGFPE";
+		case SIGKILL: return "SIGKILL";
+		case SIGUSR1: return "SIGUSR1";
+		case SIGSEGV: return "SIGSEGV";
+		case SIGUSR2: return "SIGUSR2";
+		case SIGPIPE: return "SIGPIPE";
+		case SIGALRM: return "SIGALRM";
+		case SIGTERM: return "SIGTERM";
+		case SIGSTKFLT: return "SIGSTKFLT";
+		case SIGCHLD: return "SIGCHLD";
+		case SIGCONT: return "SIGCONT";
+		case SIGSTOP: return "SIGSTOP";
+		case SIGTSTP: return "SIGTSTP";
+		case SIGTTIN: return "SIGTTIN";
+		case SIGTTOU: return "SIGTTOU";
+		case SIGURG: return "SIGURG";
+		case SIGXCPU: return "SIGXCPU";
+		case SIGXFSZ: return "SIGXFSZ";
+		case SIGVTALRM: return "SIGVTALRM";
+		case SIGPROF: return "SIGPROF";
+		case SIGWINCH: return "SIGWINCH";
+		case SIGIO: return "SIGIO";
+		case SIGPWR: return "SIGPWR";
+		case SIGSYS: return "SIGSYS";
+		default: return "UNKNOWN";
+	}
+}
+
+// return:
+// 0 - child still running
+// 
+int wait_debuggee(pid_t pid)
+{
+	int rc, status;
+
+	printf("waiting on pid=%d\n", pid);
+	rc = waitpid(pid, &status, 0);
+	if (rc == -1) {
+		perror("waitpid()");
+		exit(1);
+	}
+
+	if (WIFEXITED(status)) {
+		printf("child exited with status %d\n", WEXITSTATUS(status));
+		return -1;
+	}
+
+	if (WIFSIGNALED(status)) {
+		printf("child terminated by signal %d (%s)\n",
+			WTERMSIG(status), signal_to_name(WTERMSIG(status)));
+		return -1;
+	}
+
+	if (WIFSTOPPED(status)) {
+		int ptrace_event = status >> 16;
+		int signal = WSTOPSIG(status);
+
+		if (ptrace_event == PTRACE_EVENT_STOP) {
+			if (signal == SIGSTOP || signal == SIGTSTP || signal == SIGTTIN || signal == SIGTTOU) {
+				printf("Tracee entered group-stop PTRACE_EVENT_STOP (signal: %d)\n", signal);
+					ptrace(PTRACE_LISTEN, pid, NULL, NULL);
+			} else {
+				printf("Tracee entered non-group-stop PTRACE_EVENT_STOP (signal: %d)\n", signal);
+				ptrace(PTRACE_SYSCALL, pid, NULL, 0);
+			}
+		}
+		else {
+			if (signal == (SIGTRAP | 0x80)) {
+				printf("Tracee entered/exited syscall\n");
+				//ptrace(PTRACE_SYSCALL, pid, NULL, 0);
+			} else {
+				printf("Tracee received signal (signal: %d (%s))\n",
+					signal, signal_to_name(signal));
+				//ptrace(PTRACE_SYSCALL, pid, NULL, signal);
+			}
+		}
+		//printf("child stopped by signal %d (%s)\n",
+		//	WSTOPSIG(status), signal_to_name(WSTOPSIG(status)));
+		return 0;
+	}
+
+	printf("waitpid(), but don't know how to interpret status 0x%X\n", status);
+	return -1;
+}
+
 int main(int ac, char *av[])
 {
 	int rc, iret;
@@ -1667,16 +1763,7 @@ int main(int ac, char *av[])
 	if (iret == 0)
 		printf("Got module name: %s\n", module_name);
 
-//	if(ac < 3) {
-//		printf("usage to read:\n");
-//		printf("	%s <pid> <address>\n", av[0]);
-//		printf("usage to write:\n");
-//		printf("	%s <pid> <address> <value>\n", av[0]);
-//		exit(1);
-//	}
-
 	pid = atoi(av[1]);
-	//addr = strtoull(av[2], NULL, 16);
 
 	printf("attaching to process pid=%d\n", pid);
 	rc = ptrace(PTRACE_ATTACH, pid, 0, 0);
@@ -1685,21 +1772,12 @@ int main(int ac, char *av[])
 		exit(1);
 	}
 
-	printf("waiting on pid=%d\n", pid);
-	rc = waitpid(pid, &status, 0);
-	if (rc == -1) {
-		perror("waitpid()");
-		exit(1);
-	}
+	wait_debuggee(pid);
 
 	while (1) {
 		/* execute until syscall */
-		ptrace(PTRACE_SYSCALL, pid, 0, 0);
-		rc = waitpid(pid, &status, 0);
-		if (rc == -1) {
-			perror("waitpid()");
-			exit(1);
-		}
+		ptrace(PTRACE_CONT, pid, 0, 0);
+		wait_debuggee(pid);
 
 		ptrace(PTRACE_GETREGS, pid, NULL, &regs);
 		printf("target stopped at 0x%" PRIxPTR "\n", regs.rip);
