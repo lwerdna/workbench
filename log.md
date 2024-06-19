@@ -1,3 +1,14 @@
+# 2024-06-17
+
+Beware readlink(), which does not null-terminate strings. In my case, there happened to be a 0x02
+after the string and then a 0x00, so it would print fine, but functions like strcmp() and strstr()
+wouldn't fail mysteriously.
+
+# 2024-06-12
+
+Compile AARCH64 binaries using apt installable packages and examine the resulting executables:
+https://github.com/lwerdna/reference_code/tree/master/hello_aarch64_linux_gnu_gcc
+
 # 2024-06-06
 
 There are a number of ways to programmatically break an attached GDB on ARM, including at least:

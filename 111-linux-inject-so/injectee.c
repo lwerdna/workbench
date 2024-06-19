@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#include <dlfcn.h>
+
 void *threadfunc(void *arg)
 {
 	int thr_id = *(int *)arg;
@@ -17,6 +19,10 @@ void *threadfunc(void *arg)
 
 int main(int ac, char **av)
 {
+	if (ac > 10) {
+		dlopen("foo.so", 0);
+	}
+
 	#define NTHREADS 8
 
 	pthread_t threads[NTHREADS];
