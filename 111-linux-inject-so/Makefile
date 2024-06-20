@@ -1,7 +1,7 @@
 all: injector injectee injected.so
 
 injector: injector.c
-	gcc -g injector.c -o injector
+	gcc -g injector.c -o injector -ldl
 
 injector-arm: injector.c
 	arm-linux-gnueabi-gcc -static injector.c -o injector-arm

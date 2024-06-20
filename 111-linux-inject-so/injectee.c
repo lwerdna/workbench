@@ -21,7 +21,7 @@ void *threadfunc(void *arg)
 int main(int ac, char **av)
 {
 	if (ac > 10) {
-		dlopen("foo.so", 0);
+		dlopen("injected.so", RTLD_NOW);
 	}
 
 	#define NTHREADS 8
@@ -34,9 +34,8 @@ int main(int ac, char **av)
 		pthread_create(&threads[i], NULL, threadfunc, &i);
 	}
 
-	printf("Waiting to trap...\n");
-	sleep(10);
-	raise(SIGTRAP);
+	//printf("Waiting to trap...\n");
+	//raise(SIGTRAP);
 
 	printf("Waiting on threads...\n");
 	for (int i=0; i<NTHREADS; ++i)
