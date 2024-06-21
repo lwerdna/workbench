@@ -1,3 +1,17 @@
+# 2024-06-21
+
+What's wrong with this logic?
+
+if mylib.so is present in /proc/<pid>/maps
+  handle = dlopen("mylib.so", ...)
+  dlclose(handle)
+
+This, from man 3 dlopen:
+
+> The dl library maintains reference counts for library handles, so a dynamic library is not deallocated until dlclose() has been called on it as many times as dlopen() has succeeded on it.
+
+So each time I retrieved a handle, I was taking one step back.
+
 # 2024-06-19
 
 I didn't know there were no load multiple (ldm), store multiple (stm), push, or pop instructions in A64.
