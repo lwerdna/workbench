@@ -21,6 +21,9 @@ digraph chess_openings {
 	open_sicilian5 [label=""];
 	open_sicilian6 [label=""];
 	open_sicilian7 [label=""];
+	french_defense2 [label=""];
+	french_defense3 [label=""];
+	unnamed0 [label=""];
 
 	initial [label="initial"]
 
@@ -38,6 +41,9 @@ digraph chess_openings {
 	kings_pawn -> caro_kann [label="c6"];
 	kings_pawn -> sicilian [label="c5"];
 	kings_pawn -> vienna_game [label="Nc3"];
+
+	french_defense -> french_defense2 [label="d4"];
+	french_defense2 -> french_defense3 [label="d5"];
 
 	caro_kann -> caro_kann2 [label="d4"];
 	caro_kann2 -> caro_kann3 [label="d5"];
@@ -66,7 +72,12 @@ digraph chess_openings {
 	queens_pawn -> old_benoni [label="c5"];
 	queens_pawn -> closed_game [label="d5"];
 	queens_pawn -> englund_gambit [label="e5"];	
-	queens_pawn -> indian_defense [label="Nf6"];	
+	queens_pawn -> indian_defense [label="Nf6"];
+	queens_pawn -> horwitz_defense [label="e6"];
+
+	horwitz_defense -> unnamed0 [label="e4"];
+
+	unnamed0 -> french_defense3 [label="d5"];
 
 	englund_gambit -> center_game [label="e4"];
 
@@ -96,6 +107,9 @@ digraph chess_openings {
 
 	closed_game -> queens_gambit [label="c4"];
 	closed_game -> london_accelerated [label="Bf4"];
+	closed_game -> blackmar_diemer_gambit [label="e4"];
+
+	blackmar_diemer_gambit -> french_defense3 [label="e6"]
 
 	queens_gambit -> queens_gambit_declined [label="e6"];
 	queens_gambit -> queens_gambit_accepted [label="dxc4"];
