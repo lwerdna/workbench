@@ -1,0 +1,46 @@
+Let's see what happens if we ping a computer.
+
+The setup is pretty simple:
+
+ +----------------+
+ | SWITCH  port 0 |---- virtual host "Alice"   192.168.123.10 AA:AA:AA:AA:AA:AA
+ |         port 1 |---- virtual host "Bob"     192.168.123.11 BA:BB:BB:BB:BB:BB
+ |         port 2 |---- virtual host "Charlie" 192.168.123.12 CC:CC:CC:CC:CC:CC
+ |         port 3 |
+ |         port 4 |
+ |         port 5 |
+ |         port 6 |
+ |         port 7 |---- tap (Host linux)       192.168.123.1
+ +----------------+
+
+Setup the TAP:
+$ sudo ip tuntap add dev tap0 mode tap
+$ sudo ip addr add 192.168.123.1/24 dev tap0
+$ sudo ip link set tap0 up
+
+Run the simulation:
+$ ./simulation0.py
+
+I get some packets into the switch from 33:33:00:00:00:16, which are flooded to the virtual hosts and ignored.
+From another terminal, ping Alice:
+$ ping 192.168.123.10
+PING 192.168.123.10 (192.168.123.10) 56(84) bytes of data.
+64 bytes from 192.168.123.10: icmp_seq=1 ttl=64 time=419 ms
+64 bytes from 192.168.123.10: icmp_seq=2 ttl=64 time=487 ms
+64 bytes from 192.168.123.10: icmp_seq=3 ttl=64 time=524 ms
+
+What happens:
+The TAP receives an ARP for 192.168.123.10 from 192.168.123.1, destination mac broadcast.
+This goes to switch port 7.
+The switch associates port 7 with the TAP MAC.
+Since broadcast, switch sends on ports 0, 1, 2 (virtual hosts Alice, Bob, Charlie)
+Bob and Charlie ignore the ARP, but Alice replies "192.168.123.10 is at AA:AA:AA:AA:AA:AA"
+This goes to switch port 0.
+The switch associates port 0 with Alice's MAC.
+Since the destination MAC is associated with port 7, it is sent there.
+The TAP returns the ARP reply to linux.
+The TAP receives an ICMP echo request to AA:AA:AA:AA:AA:AA on port 7.
+Since the destination MAC is associated with port 0, it is sent there.
+Alice receives it, and replies.
+Since the destination MAC of the reply is associated with port7, it is sent there.
+The TAP returns the ICMP reply to linux.

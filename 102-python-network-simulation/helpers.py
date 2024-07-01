@@ -4,6 +4,15 @@ import re
 import struct
 import random
 
+mac_loopback = b'\x00\x00\x00\x00\x00\x00'
+mac_bcast = b'\xFF\xFF\xFF\xFF\xFF\xFF'
+
+def mac_is_multicast(mac):
+    return mac[0] & 1 # is G(roup) of I/G bit set?
+
+def mac_is_unicast(mac):
+    return (mac[0] & 1) == 0 # is G(roup) of I/G bit clear?
+
 # https://gist.github.com/mzpqnxow/a368c6cd9fae97b87ef25f475112c84c
 def hexdump(src, addr=0, length=16, sep='.'):
     FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or sep for x in range(256)])
@@ -94,10 +103,13 @@ def calc_checksum(data):
 def calc_checksum_h(data):
     return struct.pack('!H', calc_checksum(data))
 
-def generate_host_mac():
+def generate_mac():
     result = [random.randint(0, 255) for x in range(6)]
-    result[0] |= 0x2 # setting the locally adminstered bit
+    result[0] |= 0x2 # setting the locally administered bit
     result[0] &= 0xFE # clearing the multicast bit
     result = b''.join(x.to_bytes(1, 'big') for x in result)
     return result
 
+def connect(portA, portB):
+    portA.destination = portB
+    portB.destination = portA
