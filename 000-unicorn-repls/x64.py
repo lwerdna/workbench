@@ -135,7 +135,7 @@ if __name__ == '__main__':
             elif m := re.match(r'eb ([a-fA-F0-9x]) (.*)', cmd):
                 (addr, bytestr) = m.group(1, 2)
                 addr = int(addr, 16)
-                data = b''.join([int(x, 16).to_bytes(1,'big') for x in bytestr.split()])
+                data = bytes.fromhex(bytestr)
                 print('writing:', colored(data.hex(), 'green'))
                 mu.mem_write(addr, data)
                 do_show_context = False
