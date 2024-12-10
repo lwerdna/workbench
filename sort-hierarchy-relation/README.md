@@ -3,7 +3,7 @@ Sort items into a hierarchy given an arbitrary "is ancestor of" relation.
 ### 2023-01-24 UPDATE
 For a [partially ordered set](https://en.wikipedia.org/wiki/Partially_ordered_set), you can form a graph where vertices are the elements and a directed edge exists between A and B when the relation holds. Next, remove all edges that could be rederived by transitivity (transitive reduction). The resulting graph is a [Hasse diagram](https://en.wikipedia.org/wiki/Hasse_diagram).
 
-With foreknowledge the Hasse diagram will be a tree, we can build it efficientlys by simply starting empty and inserting one element at a time. During insertion, you have to test the relation against elements down the depth of the tree, which is `log n`. There are `n` insertions so I think this whole algorithm is `O(n log n)`.
+With foreknowledge the Hasse diagram will be a tree, we can build it efficiently by simply starting empty and inserting one element at a time. During insertion, you have to test the relation against elements down the depth of the tree, which is `log n`. There are `n` insertions so I think this whole algorithm is `O(n log n)`.
 
 A pedagogical implementation demonstrating the general case starts by building the graph from the elements and relations, then taking the [transitive reduction](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.dag.transitive_reduction.html), then testing if the result is a tree. If it's not, you can re-examine the data, or be tolerant and perhaps ignore every incoming edge after each vertex's first. Finally, traverse the tree pre-order. See [./test-intervals-networkx.py](./test-intervals-networkx.py) for a demonstration utilizing the graph library [NetworkX](https://networkx.org/).
 

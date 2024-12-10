@@ -1,3 +1,111 @@
+# 2024-12-10
+
+{
+Parse X509 certificates.
+
+https://github.com/lwerdna/filesamples/blob/master/x509_lets_encrypt.cer
+https://github.com/lwerdna/finter/blob/master/finter/x509_der.py
+
+Best tutorial:
+  https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der
+
+Very good tool:
+  https://lapo.it/asn1js
+  https://asn1js.eu
+}
+
+{
+Use a meta-language to abstract away data structure byte representation.
+
+There's a very nice idea that I am late to learn.
+Instead of defining a data structure in a language dependent way (eg: in a C struct), a meta-language can be designed and used, here ASN.1, but protocol buffers is another example.
+The meta language might then be "compiled" to produce the C struct.
+The noun "serialization" is then used to denote the actual byte layout of the data structure, just as it more commonly denoted the byte representation of a serialized object.
+Mediated by this meta language, different languages can exchange these data structures, with issues of representation (how primitives are encoded, alignment, etc.) conveniently abstracted away.
+
+References:
+  1. https://en.wikipedia.org/wiki/ASN.1
+  2. https://en.wikipedia.org/wiki/Protocol_Buffers
+}
+
+# 2024-12-09
+
+{
+Force a TLS v1.0 connection.
+
+It's deprecated everywhere!
+`openssl s_client -debug -connect 192.168.1.123 -tls1` doesn't work:
+   SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:104
+The python ssl library doesn't work:
+   DeprecationWarning: ssl.PROTOCOL_TLSv1 is deprecated
+
+Luckily we have tlslite (`pip install tlslite-ng`)!
+
+TODO: put TLS code
+}
+
+{
+Make a windows startup disk.
+
+Balena Etcher
+Rufus
+Startup Disk Creator (Ubuntu)
+
+WoeUSB, WoeUSB-ng, Ventoy
+
+ISO's are optical images (ISO9660) and typically cannot be dd'd directly to USB drives.
+Linux distros use "IsoHybrid" hack, Windows ISO's don't.
+A tool that works with Windows ISOs writes a partition scheme (MBR or GPT) and puts the contents of the ISO to a filesystem (FAT32 or NTFS).
+Competing partition standards and schemes: MBR, GUID partition table (GPT), Apple Partition Table (APT)
+}
+
+{
+Analyze certificate in TLS negotiation.
+
+Make the server speak:
+  nmap --script ssl-enum-ciphers -p 55754 192.168.122.102
+
+In wireshark:
+  capture TLS exchange
+  identify "Server Hello" packet
+  right-click "Certificate" -> "Export Packet Bytes" -> cert.bin
+
+Dump:
+  openssl x509 -text -in cert.bin
+  openssl asn1parse -in cert.bin -inform DER
+  openssl s_client -trace -connect 192.168.122.102 -tls1
+  openssl s_client -debug -connect 192.168.122.102 -tls1
+
+Certificate is basically a signed tuple of (subject, public key).
+If "Issuer" and "Subject" are the same, certificate is "self-signed".
+RFC5280 gives cert structure in ASN.1 (abstract syntax notation).
+Actual representation "encoding" can then be made into:
+  - DER (distinguished encoding rules) (bytes)
+  - XER (xml encoding rules)
+  - JER (json encoding rules)
+Further processing can base64 encode, PEM, etc.
+
+References:
+  darutk.medium.com
+}
+
+{
+Convert between bytes and hex strings in Python
+
+mybytes.hex()          # b'\xAA' -> 'AA'
+bytes.fromhex(hexstr)  # 'AA' -> b'\xAA'
+}
+
+# 2024-12-08
+
+{
+Make ISO image from files
+
+mkisofs -o image.iso /path/to/files
+
+The tool comes from package "genisoimage".
+}
+
 # 2024-10-12
 
 {
