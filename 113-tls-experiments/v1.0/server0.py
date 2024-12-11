@@ -8,10 +8,10 @@ from tlslite import TLSConnection
 from tlslite.api import *
 
 x509 = X509()
-x509.parse(open('cert.pem').read())
+x509.parse(open('server_cert.pem').read())
 certChain = X509CertChain([x509])
 
-privateKey = parsePEMKey(open('key.pem').read(), private=True)
+privateKey = parsePEMKey(open('server_key.pem').read(), private=True)
 
 host = 'localhost' #socket.gethostname()
 port = 31337
