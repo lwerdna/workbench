@@ -1,4 +1,5 @@
-client0.py, server0.py - anonymous client, server uses self-signed certificate
+client0.py, server0.py - anonymous client, server auths with self-signed certificate
+client1.py, server1.py - client and server both auth with self-signed certificate
 
 Generate keys and certificates with `make`.
 
