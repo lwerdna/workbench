@@ -13,7 +13,15 @@ certChain = X509CertChain([x509])
 
 privateKey = parsePEMKey(open('server_key.pem').read(), private=True)
 
-host = 'localhost' #socket.gethostname()
+reqCert = False
+anon = False
+for arg in sys.argv:
+    if 'reqcert' in arg.lower():
+        reqCert = True
+    if 'anon' in arg.lower():
+        anon = True
+
+host = '0.0.0.0' #socket.gethostname()
 port = 31337
 sock = socket.socket()
 print(f'binding to {host}:{port}')
@@ -30,7 +38,15 @@ connection = TLSConnection(conn)
 settings = HandshakeSettings()
 settings.maxVersion = (3,3)
 settings.minVersion = (3,3)
-connection.handshakeServer(certChain=certChain, privateKey=privateKey, settings=settings, anon=True)
+
+print(f'{sys.argv[0]} anon    # anonymous client, server auths with cert')
+print(f'{sys.argv[0]} reqCert # client and server auths with cert')
+
+# reqCert   anon  effect
+# ------- ------  ------
+#   false   true  anonymous client, server authenticates with self-signed cert
+#    true   false client and server authenticates with self-signed cert
+connection.handshakeServer(certChain=certChain, privateKey=privateKey, settings=settings, reqCert=reqCert, anon=anon)
 
 # receive something
 while True:

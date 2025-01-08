@@ -3,7 +3,8 @@ client1.py, server1.py - client and server both auth with self-signed certificat
 
 Generate keys and certificates with `make`.
 
-On one terminal: `./server0.py`
+On one terminal run the server from ../server
+
 On another: `./client0.py localhost 31337`
 
 # References
