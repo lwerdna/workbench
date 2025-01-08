@@ -38,8 +38,19 @@ if 1:
     with open(fpath, 'w') as fp:
         fp.write(f'CLIENT_RANDOM {connection._clientRandom.hex()} {sess.masterSecret.hex()}\n')
 
-# write(), send(), sendall()
-connection.sendall("Hello, world!\n".encode('utf-8'))
-connection.sendall(b'\x41\x42\x43\x44') # "ABCD"
+def recv_until(connection, what='\n'):
+    buf = b''
+    while not buf.endswith(b'\x0a'):
+        buf += connection.recv(1)
+    return buf
 
-print(connection.read())
+# write(), send(), sendall()
+connection.sendall('Hello, world!\n'.encode('utf-8'))
+print('GOT:', recv_until(connection))
+connection.sendall('How are you?\n'.encode('utf-8'))
+print('GOT:', recv_until(connection))
+connection.sendall('I am leaving now.\n'.encode('utf-8'))
+print('GOT:', recv_until(connection))
+connection.sendall('Bye!\n'.encode('utf-8'))
+connection.close()
+sock.close()

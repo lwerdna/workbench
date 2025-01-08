@@ -13,16 +13,27 @@ certChain = X509CertChain([x509])
 
 privateKey = parsePEMKey(open('server_key.pem').read(), private=True)
 
+# parse args
+port = 31337
 reqCert = False
 anon = False
 for arg in sys.argv:
+    if arg.isnumeric():
+        port = int(arg)
     if 'reqcert' in arg.lower():
         reqCert = True
     if 'anon' in arg.lower():
         anon = True
 
+print(f'{sys.argv[0]} anon    # anonymous client, server auths with cert')
+print(f'{sys.argv[0]} reqCert # client and server auths with cert')
+
+# reqCert   anon  effect
+# ------- ------  ------
+#   false   true  anonymous client, server authenticates with self-signed cert
+#    true   false client and server authenticates with self-signed cert
+
 host = '0.0.0.0' #socket.gethostname()
-port = 31337
 sock = socket.socket()
 print(f'binding to {host}:{port}')
 sock.bind((host, int(port)))
@@ -39,19 +50,20 @@ settings = HandshakeSettings()
 settings.maxVersion = (3,3)
 settings.minVersion = (3,3)
 
-print(f'{sys.argv[0]} anon    # anonymous client, server auths with cert')
-print(f'{sys.argv[0]} reqCert # client and server auths with cert')
-
-# reqCert   anon  effect
-# ------- ------  ------
-#   false   true  anonymous client, server authenticates with self-signed cert
-#    true   false client and server authenticates with self-signed cert
 connection.handshakeServer(certChain=certChain, privateKey=privateKey, settings=settings, reqCert=reqCert, anon=anon)
 
-# receive something
-while True:
-    data = connection.recv(1024).decode()
-    print(data, end='')
+def recv_until(connection, what='\n'):
+    buf = b''
+    while not buf.endswith(b'\x0a'):
+        buf += connection.recv(1)
+    return buf
+
+print('GOT:', recv_until(connection))
+connection.sendall('My name is not world, its Alice!\n'.encode('utf-8'))
+print('GOT:', recv_until(connection))
+connection.sendall('I am fine!\n'.encode('utf-8'))
+print('GOT:', recv_until(connection))
+connection.sendall('Ok, see you later!\n'.encode('utf-8'))
 
 conn.close()
 sock.close()
