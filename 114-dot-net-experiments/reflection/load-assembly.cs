@@ -4,7 +4,7 @@
 // - enumerating the methods in those classes
 // - calling a method
 
-using System;
+using System; // for class "Activator"
 using System.IO; // for class "Path"
 using System.Runtime.Remoting; // for class "ObjectHandle"
 using System.Reflection; // for class "Assembly"
