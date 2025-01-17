@@ -2,25 +2,15 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 
-namespace InjectedNamespace
+namespace Test
 {
-	public class InjectedClass
+	public class Test
 	{
-		public static void InjectedMethod()
+		public static void TestMethod()
 		{
 			int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 
-			for (int i=0; i<5*60; ++i)
-			{
-				Console.WriteLine("Hello, world! (pid: {0})", pid);
-
-				Thread.Sleep(1000);
-			}
-		}
-
-		public void FunkyMonkey()
-		{
-			Console.WriteLine("Funky Monkey is here!");
+			Console.WriteLine("STAGE2: I'm inside pid {0}!", pid);
 		}
 	}
 }
