@@ -37,6 +37,12 @@ namespace ExampleNamespace
 					{
 						Console.WriteLine("    method: {0}", meth);
 					}
+
+					PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+					for (int i=0; i<properties.Length; ++i)
+					{
+						Console.WriteLine("    properties: {0}", properties[i].ToString());
+					}
 				}
 			}
 		}

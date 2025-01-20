@@ -8,8 +8,8 @@ Injected.dll: Injected.cs
 injectee.exe: injectee.cs
 	mono-csc injectee.cs -out:injectee.exe
 
-injector.exe: injector.cs MInject.dll
-	mono-csc injector.cs -reference:MInject.dll -out:injector.exe
+#injector.exe: injector.cs MInject.dll
+#	mono-csc injector.cs -reference:MInject.dll -out:injector.exe
 
 create-objects.exe: create-objects.cs
 	mono-csc create-objects.cs -out:create-objects.exe

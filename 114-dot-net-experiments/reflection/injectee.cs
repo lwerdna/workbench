@@ -6,6 +6,9 @@ namespace InjecteeNamespace
 {
 	public class InjecteeClass
 	{
+		string name = "MyName";
+		int age = 77;
+
 		public static void Main(String[] args)
 		{
 			if (args.Length > 0)
