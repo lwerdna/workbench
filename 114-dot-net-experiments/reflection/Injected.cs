@@ -6,7 +6,7 @@ namespace InjectedNamespace
 	{
 		public static void InjectedMethod()
 		{
-			Console.WriteLine("I'm injected!");
+			Console.WriteLine("STAGE2: InjectedMethod()");
 		}
 	}
 }

@@ -1,9 +1,6 @@
-Quick start:
-
 ```
-make
-./inject <path_to_assembly> <pid>
+usage:
+  ./inject.py <pid> <dll> <namespace> <class> <method>
+example:
+  ./inject.py 1234 test.dll MyNamespace MyClass MyMethod
 ```
-
-For example `./inject.py injected.dll 1264552`.
-
