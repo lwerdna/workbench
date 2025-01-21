@@ -14,8 +14,22 @@ def gdb(gdbmi, command):
     return [x['payload'] for x in response if x['type']=='console']
 
 if __name__ == '__main__':
-    assembly_path = sys.argv[1]
-    pid = int(sys.argv[2])
+    print(__file__)
+
+    if len(sys.argv) < 5 + 1:
+        print(f'usage:')
+        print(f'  {sys.argv[0]} <pid> <dll> <namespace> <class> <method>')
+        print(f'usage:')
+        print(f'  {sys.argv[0]} 1234 test.dll MyNamespace MyClass MyMethod')
+        sys.exit(0)
+
+    path_stage1 = os.path.join(os.path.split(__file__)[0], 'stage1.so')
+
+    pid = int(sys.argv[1])
+    path_assembly = sys.argv[2]
+    inj_namespace = sys.argv[3]
+    inj_class = sys.argv[4]
+    inj_method = sys.argv[5]
 
     # change with:
     # echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
@@ -27,15 +41,14 @@ if __name__ == '__main__':
                 print(f'   HINT: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope')
 
     # check path to assembly
-    if not os.path.isabs(assembly_path):
-        assembly_path = os.path.abspath(assembly_path)
-    if not os.path.exists(assembly_path):
-        print(f'ERROR: {assembly_path} does not exist')
+    if not os.path.isabs(path_assembly):
+        path_assembly = os.path.abspath(path_assembly)
+    if not os.path.exists(path_assembly):
+        print(f'ERROR: {path_assembly} does not exist')
         sys.exit(-1)
 
     # check path to stage1
-    stage1_path = os.path.join(os.getcwd(), 'stage1.so')
-    if not os.path.exists(stage1_path):
+    if not os.path.exists(path_stage1):
         print(f'ERROR: {stage1_path} does not exist')
         sys.exit(-1)
 
@@ -43,12 +56,12 @@ if __name__ == '__main__':
     gdb(gdbmi, f'attach {pid}')
 
     # get stage1 to memory
-    lines = gdb(gdbmi, f'call dlopen("{stage1_path}", 2)')
+    lines = gdb(gdbmi, f'call dlopen("{path_stage1}", 2)')
     handle = int(re.search(r' 0x([a-fA-F0-9]+)', lines[-1]).group(1), 16)
     print(f'shared object loaded to: 0x{handle:X}')
 
     # call stage1 with path to stage2 (the .net dll)
-    gdb(gdbmi, f'call (void)load_assembly_call_method("{assembly_path}", "FooNamespace", "FooClass", "FooMethod")')
+    gdb(gdbmi, f'call (void)load_assembly_call_method("{path_assembly}", "{inj_namespace}", "{inj_class}", "{inj_method}")')
 
     # cleanup
     gdb(gdbmi, f'call dlclose(0x{handle:X})')
