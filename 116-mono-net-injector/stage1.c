@@ -73,22 +73,22 @@ void load_assembly_call_method(char *assembly_path, char *namespace, char *class
 	printf("STAGE1: calling mono_thread_attach()\n");
     do_mono_thread_attach(do_mono_get_root_domain());
 
-	printf("STAGE1: calling mono_assembly_open()\n");
+	printf("STAGE1: calling mono_assembly_open(\"%s\")\n", assembly_path);
     void *assembly = do_mono_assembly_open(assembly_path, NULL);
     if (assembly == NULL) ERRCLEANUP("acquiring assembly");
     //printf("STAGE1: assembly = %p\n", assembly);
 
-	printf("STAGE1: calling mono_assembly_get_image()\n");
+	printf("STAGE1: calling mono_assembly_get_image(%p)\n", assembly);
     void *Image = do_mono_assembly_get_image(assembly);
     if (Image == NULL) ERRCLEANUP("acquiring image");
     //printf("STAGE1: Image = %p\n", Image);
 
-	printf("STAGE1: calling mono_class_from_name()\n");
+	printf("STAGE1: calling mono_class_from_name(%p, \"%s\", \"%s\")\n", Image, namespace, class);
     void *MonoClass = do_mono_class_from_name(Image, namespace, class);
     if (MonoClass == NULL) ERRCLEANUP("acquiring class");
     //printf("STAGE1: MonoClass = %p\n", MonoClass);
 
-	printf("STAGE1: calling mono_class_get_method_from_name()\n");
+	printf("STAGE1: calling mono_class_get_method_from_name(%p, \"%s\", 0)\n", MonoClass, method);
     void *MonoClassMethod = do_mono_class_get_method_from_name(MonoClass, method, 0);
     if (MonoClassMethod == NULL) ERRCLEANUP("acquiring method");
     //printf("STAGE1: MonoClassMethod = %p\n", MonoClassMethod);

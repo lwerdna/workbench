@@ -1,12 +1,12 @@
 .PHONY: all clean install
 
-all: stage1.so injected.dll
+all: stage1.so Injected.dll
 
 stage1.so: stage1.c
 	gcc stage1.c -ldl -shared -fPIC -o stage1.so
 
-injected.dll: injected.cs
-	mono-csc -target:library injected.cs -out:injected.dll
+Injected.dll: Injected.cs
+	mono-csc -target:library Injected.cs -out:Injected.dll
 
 install-link:
 	ln -s $(PWD)/inject.py $(HOME)/.local/bin/inject.py

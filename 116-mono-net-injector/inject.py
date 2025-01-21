@@ -19,7 +19,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 5 + 1:
         print(f'usage:')
         print(f'  {sys.argv[0]} <pid> <dll> <namespace> <class> <method>')
-        print(f'usage:')
+        print(f'example:')
         print(f'  {sys.argv[0]} 1234 test.dll MyNamespace MyClass MyMethod')
         sys.exit(0)
 

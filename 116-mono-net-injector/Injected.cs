@@ -2,11 +2,11 @@ using System;
 using System.Threading;
 using System.Diagnostics;
 
-namespace Test
+namespace TestNamespace
 {
-	public class Test
+	public class TestClass
 	{
-		public static void Baz()
+		public static void TestMethod()
 		{
 			Console.WriteLine("I'm injected!");
 		}
