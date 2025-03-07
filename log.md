@@ -106,6 +106,17 @@ mkisofs -o image.iso /path/to/files
 The tool comes from package "genisoimage".
 }
 
+# 2024-11-27
+
+{
+Ethernet II is different than Ethernet 802.3!
+Actually they are 2 of 4 possible ethernet frames.
+Both start with DstMac(6), SrcMac(6), EtherType(2).
+The former follows with the payload bytes, the latter follows with an 802.2 header.
+The ethertype/length field and the first two bytes of the payload decide.
+see: "Ethernet Frame Differentiation" at https://en.wikipedia.org/wiki/Ethernet_frame
+} #Networking #TIL
+
 # 2024-10-12
 
 {
