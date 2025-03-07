@@ -1,3 +1,53 @@
+# 2025-03-07
+
+{
+The sudo `-E` switch.
+
+There have been so many times my python scripts requiring privileges (like opening a port below 1024) wouldn't work.
+And when I `sudo myscript.py` the needed libraries weren't found.
+I resorted to `sudo -i` to get a root environment then `pip install` libraries (if permitted) before invoking the script.
+Or, I would I would install the libraries in a [venv](https://docs.python.org/3/library/venv.html), then `sudo -i` and activate that venv from the root environment, before invoking the script.
+But now I have learned `-E`, which preserves the environment and the PYTHONPATH or whatever is needed for my root-requiring script to run.
+} #TIL #Linux.Bash
+
+{
+Shell variables are different than environment variables.
+
+Set a shell variable (AKA: local variable), and not the environment of children:
+
+```bash
+FOO=7
+python -c 'import os; print("FOO" in os.environ)'
+False
+```
+
+Variables like "i" in: `for i in * ;` are shell variables.
+
+Do not set a shell variable, but set the environment of children:
+
+```bash
+FOO=7 python -c 'import os; print("FOO" in os.environ)'
+True
+```
+
+Set environment variable here and in children.
+
+```
+export FOO=7
+python -c 'import os; print("FOO" in os.environ)'
+True
+```
+
+Note `export` is a bash builtin, `FOO=7` is bash syntax, and `env` is an external program.
+The env program takes <environment> <command> <args>.
+In its environment, env will set the variables given in the <environment> argument, then replace itself with command using execvp().
+
+## References:
+1. https://help.ubuntu.com/community/EnvironmentVariables
+2. https://askubuntu.com/questions/26318/environment-variable-vs-shell-variable-whats-the-difference
+
+} #TIL #Linux.Bash
+
 # 2024-12-10
 
 {
@@ -110,6 +160,7 @@ The tool comes from package "genisoimage".
 
 {
 Ethernet II is different than Ethernet 802.3!
+
 Actually they are 2 of 4 possible ethernet frames.
 Both start with DstMac(6), SrcMac(6), EtherType(2).
 The former follows with the payload bytes, the latter follows with an 802.2 header.
