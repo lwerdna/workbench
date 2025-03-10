@@ -1,3 +1,54 @@
+# 2025-03-10
+
+{
+Ping's UDP connect() Trick to Find Source IP
+
+There was a case where I had multiple interfaces on different networks, like (simplified):
+
+```
+eth0: 192.168.1.123
+eth1: 192.168.100.123
+eth2: 192.168.200.123
+```
+
+And I needed my source IP address as one of the fields in a packet I was crafting.
+But how?
+Should I iterate over interfaces, perhaps parsing the output of `ip link`, and determining which interface (and thus which source IP) to use?
+Interfaces can have multiple IP's too.
+No, the solution was to let Linux do the work, then observe what IP it used.
+If I connect to 192.168.100.x, Linux will route that through eth1, with source 192.168.100.123.
+Since I knew of one port open on the server, I could establish a connection, and query what IP Linux assigned:
+
+```python
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    s.connect((host, port))
+    ip, port = s.getsocknane()
+    result = ip
+except ConnectionRefusedError:
+    pass
+```
+
+This morning I mistyped an IP assignment, and ping wasn't working when I thought it should.
+I could see packets in wireshark, I knew the link was up and active, what was going on?
+The error message was strange too:
+
+> ping: connect: Network is unreachable
+
+Connect? This is ping, what is happening?
+I ran under `strace` and saw that, just prior to the error message, it tries:
+
+```C
+s = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)
+connect(s, /* destination ip, port 1025 */)
+```
+
+I searched this and essentially it is a more advanced "trick" than the TCP connect one, because it doesn't require an open port on the destination.
+The `connect()` call for UDP sockets just establishes a source ip/port and destination ip/port, it doesn't actually send a SYN or establish any state as in TCP sockets.
+Thus, it forces Linux to consider interfaces and determine the source IP.
+The port 1025 is arbitrary, but it's so close to 1024 (the first port not requiring root to bind to) that I wonder if it's one-off by accident.
+} #Networking
+
 # 2025-03-07
 
 {
