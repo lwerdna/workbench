@@ -16,7 +16,9 @@ word2freq = {}
 word2sents = {}
 
 for sentence in sentences:
-    for word in nltk.word_tokenize(sentence):
+    words = nltk.word_tokenize(sentence)
+    words = [w.lower() for w in words]
+    for word in words:
         freq = wordfreq.word_frequency(word, 'en')
         if freq == 0:
             continue
@@ -32,7 +34,7 @@ for i, word in enumerate(sorted(word2freq, key=lambda w: word2freq[w])):
     print(f'and appears in {len(sentences)}:')
     for s in sentences:
         print('  ' + s)
-    if i > 40:
+    if i > 60:
         break
     print('----')
 
