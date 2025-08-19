@@ -146,6 +146,7 @@ def get_iso8601_time():
     now = time.localtime(seconds)
     return time.strftime("%F", now);
     
+# epochToISO8601(time.time()) to get current date like what you want "2024-07-09"
 def epochToISO8601(epoch: float):
     timeStruct = time.localtime(epoch)
     timeString = time.strftime('%Y-%m-%d', timeStruct)

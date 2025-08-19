@@ -265,7 +265,6 @@ $ sudo mount --bind haha /etc/shells
 $ ./test
 /path/to/yomomma
 $ sudo umount /etc/shell
-}
 ```
 
 This might also be used to temporarily deny logins (even thru ssh) without disabling those services.
@@ -523,6 +522,9 @@ $ qemu-arm -L /usr/arm-linux-gnueabi ./target
 
 # 2024-05-14
 
+{
+Approaches to "ripping" or "lifting" code
+
 The only verb I knew for stealing code from a target (instead of reimplementing it) was "rip", but in some whitebox crypto papers they use "lift".
 With the ease of setting up one-off emulators, I'm up to three methods for doing this:
 1) copy the blob(s), jump/call into it carefully
@@ -547,12 +549,16 @@ https://github.com/lwerdna/dotfiles/blob/master/gdbinit_mem
 Remember, gdb doesn't mean only linux targets, it's anything that accepts gdb rsp connections, like qemu, renode, etc.
 
 Add whitebox-lift.py example to Project 106
+}
 
 # 2024-05-13
 
 Project 106: Add example where unicorn UC_HOOK_MEM_FETCH_UNMAPPED can detect unmapped fetches, and survive execution. I thought changing PC/RIP from the offending fetch address would be sufficient, but you must also map in memory at the fetch address to prevent an additional UC_ERR_MAP.
 
 # 2024-05-11
+
+{
+Correcting misconception of STDIN, STDOUT, STDERR and dup2()
 
 Project 105: upgrade with dup2() call so payload can come from redirected stdin but spawned shell can still interact with terminal.
 
@@ -565,13 +571,15 @@ See test-fds.c in Project 105.
 Now dup(1, 0) says make 0 describe to whatever 1 describes, closing 0 if it currently describes something.
 So if 0 has been redirected, you can restore it the original pts because 1 and 2 still hold a reference.
 So dup(2, 0) should also work.
+}
 
 # 2024-05-10
 
 Project 105: slightly harder ROP, call system("/bin/sh") and exit()
 
 {
-All that "2>&1" type stuff in bash are called redirections or redirection operators.
+"2>&1" type stuff in bash are called redirections or redirection operators.
+
 https://www.gnu.org/software/bash/manual/bash.html#Redirections
 
 ls > dirlist 2>&1
@@ -605,13 +613,20 @@ pip show -f pwntools
 
 Project 104: easy return oriented programming (ROP) exercise from ired.team
 
+{
+Passing command output or files contents as command argument
+
 Pass command output as argument:
 $ echo $(echo -n 'hey')
 Pass file contents as argument:
 $ echo -n 'hey' > /tmp/tmp.txt
 $ echo $(</tmp/tmp.txt)
+} #Techtip #Linux.Bash
 
 # 2024-05-08
+
+{
+A look below the surface of APT
 
 I always used apt at the "surface", never understanding deeper inner workings.
 Sometimes some answers used dpkg, which I kind of knew was related.
@@ -656,6 +671,7 @@ Upstream is synonymous with "source".
 
 A #IDoAndIUnderstand project I need to undertake:
 https://askubuntu.com/questions/458748/is-it-possible-to-add-a-location-folder-on-my-hard-disk-to-sources-list for creating a local package.
+}
 
 # 2024-05-07
 
@@ -664,7 +680,14 @@ https://github.com/lwerdna/reference_code/tree/master/hello_arm_linux_gnueabi_gc
 
 # 2024-05-06
 
+{
 Run an ARM application inside an ARM chroot with qemu.
+
+What happens if a usermode binary you're emulating with qemu references another file?
+For example, it's dynamic interpreter?
+Or other shared objects?
+You can `chroot` on qemu to make these all resolve seamlessly.
+
 Note qemu-arm is the user binary emulator and qemu-system-arm is the system emulator.
 If error "chroot: failed to run command ‘/usr/bin/qemu-arm’: No such file or directory", it is due (I think) to inability to find some dependency (a .so?) of qemu-arm, not missing qemu-arm itself.
 Using qemu-arm-static from package qemu-user-static is easiest since no dependencies, and no interpreter / dynamic linker.
@@ -681,6 +704,7 @@ Is Linux and its ways of thinking like a mindbending playground? Consider:
 * Chroot and emulation.
 * SLIP and tuntap and tunneling packets.
 * A file can contain a filesystem (which of course contains files).
+}
 
 # 2024-05-03
 Project 102 updated with devices (switch, nic, host) implemented as threads, can ping from host OS.
@@ -688,6 +712,7 @@ Project 102 updated with devices (switch, nic, host) implemented as threads, can
 # 2024-05-01
 {
 Patch files with `dd`:
+
 $ xxd -g 1 /tmp/probe.bin
 00000000: de ad be ef                                      ....
 $ xxd -g 1 /tmp/tmp.bin
@@ -703,6 +728,8 @@ Project 102: Using a tap (layer 2) virtual network device, simulate a switch and
 # 2024-04-23
 
 {
+VIM Customization costs me 2 hours troubleshooting SSH
+
 I spent close to 2 hours trying to resolve why passwordless login wasn't working.
 
 I didn't have access to /var/log/auth.log or alternatives because it is not my server.
@@ -748,6 +775,8 @@ https://github.com/lwerdna/reference_code/tree/master/hello_world_ubuntu_lkm
 Project 103: Dump binaries and emulate them using unicorn, aiming to get some of the graphical output of stack reads/writes that whitebox crypto defeat papers have. Demonstrate use of unicorn hooks. #Crypto #Emulation #Unicorn
 
 # 2024-03-08
-add u-boot dissection to: https://github.com/lwerdna/finter
+{
+Add u-boot dissection to: https://github.com/lwerdna/finter
 uImage is (image or zImage or ?) wrapped in struct legacy_img_hdr
 https://github.com/u-boot/u-boot/blob/master/include/image.h
+}

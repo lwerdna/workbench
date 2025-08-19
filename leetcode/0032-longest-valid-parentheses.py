@@ -80,8 +80,28 @@ class Solution1(object):
 
         return record
 
-for sol in [Solution0(), Solution1()]:
-    assert(sol.longestValidParentheses('') == 0)
+class Solution2(object):
+    def longestValidParentheses(self, string):
+        result = 0
+        height = 0
+        lookup = {}
+        for i, char in enumerate(string):
+            if char == '(':
+                if not height in lookup:
+                    lookup[height] = i
+                height += 1
+            else:
+                if height > 0:
+                    height -= 1
+                    length = i - lookup[height] + 1
+                    result = max(result, length)
+                else:
+                    lookup = {}
+
+        return result
+
+for sol in [Solution2()]:
+    #assert(sol.longestValidParentheses('') == 0)
     assert(sol.longestValidParentheses('()') == 2)
     assert(sol.longestValidParentheses(')(') == 0)
     assert(sol.longestValidParentheses('(()') == 2)

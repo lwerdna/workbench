@@ -2,9 +2,9 @@ Run some TLS experiments, view encrypted traffic with Wireshark [1].
 
 ![](./assets/diagram.svg)
 
-`./v1.0/*` client/server for tls 1.0, difficult to do with modern OpenSSL or tools that link against it
-`./client/*` client, leaks key material for wireshark
-`./server/*` server
+* `./v1.0/*` client/server for tls 1.0, difficult to do with modern OpenSSL or tools that link against it
+* `./client/*` client, leaks key material for wireshark
+* `./server/*` server
 
 ## MITM with socat
 

@@ -1,6 +1,7 @@
 // https://journal.lunar.sh/2020/mono-dot-net-injection.html
 // https://github.com/warbler/SharpMonoInjector/blob/master/src/SharpMonoInjector/Injector.cs
-
+// https://www.codeproject.com/Articles/607352/Injecting-NET-Assemblies-Into-Unmanaged-Processes
+//
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
