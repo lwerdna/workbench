@@ -1,0 +1,19 @@
+user manual:
+  https://www.totalphase.com/support/articles/200397858-level-shifter-board-user-manual/
+
+from the jumper settings we know all possible logic levels:
+  1.2V, 1.5V, 1.8V, 2.5V, 3.0V, 3.3V
+
+pins:
+  TPWR on 'EXT TGT' group - target power
+    supply this pin if target is powering the target side of the board
+    view this pin if Aardvark is powering the target side of the board (TPWR connected by jumper)
+  SCK serial clock
+  SS slave select (active low: is usuall high but goes low upon selection)
+
+Parameters with standard values according to saleae Logic2
+  endian: MSB
+  bits per transfer: 8
+  clock state: CPOL=0 (low when inactive)
+  clock phase: CPHA=0 (data valid on leading edge)
+  enable line: active low (go low to activate)
