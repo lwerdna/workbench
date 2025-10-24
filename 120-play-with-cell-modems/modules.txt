@@ -1,0 +1,9 @@
+
+Quectel RM521F-GL
+ supports 3GPP Release 16
+ supports band n3
+
+Quectel RM20N-GL
+ supports 3GPP Release 16
+ supports band n3
+
