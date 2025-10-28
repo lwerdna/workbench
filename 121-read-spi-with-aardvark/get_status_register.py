@@ -18,6 +18,6 @@ if __name__ == '__main__':
 
     print(f'doing it!')
     config_spi(handle)
-    read_jedec(handle)
+    rdsr(handle)
 
     print('done')
