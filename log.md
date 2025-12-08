@@ -1,3 +1,17 @@
+# 2025-12-06 Saturday
+
+{
+Following the below blog:
+  https://vindivlabs.com/research/lumi_part_1/
+  https://vindivlabs.com/research/lumi_part_2/
+
+The camera that arrived was a little different than the model discussed, but still contained the PUYA PY25q128ha SPI memory chip.
+
+The term "in-circuit" means "in situ" or "in the original place".
+
+Using an XGecu T56 reader with clips, it was NOT possible to read the SPI chip in-circuit. It then became readable after desoldering the chip and placing it in the reader.
+}
+
 # 2025-03-10
 
 {
