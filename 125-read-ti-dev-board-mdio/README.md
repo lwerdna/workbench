@@ -1,6 +1,6 @@
 Use an Arduino ESP32 to read/write MDIO on a TI PHY dev board.
 
-See tool.ino for the Arduino sketch.
+See tool/tool.ino for the Arduino sketch, which you can open in Arduino IDE or use the Makefile to compile on the command line.s
 
 Only three wires to the PHY!
 
